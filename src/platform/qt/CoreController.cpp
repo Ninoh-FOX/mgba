@@ -8,6 +8,7 @@
 #include "ConfigController.h"
 #include "InputController.h"
 #include "LogController.h"
+#include "MemoryAccessLogController.h"
 #include "MultiplayerController.h"
 #include "Override.h"
 
@@ -49,6 +50,10 @@ CoreController::CoreController(mCore* core, QObject* parent)
 	GBASIODolphinCreate(&m_dolphin);
 #endif
 
+#ifdef ENABLE_DEBUGGERS
+	mDebuggerInit(&m_debugger);
+#endif
+
 	m_resetActions.append([this]() {
 		if (m_autoload) {
 			mCoreLoadState(m_threadContext.core, 0, m_loadStateFlags);
@@ -75,25 +80,25 @@ CoreController::CoreController(mCore* core, QObject* parent)
 			controller->updatePlayerSave();
 		}
 
+		if (controller->m_override) {
+			controller->m_override->identify(context->core);
+			context->core->setOverride(context->core, controller->m_override->raw());
+		}
+
 		QMetaObject::invokeMethod(controller, "started");
 	};
 
 	m_threadContext.resetCallback = [](mCoreThread* context) {
 		CoreController* controller = static_cast<CoreController*>(context->userData);
-		for (auto action : controller->m_resetActions) {
+		for (auto& action : controller->m_resetActions) {
 			action();
-		}
-
-		if (controller->m_override) {
-			controller->m_override->identify(context->core);
-			controller->m_override->apply(context->core);
 		}
 
 		controller->m_resetActions.clear();
 		controller->m_frameCounter = -1;
 
 		if (!controller->m_hwaccel) {
-			context->core->setVideoBuffer(context->core, reinterpret_cast<color_t*>(controller->m_activeBuffer.data()), controller->screenDimensions().width());
+			context->core->setVideoBuffer(context->core, reinterpret_cast<mColor*>(controller->m_activeBuffer.data()), controller->screenDimensions().width());
 		}
 
 		QString message(tr("Reset r%1-%2 %3").arg(gitRevision).arg(QLatin1String(gitCommitShort)).arg(controller->m_crc32, 8, 16, QLatin1Char('0')));
@@ -200,7 +205,8 @@ CoreController::CoreController(mCore* core, QObject* parent)
 		}
 		message = QString::vasprintf(format, args);
 		QMetaObject::invokeMethod(controller, "logPosted", Q_ARG(int, level), Q_ARG(int, category), Q_ARG(const QString&, message));
-		if (level == mLOG_FATAL) {
+		if (level == mLOG_FATAL && !controller->m_crashSeen) {
+			controller->m_crashSeen = true;
 			QMetaObject::invokeMethod(controller, "crashed", Q_ARG(const QString&, message));
 		}
 	};
@@ -214,6 +220,10 @@ CoreController::~CoreController() {
 
 	mCoreThreadJoin(&m_threadContext);
 
+#ifdef ENABLE_DEBUGGERS
+	mDebuggerDeinit(&m_debugger);
+#endif
+
 	if (m_cacheSet) {
 		mCacheSetDeinit(m_cacheSet.get());
 		m_cacheSet.reset();
@@ -223,12 +233,17 @@ CoreController::~CoreController() {
 	m_threadContext.core->deinit(m_threadContext.core);
 }
 
-const color_t* CoreController::drawContext() {
+void CoreController::setPath(const QString& path, const QString& base) {
+	m_path = path;
+	m_baseDirectory = base;
+}
+
+const mColor* CoreController::drawContext() {
 	if (m_hwaccel) {
 		return nullptr;
 	}
 	QMutexLocker locker(&m_bufferMutex);
-	return reinterpret_cast<const color_t*>(m_completeBuffer.constData());
+	return reinterpret_cast<const mColor*>(m_completeBuffer.constData());
 }
 
 QImage CoreController::getPixels() {
@@ -266,9 +281,13 @@ mPlatform CoreController::platform() const {
 
 QSize CoreController::screenDimensions() const {
 	unsigned width, height;
-	m_threadContext.core->desiredVideoDimensions(m_threadContext.core, &width, &height);
+	m_threadContext.core->currentVideoSize(m_threadContext.core, &width, &height);
 
 	return QSize(width, height);
+}
+
+unsigned CoreController::videoScale() const {
+	return m_threadContext.core->videoScale(m_threadContext.core);
 }
 
 void CoreController::loadConfig(ConfigController* config) {
@@ -287,24 +306,17 @@ void CoreController::loadConfig(ConfigController* config) {
 	m_fastForwardMute = config->getOption("fastForwardMute", -1).toInt();
 	mCoreConfigCopyValue(&m_threadContext.core->config, config->config(), "volume");
 	mCoreConfigCopyValue(&m_threadContext.core->config, config->config(), "mute");
-	m_preload = config->getOption("preload").toInt();
-
-	int playerId = m_multiplayer->playerId(this) + 1;
-	QVariant savePlayerId = config->getOption("savePlayerId");
-	if (m_multiplayer->attached() < 2 && savePlayerId.canConvert<int>()) {
-		playerId = savePlayerId.toInt();
-	}
-	mCoreConfigSetOverrideIntValue(&m_threadContext.core->config, "savePlayerId", playerId);
+	m_preload = config->getOption("preload", true).toInt();
 
 	QSize sizeBefore = screenDimensions();
-	m_activeBuffer.resize(256 * 224 * sizeof(color_t));
-	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<color_t*>(m_activeBuffer.data()), sizeBefore.width());
+	m_activeBuffer.resize(256 * 224 * sizeof(mColor));
+	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<mColor*>(m_activeBuffer.data()), sizeBefore.width());
 
 	mCoreLoadForeignConfig(m_threadContext.core, config->config());
 
 	QSize sizeAfter = screenDimensions();
-	m_activeBuffer.resize(sizeAfter.width() * sizeAfter.height() * sizeof(color_t));
-	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<color_t*>(m_activeBuffer.data()), sizeAfter.width());
+	m_activeBuffer.resize(sizeAfter.width() * sizeAfter.height() * sizeof(mColor));
+	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<mColor*>(m_activeBuffer.data()), sizeAfter.width());
 
 	if (hasStarted()) {
 		updateFastForward();
@@ -321,15 +333,36 @@ void CoreController::loadConfig(ConfigController* config) {
 #endif
 }
 
-#ifdef USE_DEBUGGERS
-void CoreController::setDebugger(mDebugger* debugger) {
+#ifdef ENABLE_DEBUGGERS
+void CoreController::attachDebugger(bool interrupt) {
 	Interrupter interrupter(this);
-	if (debugger) {
-		mDebuggerAttach(debugger, m_threadContext.core);
-		mDebuggerEnter(debugger, DEBUGGER_ENTER_ATTACHED, 0);
-	} else {
-		m_threadContext.core->detachDebugger(m_threadContext.core);
+	if (!m_threadContext.core->debugger) {
+		mDebuggerAttach(&m_debugger, m_threadContext.core);
 	}
+	if (interrupt) {
+		mDebuggerEnter(&m_debugger, DEBUGGER_ENTER_ATTACHED, 0);
+	}
+}
+
+void CoreController::detachDebugger() {
+	Interrupter interrupter(this);
+	if (!m_threadContext.core->debugger) {
+		return;
+	}
+	m_threadContext.core->detachDebugger(m_threadContext.core);
+}
+
+void CoreController::attachDebuggerModule(mDebuggerModule* module, bool interrupt) {
+	Interrupter interrupter(this);
+	if (module) {
+		mDebuggerAttachModule(&m_debugger, module);
+	}
+	attachDebugger(interrupt);
+}
+
+void CoreController::detachDebuggerModule(mDebuggerModule* module) {
+	Interrupter interrupter(this);
+	mDebuggerDetachModule(&m_debugger, module);
 }
 #endif
 
@@ -392,8 +425,8 @@ bool CoreController::attachDolphin(const Address& address) {
 		return false;
 	}
 	if (GBASIODolphinConnect(&m_dolphin, &address, 0, 0)) {
-		GBA* gba = static_cast<GBA*>(m_threadContext.core->board);
-		GBASIOSetDriver(&gba->sio, &m_dolphin.d, SIO_JOYBUS);
+		clearMultiplayerController();
+		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_LINK_PORT, &m_dolphin.d);
 		return true;
 	}
 	return false;
@@ -401,8 +434,8 @@ bool CoreController::attachDolphin(const Address& address) {
 
 void CoreController::detachDolphin() {
 	if (platform() == mPLATFORM_GBA) {
-		GBA* gba = static_cast<GBA*>(m_threadContext.core->board);
-		GBASIOSetDriver(&gba->sio, nullptr, SIO_JOYBUS);
+		// TODO: Reattach to multiplayer controller
+		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_LINK_PORT, NULL);
 	}
 	GBASIODolphinDestroy(&m_dolphin);
 }
@@ -428,13 +461,22 @@ void CoreController::setLogger(LogController* logger) {
 	connect(this, &CoreController::logPosted, m_log, &LogController::postLog);
 }
 
+#ifdef ENABLE_DEBUGGERS
+std::weak_ptr<MemoryAccessLogController> CoreController::memoryAccessLogController() {
+	if (!m_malController) {
+		m_malController = std::make_shared<MemoryAccessLogController>(this);
+	}
+	return m_malController;
+}
+#endif
+
 void CoreController::start() {
 	QSize size(screenDimensions());
-	m_activeBuffer.resize(size.width() * size.height() * sizeof(color_t));
+	m_activeBuffer.resize(size.width() * size.height() * sizeof(mColor));
 	m_activeBuffer.fill(0xFF);
 	m_completeBuffer = m_activeBuffer;
 
-	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<color_t*>(m_activeBuffer.data()), size.width());
+	m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<mColor*>(m_activeBuffer.data()), size.width());
 
 	if (!m_patched) {
 		mCoreAutoloadPatch(m_threadContext.core);
@@ -447,14 +489,19 @@ void CoreController::start() {
 
 void CoreController::stop() {
 	setSync(false);
-#ifdef USE_DEBUGGERS
-	setDebugger(nullptr);
+#ifdef ENABLE_DEBUGGERS
+	if (m_malController) {
+		m_malController->stop();
+	}
+
+	detachDebugger();
 #endif
 	setPaused(false);
 	mCoreThreadEnd(&m_threadContext);
 }
 
 void CoreController::reset() {
+	m_crashSeen = false;
 	mCoreThreadReset(&m_threadContext);
 }
 
@@ -518,9 +565,6 @@ void CoreController::setRewinding(bool rewind) {
 }
 
 void CoreController::rewind(int states) {
-	if (!states) {
-		return;
-	}
 	if (!m_threadContext.core->opts.rewindEnable) {
 		emit statusPosted(tr("Rewinding not currently enabled"));
 	}
@@ -528,11 +572,7 @@ void CoreController::rewind(int states) {
 	if (!states) {
 		states = INT_MAX;
 	}
-	for (int i = 0; i < states; ++i) {
-		if (!mCoreRewindRestore(&m_threadContext.impl->rewind, m_threadContext.core)) {
-			break;
-		}
-	}
+	mCoreRewindRestore(&m_threadContext.impl->rewind, m_threadContext.core, states);
 	interrupter.resume();
 	emit frameAvailable();
 	emit rewound();
@@ -613,6 +653,7 @@ void CoreController::loadState(int slot) {
 		m_stateSlot = slot;
 		m_backupSaveState.clear();
 	}
+	m_crashSeen = false;
 	mCoreThreadClearCrashed(&m_threadContext);
 	mCoreThreadRunFunction(&m_threadContext, [](mCoreThread* context) {
 		CoreController* controller = static_cast<CoreController*>(context->userData);
@@ -633,6 +674,7 @@ void CoreController::loadState(const QString& path, int flags) {
 	if (flags != -1) {
 		m_loadStateFlags = flags;
 	}
+	m_crashSeen = false;
 	mCoreThreadClearCrashed(&m_threadContext);
 	mCoreThreadRunFunction(&m_threadContext, [](mCoreThread* context) {
 		CoreController* controller = static_cast<CoreController*>(context->userData);
@@ -662,6 +704,7 @@ void CoreController::loadState(QIODevice* iodev, int flags) {
 	if (flags != -1) {
 		m_loadStateFlags = flags;
 	}
+	m_crashSeen = false;
 	mCoreThreadClearCrashed(&m_threadContext);
 	mCoreThreadRunFunction(&m_threadContext, [](mCoreThread* context) {
 		CoreController* controller = static_cast<CoreController*>(context->userData);
@@ -712,7 +755,7 @@ void CoreController::saveState(const QString& path, int flags) {
 			vf->read(vf, controller->m_backupSaveState.data(), controller->m_backupSaveState.size());
 			vf->close(vf);
 		}
-		vf = VFileDevice::open(controller->m_statePath, O_WRONLY | O_CREAT | O_TRUNC);
+		vf = VFileDevice::open(controller->m_statePath, O_RDWR | O_CREAT | O_TRUNC);
 		if (!vf) {
 			return;
 		}
@@ -781,14 +824,20 @@ void CoreController::loadSave(const QString& path, bool temporary) {
 	m_resetActions.append([this, path, temporary]() {
 		VFile* vf = VFileDevice::open(path, temporary ? O_RDONLY : O_RDWR);
 		if (!vf) {
-			LOG(QT, ERROR) << tr("Failed to open save file: %1").arg(path);
+			qCritical() << tr("Failed to open save file: %1").arg(path);
 			return;
 		}
 
+		bool ok;
 		if (temporary) {
-			m_threadContext.core->loadTemporarySave(m_threadContext.core, vf);
+			ok = m_threadContext.core->loadTemporarySave(m_threadContext.core, vf);
 		} else {
-			m_threadContext.core->loadSave(m_threadContext.core, vf);
+			ok = m_threadContext.core->loadSave(m_threadContext.core, vf);
+		}
+		if (!ok) {
+			vf->close(vf);
+		} else {
+			m_savePath = path;
 		}
 	});
 	if (hasStarted()) {
@@ -796,12 +845,18 @@ void CoreController::loadSave(const QString& path, bool temporary) {
 	}
 }
 
-void CoreController::loadSave(VFile* vf, bool temporary) {
-	m_resetActions.append([this, vf, temporary]() {
+void CoreController::loadSave(VFile* vf, bool temporary, const QString& path) {
+	m_resetActions.append([this, vf, temporary, path]() {
+		bool ok;
 		if (temporary) {
-			m_threadContext.core->loadTemporarySave(m_threadContext.core, vf);
+			ok = m_threadContext.core->loadTemporarySave(m_threadContext.core, vf);
 		} else {
-			m_threadContext.core->loadSave(m_threadContext.core, vf);
+			ok = m_threadContext.core->loadSave(m_threadContext.core, vf);
+		}
+		if (!ok) {
+			vf->close(vf);
+		} else {
+			m_savePath = path;
 		}
 	});
 	if (hasStarted()) {
@@ -827,7 +882,7 @@ void CoreController::loadPatch(const QString& patchPath) {
 void CoreController::replaceGame(const QString& path) {
 	QFileInfo info(path);
 	if (!info.isReadable()) {
-		LOG(QT, ERROR) << tr("Failed to open game file: %1").arg(path);
+		qCritical() << tr("Failed to open game file: %1").arg(path);
 		return;
 	}
 	QString fname = info.canonicalFilePath();
@@ -838,6 +893,7 @@ void CoreController::replaceGame(const QString& path) {
 	} else {
 		mCoreLoadFile(m_threadContext.core, fname.toUtf8().constData());
 	}
+	// TODO: Make sure updating the path is handled properly by everything that calls path() and baseDirectory()
 	updateROMInfo();
 }
 
@@ -856,7 +912,7 @@ void CoreController::yankPak() {
 		break;
 #endif
 	case mPLATFORM_NONE:
-		LOG(QT, ERROR) << tr("Can't yank pack in unexpected platform!");
+		qCritical() << tr("Can't yank pack in unexpected platform!");
 		break;
 	}
 }
@@ -939,7 +995,7 @@ void CoreController::scanCard(const QString& path) {
 			}
 		}
 		scanCards(lines);
-		m_eReaderData = eReaderData;
+		m_eReaderData = std::move(eReaderData);
 	} else if (image.size() == QSize(989, 44) || image.size() == QSize(639, 44)) {
 		const uchar* bits = image.constBits();
 		size_t size;
@@ -971,7 +1027,7 @@ void CoreController::importSharkport(const QString& path) {
 	}
 	VFile* vf = VFileDevice::open(path, O_RDONLY);
 	if (!vf) {
-		LOG(QT, ERROR) << tr("Failed to open snapshot file for reading: %1").arg(path);
+		qCritical() << tr("Failed to open snapshot file for reading: %1").arg(path);
 		return;
 	}
 	Interrupter interrupter(this);
@@ -988,7 +1044,7 @@ void CoreController::exportSharkport(const QString& path) {
 	}
 	VFile* vf = VFileDevice::open(path, O_WRONLY | O_CREAT | O_TRUNC);
 	if (!vf) {
-		LOG(QT, ERROR) << tr("Failed to open snapshot file for writing: %1").arg(path);
+		qCritical() << tr("Failed to open snapshot file for writing: %1").arg(path);
 		return;
 	}
 	Interrupter interrupter(this);
@@ -1004,9 +1060,9 @@ void CoreController::attachPrinter() {
 	}
 	GB* gb = static_cast<GB*>(m_threadContext.core->board);
 	clearMultiplayerController();
-	GBPrinterCreate(&m_printer.d);
+	GBPrinterCreate(&m_printer);
 	m_printer.parent = this;
-	m_printer.d.print = [](GBPrinter* printer, int height, const uint8_t* data) {
+	m_printer.print = [](GBPrinter* printer, int height, const uint8_t* data) {
 		QGBPrinter* qPrinter = reinterpret_cast<QGBPrinter*>(printer);
 		QImage image(GB_VIDEO_HORIZONTAL_PIXELS, height, QImage::Format_Indexed8);
 		QVector<QRgb> colors;
@@ -1014,7 +1070,7 @@ void CoreController::attachPrinter() {
 		colors.append(qRgb(0xA8, 0xA8, 0xA8));
 		colors.append(qRgb(0x50, 0x50, 0x50));
 		colors.append(qRgb(0x00, 0x00, 0x00));
-		image.setColorTable(colors);
+		image.setColorTable(std::move(colors));
 		for (int y = 0; y < height; ++y) {
 			for (int x = 0; x < GB_VIDEO_HORIZONTAL_PIXELS; x += 4) {
 				uint8_t byte = data[(x + y * GB_VIDEO_HORIZONTAL_PIXELS) / 4];
@@ -1027,7 +1083,7 @@ void CoreController::attachPrinter() {
 		QMetaObject::invokeMethod(qPrinter->parent, "imagePrinted", Q_ARG(const QImage&, image));
 	};
 	Interrupter interrupter(this);
-	GBSIOSetDriver(&gb->sio, &m_printer.d.d);
+	GBSIOSetDriver(&gb->sio, &m_printer.d);
 }
 
 void CoreController::detachPrinter() {
@@ -1036,7 +1092,7 @@ void CoreController::detachPrinter() {
 	}
 	Interrupter interrupter(this);
 	GB* gb = static_cast<GB*>(m_threadContext.core->board);
-	GBPrinterDonePrinting(&m_printer.d);
+	GBPrinterDonePrinting(&m_printer);
 	GBSIOSetDriver(&gb->sio, nullptr);
 }
 
@@ -1045,7 +1101,7 @@ void CoreController::endPrint() {
 		return;
 	}
 	Interrupter interrupter(this);
-	GBPrinterDonePrinting(&m_printer.d);
+	GBPrinterDonePrinting(&m_printer);
 }
 #endif
 
@@ -1057,7 +1113,7 @@ void CoreController::attachBattleChipGate() {
 	Interrupter interrupter(this);
 	clearMultiplayerController();
 	GBASIOBattlechipGateCreate(&m_battlechip);
-	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_BATTLECHIP_GATE, &m_battlechip);
+	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_LINK_PORT, &m_battlechip);
 }
 
 void CoreController::detachBattleChipGate() {
@@ -1065,7 +1121,7 @@ void CoreController::detachBattleChipGate() {
 		return;
 	}
 	Interrupter interrupter(this);
-	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_BATTLECHIP_GATE, nullptr);
+	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_LINK_PORT, nullptr);
 }
 
 void CoreController::setBattleChipId(uint16_t id) {
@@ -1157,7 +1213,7 @@ void CoreController::setFramebufferHandle(int fb) {
 	if (hasStarted()) {
 		m_threadContext.core->reloadConfigOption(m_threadContext.core, "hwaccelVideo", NULL);
 		if (!m_hwaccel) {
-			m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<color_t*>(m_activeBuffer.data()), screenDimensions().width());
+			m_threadContext.core->setVideoBuffer(m_threadContext.core, reinterpret_cast<mColor*>(m_activeBuffer.data()), screenDimensions().width());
 		}
 	}
 }
@@ -1189,7 +1245,7 @@ int CoreController::updateAutofire() {
 void CoreController::finishFrame() {
 	if (!m_hwaccel) {
 		unsigned width, height;
-		m_threadContext.core->desiredVideoDimensions(m_threadContext.core, &width, &height);
+		m_threadContext.core->currentVideoSize(m_threadContext.core, &width, &height);
 
 		QMutexLocker locker(&m_bufferMutex);
 		memcpy(m_completeBuffer.data(), m_activeBuffer.constData(), width * height * BYTES_PER_PIXEL);
@@ -1216,11 +1272,10 @@ void CoreController::finishFrame() {
 }
 
 void CoreController::updatePlayerSave() {
-	int savePlayerId = 0;
-	mCoreConfigGetIntValue(&m_threadContext.core->config, "savePlayerId", &savePlayerId);
-	if (savePlayerId == 0 || m_multiplayer->attached() > 1) {
-		savePlayerId = m_multiplayer->playerId(this) + 1;
+	if (m_saveBlocked) {
+		return;
 	}
+	int savePlayerId = m_multiplayer->saveId(this);
 
 	QString saveSuffix;
 	if (savePlayerId < 2) {
@@ -1231,7 +1286,16 @@ void CoreController::updatePlayerSave() {
 	QByteArray saveSuffixBin(saveSuffix.toUtf8());
 	VFile* save = mDirectorySetOpenSuffix(&m_threadContext.core->dirs, m_threadContext.core->dirs.save, saveSuffixBin.constData(), O_CREAT | O_RDWR);
 	if (save) {
-		m_threadContext.core->loadSave(m_threadContext.core, save);
+		if (!m_threadContext.core->loadSave(m_threadContext.core, save)) {
+			save->close(save);
+		} else {
+			if (m_threadContext.core->dirs.save == m_threadContext.core->dirs.base) {
+				m_savePath = m_baseDirectory;
+			} else {
+				m_savePath = QString::fromUtf8(m_threadContext.core->opts.savegamePath);
+			}
+			m_savePath += PATH_SEP + QString::fromUtf8(m_threadContext.core->dirs.baseName) + saveSuffix;
+		}
 	}
 }
 
@@ -1281,9 +1345,9 @@ void CoreController::updateROMInfo() {
 	mCore* core = m_threadContext.core;
 	core->checksum(core, &m_crc32, mCHECKSUM_CRC32);
 
-	char gameTitle[17] = { '\0' };
-	core->getGameTitle(core, gameTitle);
-	m_internalTitle = QLatin1String(gameTitle);
+	mGameInfo info;
+	core->getGameInfo(core, &info);
+	m_internalTitle = QLatin1String(info.title);
 
 #ifdef USE_SQLITE3
 	if (db && m_crc32 && NoIntroDBLookupGameByCRC(db, m_crc32, &game)) {

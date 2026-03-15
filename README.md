@@ -54,6 +54,7 @@ The following mappers are fully supported:
 - MBC5
 - MBC5+Rumble
 - MBC7
+- M161
 - Wisdom Tree (unlicensed)
 - NT "old type" 1 and 2 (unlicensed multicart)
 - NT "new type" (unlicensed MBC5-like)
@@ -73,6 +74,7 @@ The following mappers are partially supported:
 - Hitek (missing logo switching)
 - GGB-81 (missing logo switching)
 - Li Cheng (missing logo switching)
+- Sintax (missing logo switching)
 
 ### Planned features
 
@@ -125,9 +127,9 @@ Compiling requires using CMake 3.1 or newer. GCC, Clang, and Visual Studio 2019 
 
 #### Docker building
 
-The recommended way to build for most platforms is to use Docker. Several Docker images are provided that contain the requisite toolchain and dependencies for building mGBA across several platforms. 
+The recommended way to build for most platforms is to use Docker. Several Docker images are provided that contain the requisite toolchain and dependencies for building mGBA across several platforms.
 
-Note: If you are on an older Windows system before Windows 10, you may need to configure your Docker to use VirtualBox shared folders to correctly map your current `mgba` checkout directory to the Docker image's working directory. (See issue [#1985](https://mgba.io/i/1985) for details.) 
+Note: If you are on an older Windows system before Windows 10, you may need to configure your Docker to use VirtualBox shared folders to correctly map your current `mgba` checkout directory to the Docker image's working directory. (See issue [#1985](https://mgba.io/i/1985) for details.)
 
 To use a Docker image to build mGBA, simply run the following command while in the root of an mGBA checkout:
 
@@ -234,6 +236,7 @@ mGBA has no hard dependencies, however, the following optional dependencies are 
 - SQLite3: for game databases.
 - libelf: for ELF loading.
 - Lua: for scripting.
+- json-c: for the scripting `storage` API.
 
 SQLite3, libpng, and zlib are included with the emulator, so they do not need to be externally compiled first.
 
@@ -254,12 +257,11 @@ Footnotes
 Copyright
 ---------
 
-mGBA is Copyright © 2013 – 2022 Jeffrey Pfau. It is distributed under the [Mozilla Public License version 2.0](https://www.mozilla.org/MPL/2.0/). A copy of the license is available in the distributed LICENSE file.
+mGBA is Copyright © 2013 – 2023 Jeffrey Pfau. It is distributed under the [Mozilla Public License version 2.0](https://www.mozilla.org/MPL/2.0/). A copy of the license is available in the distributed LICENSE file.
 
 mGBA contains the following third-party libraries:
 
 - [inih](https://github.com/benhoyt/inih), which is copyright © 2009 – 2020 Ben Hoyt and used under a BSD 3-clause license.
-- [blip-buf](https://code.google.com/archive/p/blip-buf), which is copyright © 2003 – 2009 Shay Green and used under a Lesser GNU Public License.
 - [LZMA SDK](http://www.7-zip.org/sdk.html), which is public domain.
 - [MurmurHash3](https://github.com/aappleby/smhasher) implementation by Austin Appleby, which is public domain.
 - [getopt for MSVC](https://github.com/skandhurkat/Getopt-for-Visual-Studio/), which is public domain.

@@ -15,8 +15,8 @@
 #include <mgba-util/gui/file-select.h>
 #include <mgba-util/gui/font.h>
 #include <mgba-util/gui/menu.h>
+#include <mgba-util/image/png-io.h>
 #include <mgba-util/memory.h>
-#include <mgba-util/png-io.h>
 #include <mgba-util/vfs.h>
 
 #ifdef PSP2
@@ -123,34 +123,39 @@ static void _drawState(struct GUIBackground* background, void* id) {
 	struct mGUIBackground* gbaBackground = (struct mGUIBackground*) background;
 	unsigned stateId = ((uint32_t) id) >> 16;
 	if (gbaBackground->p->drawScreenshot) {
-		unsigned w, h;
-		gbaBackground->p->core->desiredVideoDimensions(gbaBackground->p->core, &w, &h);
-		size_t size = w * h * BYTES_PER_PIXEL;
-		if (size != gbaBackground->imageSize) {
-			mappedMemoryFree(gbaBackground->image, gbaBackground->imageSize);
-			gbaBackground->image = NULL;
-		}
-		if (gbaBackground->image && gbaBackground->screenshotId == (stateId | SCREENSHOT_VALID)) {
-			gbaBackground->p->drawScreenshot(gbaBackground->p, gbaBackground->image, w, h, true);
+		mColor* pixels = gbaBackground->image;
+		if (pixels && gbaBackground->screenshotId == (stateId | SCREENSHOT_VALID)) {
+			gbaBackground->p->drawScreenshot(gbaBackground->p, pixels, gbaBackground->w, gbaBackground->h, true);
 			return;
 		} else if (gbaBackground->screenshotId != (stateId | SCREENSHOT_INVALID)) {
 			struct VFile* vf = mCoreGetState(gbaBackground->p->core, stateId, false);
-			color_t* pixels = gbaBackground->image;
-			if (!pixels) {
-				pixels = anonymousMemoryMap(size);
-				gbaBackground->image = pixels;
-				gbaBackground->imageSize = size;
-			}
 			bool success = false;
-			if (vf && isPNG(vf) && pixels) {
+			unsigned w, h;
+			if (vf && isPNG(vf)) {
 				png_structp png = PNGReadOpen(vf, PNG_HEADER_BYTES);
 				png_infop info = png_create_info_struct(png);
 				png_infop end = png_create_info_struct(png);
-				if (png && info && end) {
-					success = PNGReadHeader(png, info);
-					success = success && PNGReadPixels(png, info, pixels, w, h, w);
-					success = success && PNGReadFooter(png, end);
+				success = png && info && end;
+				success = success && PNGReadHeader(png, info);
+				w = png_get_image_width(png, info);
+				h = png_get_image_height(png, info);
+				size_t size = w * h * BYTES_PER_PIXEL;
+				success = success && (w < 0x4000) && (h < 0x4000);
+				if (success) {
+					if (size != gbaBackground->imageSize) {
+						mappedMemoryFree(pixels, gbaBackground->imageSize);
+						pixels = anonymousMemoryMap(size);
+						gbaBackground->image = pixels;
+						gbaBackground->imageSize = size;
+					}
+					success = pixels;
 				}
+				success = success && PNGReadPixels(png, info, pixels, w, h, w);
+				if (success) {
+					gbaBackground->w = w;
+					gbaBackground->h = h;
+				}
+				success = success && PNGReadFooter(png, end);
 				PNGReadClose(png, info, end);
 			}
 			if (vf) {
@@ -215,7 +220,7 @@ void mGUIInit(struct mGUIRunner* runner, const char* port) {
 	runner->fps = 0;
 	runner->lastFpsCheck = 0;
 	runner->totalDelta = 0;
-	CircleBufferInit(&runner->fpsBuffer, FPS_BUFFER_SIZE * sizeof(uint32_t));
+	mCircleBufferInit(&runner->fpsBuffer, FPS_BUFFER_SIZE * sizeof(uint32_t));
 
 	mInputMapInit(&runner->params.keyMap, &_mGUIKeyInfo);
 	mCoreConfigInit(&runner->config, runner->port);
@@ -279,7 +284,7 @@ void mGUIDeinit(struct mGUIRunner* runner) {
 	if (runner->teardown) {
 		runner->teardown(runner);
 	}
-	CircleBufferDeinit(&runner->fpsBuffer);
+	mCircleBufferDeinit(&runner->fpsBuffer);
 	mInputMapDeinit(&runner->params.keyMap);
 	mCoreConfigDeinit(&runner->config);
 	if (logger.vf) {
@@ -451,6 +456,7 @@ void mGUIRun(struct mGUIRunner* runner, const char* path) {
 	mLOG(GUI_RUNNER, DEBUG, "Loading save...");
 	mCoreAutoloadSave(runner->core);
 	mCoreAutoloadCheats(runner->core);
+	mCoreAutoloadPatch(runner->core);
 	if (runner->setup) {
 		mLOG(GUI_RUNNER, DEBUG, "Setting up runner...");
 		runner->setup(runner);
@@ -494,15 +500,15 @@ void mGUIRun(struct mGUIRunner* runner, const char* path) {
 	}
 	mLOG(GUI_RUNNER, INFO, "Game starting");
 	runner->fps = 0;
+	bool fastForward = false;
 	while (running) {
-		CircleBufferClear(&runner->fpsBuffer);
+		mCircleBufferClear(&runner->fpsBuffer);
 		runner->totalDelta = 0;
 		struct timeval tv;
 		gettimeofday(&tv, 0);
 		runner->lastFpsCheck = 1000000LL * tv.tv_sec + tv.tv_usec;
 
 		int frame = 0;
-		bool fastForward = false;
 		while (running) {
 			if (runner->running) {
 				running = runner->running(runner);
@@ -604,17 +610,17 @@ void mGUIRun(struct mGUIRunner* runner, const char* path) {
 						uint64_t delta = t - runner->lastFpsCheck;
 						runner->lastFpsCheck = t;
 						if (delta > 0x7FFFFFFFLL) {
-							CircleBufferClear(&runner->fpsBuffer);
+							mCircleBufferClear(&runner->fpsBuffer);
 							runner->fps = 0;
 						}
-						if (CircleBufferSize(&runner->fpsBuffer) == CircleBufferCapacity(&runner->fpsBuffer)) {
+						if (mCircleBufferSize(&runner->fpsBuffer) == mCircleBufferCapacity(&runner->fpsBuffer)) {
 							int32_t last;
-							CircleBufferRead32(&runner->fpsBuffer, &last);
+							mCircleBufferRead32(&runner->fpsBuffer, &last);
 							runner->totalDelta -= last;
 						}
-						CircleBufferWrite32(&runner->fpsBuffer, delta);
+						mCircleBufferWrite32(&runner->fpsBuffer, delta);
 						runner->totalDelta += delta;
-						runner->fps = (CircleBufferSize(&runner->fpsBuffer) * FPS_GRANULARITY * 1000000.0f) / (runner->totalDelta * sizeof(uint32_t));
+						runner->fps = (mCircleBufferSize(&runner->fpsBuffer) * FPS_GRANULARITY * 1000000.0f) / (runner->totalDelta * sizeof(uint32_t));
 					}
 				}
 				if (frame % (AUTOSAVE_GRANULARITY * (fastForwarding ? 2 : 1)) == 0) {
@@ -650,6 +656,9 @@ void mGUIRun(struct mGUIRunner* runner, const char* path) {
 				runner->core->reset(runner->core);
 				break;
 			case RUNNER_SAVE_STATE:
+				// If we are saving state, then the screenshot stored for the state previously should no longer be considered up-to-date.
+				// Therefore, mark it as stale so that at draw time we load the new save state's screenshot.
+				((struct mGUIBackground*) stateSaveMenu.background)->screenshotId |= SCREENSHOT_INVALID;
 				mCoreSaveState(runner->core, item->data.v.u >> 16, SAVESTATE_SCREENSHOT | SAVESTATE_SAVEDATA | SAVESTATE_RTC | SAVESTATE_METADATA);
 				break;
 			case RUNNER_LOAD_STATE:
@@ -693,6 +702,7 @@ void mGUIRun(struct mGUIRunner* runner, const char* path) {
 		mCoreConfigGetIntValue(&runner->config, "showOSD", &showOSD);
 		mCoreConfigGetIntValue(&runner->config, "mute", &mute);
 		mCoreConfigGetIntValue(&runner->config, "fastForwardMute", &fastForwardMute);
+		runner->core->reloadConfigOption(runner->core, "threadedVideo.flushScanline", &runner->config);
 #ifdef M_CORE_GB
 		if (runner->core->platform(runner->core) == mPLATFORM_GB) {
 			runner->core->reloadConfigOption(runner->core, "gb.pal", &runner->config);
@@ -773,6 +783,9 @@ void mGUILoadInputMaps(struct mGUIRunner* runner) {
 	size_t i;
 	for (i = 0; runner->keySources[i].id; ++i) {
 		mInputMapLoad(&runner->params.keyMap, runner->keySources[i].id, mCoreConfigGetInput(&runner->config));
+		if (runner->core) {
+			mInputMapLoad(&runner->core->inputMap, runner->keySources[i].id, mCoreConfigGetInput(&runner->config));
+		}
 	}
 }
 
@@ -835,5 +848,6 @@ THREAD_ENTRY mGUIAutosaveThread(void* context) {
 		}
 	}
 	MutexUnlock(&autosave->mutex);
+	THREAD_EXIT(0);
 }
 #endif

@@ -282,7 +282,7 @@ ATTRIBUTE_NOINLINE static void _neutralS(struct ARMCore* cpu, int32_t d) {
 		cpu->cycles += currentCycles; \
 	}
 
-#define DEFINE_ALU_INSTRUCTION_EX_ARM(NAME, S_BODY, SHIFTER, BODY) \
+#define DEFINE_ALU_INSTRUCTION_EX_ARM(NAME, S_BODY, SHIFTER, BODY, DO_WRITE) \
 	DEFINE_INSTRUCTION_ARM(NAME, \
 		SHIFTER(cpu, opcode); \
 		int rd = (opcode >> 12) & 0xF; \
@@ -293,7 +293,7 @@ ATTRIBUTE_NOINLINE static void _neutralS(struct ARMCore* cpu, int32_t d) {
 		} \
 		BODY; \
 		S_BODY; \
-		if (rd == ARM_PC) { \
+		if (DO_WRITE && rd == ARM_PC) { \
 			if (cpu->executionMode == MODE_ARM) { \
 				currentCycles += ARMWritePC(cpu); \
 			} else { \
@@ -302,23 +302,23 @@ ATTRIBUTE_NOINLINE static void _neutralS(struct ARMCore* cpu, int32_t d) {
 		})
 
 #define DEFINE_ALU_INSTRUCTION_ARM(NAME, S_BODY, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSL, , _shiftLSL, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_LSL, S_BODY, _shiftLSL, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSR, , _shiftLSR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_LSR, S_BODY, _shiftLSR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ASR, , _shiftASR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_ASR, S_BODY, _shiftASR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ROR, , _shiftROR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_ROR, S_BODY, _shiftROR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## I, , _immediate, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## SI, S_BODY, _immediate, BODY)
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSL, , _shiftLSL, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_LSL, S_BODY, _shiftLSL, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSR, , _shiftLSR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_LSR, S_BODY, _shiftLSR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ASR, , _shiftASR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_ASR, S_BODY, _shiftASR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ROR, , _shiftROR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## S_ROR, S_BODY, _shiftROR, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## I, , _immediate, BODY, 1) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## SI, S_BODY, _immediate, BODY, 1)
 
 #define DEFINE_ALU_INSTRUCTION_S_ONLY_ARM(NAME, S_BODY, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSL, S_BODY, _shiftLSL, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSR, S_BODY, _shiftLSR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ASR, S_BODY, _shiftASR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ROR, S_BODY, _shiftROR, BODY) \
-	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## I, S_BODY, _immediate, BODY)
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSL, S_BODY, _shiftLSL, BODY, 0) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _LSR, S_BODY, _shiftLSR, BODY, 0) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ASR, S_BODY, _shiftASR, BODY, 0) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## _ROR, S_BODY, _shiftROR, BODY, 0) \
+	DEFINE_ALU_INSTRUCTION_EX_ARM(NAME ## I, S_BODY, _immediate, BODY, 0)
 
 #define DEFINE_MULTIPLY_INSTRUCTION_EX_ARM(NAME, BODY, S_BODY, SIGNED) \
 	DEFINE_INSTRUCTION_ARM(NAME, \
@@ -655,15 +655,50 @@ DEFINE_INSTRUCTION_ARM(BX,
 
 // Begin coprocessor definitions
 
-DEFINE_INSTRUCTION_ARM(CDP, ARM_STUB)
+#define DEFINE_COPROCESSOR_INSTRUCTION(NAME, BODY) \
+	DEFINE_INSTRUCTION_ARM(NAME, \
+		int op1 = (opcode >> 21) & 7; \
+		int op2 = (opcode >> 5) & 7; \
+		int rd = (opcode >> 12) & 0xF; \
+		int cp = (opcode >> 8) & 0xF; \
+		int crn = (opcode >> 16) & 0xF; \
+		int crm = opcode & 0xF; \
+		UNUSED(op1); \
+		UNUSED(op2); \
+		UNUSED(rd); \
+		UNUSED(crn); \
+		UNUSED(crm); \
+		BODY;)
+
+DEFINE_COPROCESSOR_INSTRUCTION(MRC,
+	if (cpu->cp[cp].mrc) {
+		cpu->gprs[rd] = cpu->cp[cp].mrc(cpu, crn, crm, op1, op2);
+	} else {
+		ARM_ILL;
+	})
+
+DEFINE_COPROCESSOR_INSTRUCTION(MCR,
+	if (cpu->cp[cp].mcr) {
+		cpu->cp[cp].mcr(cpu, crn, crm, op1, op2, cpu->gprs[rd]);
+	} else {
+		ARM_ILL;
+	})
+
+DEFINE_COPROCESSOR_INSTRUCTION(CDP,
+	if (cpu->cp[cp].cdp) {
+		cpu->cp[cp].cdp(cpu, crn, crm, rd, op1, op2);
+	} else {
+		ARM_ILL;
+	})
+
 DEFINE_INSTRUCTION_ARM(LDC, ARM_STUB)
 DEFINE_INSTRUCTION_ARM(STC, ARM_STUB)
-DEFINE_INSTRUCTION_ARM(MCR, ARM_STUB)
-DEFINE_INSTRUCTION_ARM(MRC, ARM_STUB)
 
 // Begin miscellaneous definitions
 
-DEFINE_INSTRUCTION_ARM(BKPT, cpu->irqh.bkpt32(cpu, ((opcode >> 4) & 0xFFF0) | (opcode & 0xF))); // Not strictly in ARMv4T, but here for convenience
+DEFINE_INSTRUCTION_ARM(BKPT,
+	cpu->irqh.bkpt32(cpu, ((opcode >> 4) & 0xFFF0) | (opcode & 0xF));
+	currentCycles = 0;); // Not strictly in ARMv4T, but here for convenience
 DEFINE_INSTRUCTION_ARM(ILL, ARM_ILL) // Illegal opcode
 
 DEFINE_INSTRUCTION_ARM(MSR,
@@ -708,11 +743,11 @@ DEFINE_INSTRUCTION_ARM(MRSR, \
 	cpu->gprs[rd] = cpu->spsr.packed;)
 
 DEFINE_INSTRUCTION_ARM(MSRI,
-	int c = opcode & 0x00010000;
-	int f = opcode & 0x00080000;
-	int rotate = (opcode & 0x00000F00) >> 7;
-	int32_t operand = ROR(opcode & 0x000000FF, rotate);
-	int32_t mask = (c ? 0x000000FF : 0) | (f ? 0xFF000000 : 0);
+	uint32_t c = opcode & 0x00010000;
+	uint32_t f = opcode & 0x00080000;
+	uint32_t rotate = (opcode & 0x00000F00) >> 7;
+	uint32_t operand = ROR(opcode & 0x000000FF, rotate);
+	uint32_t mask = (c ? 0x000000FF : 0) | (f ? 0xFF000000 : 0);
 	if (mask & PSR_USER_MASK) {
 		cpu->cpsr.packed = (cpu->cpsr.packed & ~PSR_USER_MASK) | (operand & PSR_USER_MASK);
 	}
@@ -734,11 +769,11 @@ DEFINE_INSTRUCTION_ARM(MSRI,
 	})
 
 DEFINE_INSTRUCTION_ARM(MSRRI,
-	int c = opcode & 0x00010000;
-	int f = opcode & 0x00080000;
-	int rotate = (opcode & 0x00000F00) >> 7;
-	int32_t operand = ROR(opcode & 0x000000FF, rotate);
-	int32_t mask = (c ? 0x000000FF : 0) | (f ? 0xFF000000 : 0);
+	uint32_t c = opcode & 0x00010000;
+	uint32_t f = opcode & 0x00080000;
+	uint32_t rotate = (opcode & 0x00000F00) >> 7;
+	uint32_t operand = ROR(opcode & 0x000000FF, rotate);
+	uint32_t mask = (c ? 0x000000FF : 0) | (f ? 0xFF000000 : 0);
 	mask &= PSR_USER_MASK | PSR_PRIV_MASK | PSR_STATE_MASK;
 	cpu->spsr.packed = (cpu->spsr.packed & ~mask) | (operand & mask) | 0x00000010;)
 

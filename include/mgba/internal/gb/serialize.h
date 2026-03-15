@@ -420,6 +420,9 @@ struct GBSerializedState {
 				uint8_t bank0;
 			} mmm01;
 			struct {
+				uint8_t registersActive;
+			} pocketCam;
+			struct {
 				uint64_t lastLatch;
 				uint8_t reg;
 			} tama5;
@@ -429,6 +432,10 @@ struct GBSerializedState {
 				uint8_t value;
 				uint8_t mode;
 			} huc3;
+			struct {
+				uint8_t bank;
+				uint8_t locked;
+			} m161;
 			struct {
 				GBSerializedNTOldFlags flags;
 				uint8_t baseBank;
@@ -448,6 +455,12 @@ struct GBSerializedState {
 				uint8_t unmaskedBank;
 				uint8_t baseBank;
 			} sachen;
+			struct {
+				uint8_t mode;
+				uint8_t xorValues[4];
+				uint8_t bankNo;
+				uint8_t romBankXor;
+			} sintax;
 			struct {
 				uint8_t reserved[16];
 			} padding;
@@ -484,6 +497,7 @@ struct GBSerializedState {
 
 	union {
 		uint8_t huc3Registers[0x80];
+		uint8_t pocketCamRegisters[0x36];
 		struct {
 			uint8_t registers[4];
 			uint8_t reserved[4];

@@ -12,21 +12,11 @@ CXX_GUARD_START
 
 #include <mgba/core/log.h>
 #include <mgba/core/timing.h>
+#include <mgba/gba/interface.h>
 
 mLOG_DECLARE_CATEGORY(GBA_SAVE);
 
 struct VFile;
-
-enum SavedataType {
-	SAVEDATA_AUTODETECT = -1,
-	SAVEDATA_FORCE_NONE = 0,
-	SAVEDATA_SRAM = 1,
-	SAVEDATA_FLASH512 = 2,
-	SAVEDATA_FLASH1M = 3,
-	SAVEDATA_EEPROM = 4,
-	SAVEDATA_EEPROM512 = 5,
-	SAVEDATA_SRAM512 = 6,
-};
 
 enum SavedataCommand {
 	EEPROM_COMMAND_NULL = 0,
@@ -55,9 +45,13 @@ enum FlashStateMachine {
 	FLASH_STATE_CONTINUE = 2,
 };
 
-enum FlashManufacturer {
-	FLASH_MFG_PANASONIC = 0x1B32,
-	FLASH_MFG_SANYO = 0x1362
+enum FlashId {
+	FLASH_ATMEL_AT29LV512 = 0x3D1F, // 512k
+	FLASH_MACRONIX_MX29L512 = 0x1CC2, // 512k, unused
+	FLASH_MACRONIX_MX29L010 = 0x09C2, // 1M
+	FLASH_PANASONIC_MN63F805MNP = 0x1B32, // 512k, unused
+	FLASH_SANYO_LE26FV10N1TS = 0x1362, // 1M
+	FLASH_SST_39LVF512 = 0xD4BF, // 512k
 };
 
 enum {
@@ -68,7 +62,7 @@ enum {
 };
 
 struct GBASavedata {
-	enum SavedataType type;
+	enum GBASavedataType type;
 	uint8_t* data;
 	enum SavedataCommand command;
 	struct VFile* vf;
@@ -101,6 +95,7 @@ struct GBASavedataRTCBuffer {
 };
 
 void GBASavedataInit(struct GBASavedata* savedata, struct VFile* vf);
+void GBASavedataReset(struct GBASavedata* savedata);
 void GBASavedataDeinit(struct GBASavedata* savedata);
 
 void GBASavedataMask(struct GBASavedata* savedata, struct VFile* vf, bool writeback);
@@ -108,7 +103,7 @@ void GBASavedataUnmask(struct GBASavedata* savedata);
 size_t GBASavedataSize(const struct GBASavedata* savedata);
 bool GBASavedataClone(struct GBASavedata* savedata, struct VFile* out);
 bool GBASavedataLoad(struct GBASavedata* savedata, struct VFile* in);
-void GBASavedataForceType(struct GBASavedata* savedata, enum SavedataType type);
+void GBASavedataForceType(struct GBASavedata* savedata, enum GBASavedataType type);
 
 void GBASavedataInitFlash(struct GBASavedata* savedata);
 void GBASavedataInitEEPROM(struct GBASavedata* savedata);

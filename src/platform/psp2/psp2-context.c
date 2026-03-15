@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "psp2-context.h"
 
-#include <mgba/core/blip_buf.h>
 #include <mgba/core/core.h>
 
 #ifdef M_CORE_GBA
@@ -18,9 +17,10 @@
 #include "feature/gui/gui-runner.h"
 #include <mgba/internal/gba/input.h>
 
-#include <mgba-util/memory.h>
+#include <mgba-util/audio-resampler.h>
 #include <mgba-util/circle-buffer.h>
 #include <mgba-util/math.h>
+#include <mgba-util/memory.h>
 #include <mgba-util/threading.h>
 #include <mgba-util/vfs.h>
 #include <mgba-util/platform/psp2/sce-vfs.h>
@@ -33,10 +33,10 @@
 #include <psp2/gxm.h>
 #include <psp2/kernel/sysmem.h>
 #include <psp2/motion.h>
+#include <psp2/touch.h>
 
 #include <vita2d.h>
 
-#define RUMBLE_PWM 8
 #define CDRAM_ALIGN 0x40000
 
 mLOG_DECLARE_CATEGORY(GUI_PSP2);
@@ -54,20 +54,18 @@ static int currentTex;
 static vita2d_texture* tex[2];
 static vita2d_texture* screenshot;
 static Thread audioThread;
+static double fpsRatio = 1;
 static bool interframeBlending = false;
 static bool sgbCrop = false;
 static bool blurry = false;
+static SceTouchPanelInfo panelInfo[SCE_TOUCH_PORT_MAX_NUM];
 
 static struct mSceRotationSource {
 	struct mRotationSource d;
 	struct SceMotionSensorState state;
 } rotation;
 
-static struct mSceRumble {
-	struct mRumble d;
-	struct CircleBuffer history;
-	int current;
-} rumble;
+static struct mRumbleIntegrator rumble;
 
 static struct mSceImageSource {
 	struct mImageSource d;
@@ -84,14 +82,21 @@ bool frameLimiter = true;
 extern const uint8_t _binary_backdrop_png_start[];
 static vita2d_texture* backdrop = 0;
 
+#define BUFFERS 16
 #define PSP2_SAMPLES 512
-#define PSP2_AUDIO_BUFFER_SIZE (PSP2_SAMPLES * 16)
+#define PSP2_AUDIO_BUFFER_SIZE (PSP2_SAMPLES * BUFFERS)
+
+struct mPSP2AudioBuffer {
+	int16_t samples[PSP2_SAMPLES * 2] __attribute__((__aligned__(64)));
+	bool full;
+};
 
 static struct mPSP2AudioContext {
-	struct mStereoSample buffer[PSP2_AUDIO_BUFFER_SIZE];
-	size_t writeOffset;
-	size_t readOffset;
-	size_t samples;
+	struct mPSP2AudioBuffer outputBuffers[BUFFERS];
+	int currentAudioBuffer;
+	int nextAudioBuffer;
+	struct mAudioBuffer buffer;
+	struct mAudioResampler resampler;
 	Mutex mutex;
 	Condition cond;
 	bool running;
@@ -103,33 +108,30 @@ void mPSP2MapKey(struct mInputMap* map, int pspKey, int key) {
 
 static THREAD_ENTRY _audioThread(void* context) {
 	struct mPSP2AudioContext* audio = (struct mPSP2AudioContext*) context;
-	uint32_t zeroBuffer[PSP2_SAMPLES] = {0};
-	void* buffer = zeroBuffer;
+	const int16_t zeroBuffer[PSP2_SAMPLES * 2] __attribute__((__aligned__(64))) = {0};
+	const void* buffer = zeroBuffer;
 	int audioPort = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_MAIN, PSP2_SAMPLES, 48000, SCE_AUDIO_OUT_MODE_STEREO);
+	struct mPSP2AudioBuffer* outputBuffer = NULL;
 	while (audio->running) {
 		MutexLock(&audio->mutex);
-		if (buffer != zeroBuffer) {
+		if (outputBuffer) {
 			// Can only happen in successive iterations
-			audio->samples -= PSP2_SAMPLES;
+			outputBuffer->full = false;
 			ConditionWake(&audio->cond);
 		}
-		if (audio->samples >= PSP2_SAMPLES) {
-			buffer = &audio->buffer[audio->readOffset];
-			audio->readOffset += PSP2_SAMPLES;
-			if (audio->readOffset >= PSP2_AUDIO_BUFFER_SIZE) {
-				audio->readOffset = 0;
-			}
-			// Don't mark samples as read until the next loop iteration to prevent
-			// writing to the buffer while being read (see above)
+		outputBuffer = &audio->outputBuffers[audio->currentAudioBuffer];
+		if (outputBuffer->full) {
+			buffer = outputBuffer->samples;
+			audio->currentAudioBuffer = (audio->currentAudioBuffer + 1) % BUFFERS;
 		} else {
 			buffer = zeroBuffer;
+			outputBuffer = NULL;
 		}
 		MutexUnlock(&audio->mutex);
-
 		sceAudioOutOutput(audioPort, buffer);
 	}
 	sceAudioOutReleasePort(audioPort);
-	return 0;
+	THREAD_EXIT(0);
 }
 
 static void _sampleRotation(struct mRotationSource* source) {
@@ -149,20 +151,13 @@ static int32_t _readTiltY(struct mRotationSource* source) {
 
 static int32_t _readGyroZ(struct mRotationSource* source) {
 	struct mSceRotationSource* rotation = (struct mSceRotationSource*) source;
-	return rotation->state.gyro.z * -0x10000000;
+	return rotation->state.gyro.z * -0x8000000;
 }
 
-static void _setRumble(struct mRumble* source, int enable) {
-	struct mSceRumble* rumble = (struct mSceRumble*) source;
-	rumble->current += enable;
-	if (CircleBufferSize(&rumble->history) == RUMBLE_PWM) {
-		int8_t oldLevel;
-		CircleBufferRead8(&rumble->history, &oldLevel);
-		rumble->current -= oldLevel;
-	}
-	CircleBufferWrite8(&rumble->history, enable);
-	int small = (rumble->current << 21) / 65793;
-	int big = ((rumble->current * rumble->current) << 18) / 65793;
+static void _setRumble(struct mRumbleIntegrator* source, float level) {
+	UNUSED(source);
+	int small = level * 255;
+	int big = (level * level) * 255;
 	struct SceCtrlActuator state = {
 		small,
 		big
@@ -243,26 +238,36 @@ static void _requestImage(struct mImageSource* source, const void** buffer, size
 	sceCameraRead(imageSource->cam - 1, &read);
 }
 
-static void _postAudioBuffer(struct mAVStream* stream, blip_t* left, blip_t* right) {
+static void _postAudioBuffer(struct mAVStream* stream, struct mAudioBuffer* buf) {
 	UNUSED(stream);
 	MutexLock(&audioContext.mutex);
-	while (audioContext.samples + PSP2_SAMPLES >= PSP2_AUDIO_BUFFER_SIZE) {
-		if (!frameLimiter) {
-			blip_clear(left);
-			blip_clear(right);
-			MutexUnlock(&audioContext.mutex);
-			return;
+	mAudioResamplerProcess(&audioContext.resampler);
+	while (mAudioBufferAvailable(&audioContext.buffer) >= PSP2_SAMPLES) {
+		struct mPSP2AudioBuffer* buffer = &audioContext.outputBuffers[audioContext.nextAudioBuffer];
+		while (buffer->full) {
+			if (!frameLimiter) {
+				break;
+			}
+			ConditionWait(&audioContext.cond, &audioContext.mutex);
 		}
-		ConditionWait(&audioContext.cond, &audioContext.mutex);
+		mAudioBufferRead(&audioContext.buffer, buffer->samples, PSP2_SAMPLES);
+		buffer->full = true;
+		audioContext.nextAudioBuffer = (audioContext.nextAudioBuffer + 1) % BUFFERS;
 	}
-	struct mStereoSample* samples = &audioContext.buffer[audioContext.writeOffset];
-	blip_read_samples(left, &samples[0].left, PSP2_SAMPLES, true);
-	blip_read_samples(right, &samples[0].right, PSP2_SAMPLES, true);
-	audioContext.samples += PSP2_SAMPLES;
-	audioContext.writeOffset += PSP2_SAMPLES;
-	if (audioContext.writeOffset >= PSP2_AUDIO_BUFFER_SIZE) {
-		audioContext.writeOffset = 0;
+	MutexUnlock(&audioContext.mutex);
+}
+
+static void _audioRateChanged(struct mAVStream* stream, unsigned sampleRate) {
+	UNUSED(stream);
+	if (!sampleRate) {
+		return;
 	}
+	if (!audioContext.resampler.source || !audioContext.resampler.destination) {
+		return;
+	}
+	MutexLock(&audioContext.mutex);
+	mAudioResamplerProcess(&audioContext.resampler);
+	mAudioResamplerSetSource(&audioContext.resampler, audioContext.resampler.source, sampleRate / fpsRatio, true);
 	MutexUnlock(&audioContext.mutex);
 }
 
@@ -287,6 +292,8 @@ uint16_t mPSP2PollInput(struct mGUIRunner* runner) {
 	if (angles != GBA_KEY_NONE) {
 		activeKeys |= 1 << angles;
 	}
+	activeKeys |= mPSP2ReadTouchLR(&runner->core->inputMap);
+
 	return activeKeys;
 }
 
@@ -294,7 +301,11 @@ void mPSP2SetFrameLimiter(struct mGUIRunner* runner, bool limit) {
 	UNUSED(runner);
 	if (!frameLimiter && limit) {
 		MutexLock(&audioContext.mutex);
-		while (audioContext.samples) {
+		while (true) {
+			struct mPSP2AudioBuffer* buffer = &audioContext.outputBuffers[audioContext.currentAudioBuffer];
+			if (!buffer->full) {
+				break;
+			}
 			ConditionWait(&audioContext.cond, &audioContext.mutex);
 		}
 		MutexUnlock(&audioContext.mutex);
@@ -305,6 +316,9 @@ void mPSP2SetFrameLimiter(struct mGUIRunner* runner, bool limit) {
 void mPSP2Setup(struct mGUIRunner* runner) {
 	mCoreConfigSetDefaultIntValue(&runner->config, "threadedVideo", 1);
 	mCoreLoadForeignConfig(runner->core, &runner->config);
+
+	sceTouchGetPanelInfo(SCE_TOUCH_PORT_FRONT, &panelInfo[SCE_TOUCH_PORT_FRONT]);
+	sceTouchGetPanelInfo(SCE_TOUCH_PORT_BACK, &panelInfo[SCE_TOUCH_PORT_BACK]);
 
 	mPSP2MapKey(&runner->core->inputMap, SCE_CTRL_CROSS, GBA_KEY_A);
 	mPSP2MapKey(&runner->core->inputMap, SCE_CTRL_CIRCLE, GBA_KEY_B);
@@ -323,7 +337,7 @@ void mPSP2Setup(struct mGUIRunner* runner) {
 	mInputBindAxis(&runner->core->inputMap, PSP2_INPUT, 1, &desc);
 
 	unsigned width, height;
-	runner->core->desiredVideoDimensions(runner->core, &width, &height);
+	runner->core->baseVideoSize(runner->core, &width, &height);
 	tex[0] = vita2d_create_empty_texture_format(256, toPow2(height), SCE_GXM_TEXTURE_FORMAT_X8U8U8U8_1BGR);
 	tex[1] = vita2d_create_empty_texture_format(256, toPow2(height), SCE_GXM_TEXTURE_FORMAT_X8U8U8U8_1BGR);
 	currentTex = 0;
@@ -334,6 +348,9 @@ void mPSP2Setup(struct mGUIRunner* runner) {
 
 	runner->core->setVideoBuffer(runner->core, vita2d_texture_get_datap(tex[currentTex]), 256);
 	runner->core->setAudioBufferSize(runner->core, PSP2_SAMPLES);
+	mAudioBufferInit(&audioContext.buffer, PSP2_AUDIO_BUFFER_SIZE, 2);
+	mAudioResamplerInit(&audioContext.resampler, mINTERPOLATOR_COSINE);
+	mAudioResamplerSetDestination(&audioContext.resampler, &audioContext.buffer, 48000);
 
 	rotation.d.sample = _sampleRotation;
 	rotation.d.readTiltX = _readTiltX;
@@ -341,8 +358,8 @@ void mPSP2Setup(struct mGUIRunner* runner) {
 	rotation.d.readGyroZ = _readGyroZ;
 	runner->core->setPeripheral(runner->core, mPERIPH_ROTATION, &rotation.d);
 
-	rumble.d.setRumble = _setRumble;
-	CircleBufferInit(&rumble.history, RUMBLE_PWM);
+	mRumbleIntegratorInit(&rumble);
+	rumble.setRumble = _setRumble;
 	runner->core->setPeripheral(runner->core, mPERIPH_RUMBLE, &rumble.d);
 
 	camera.d.startRequestImage = _startRequestImage;
@@ -357,6 +374,7 @@ void mPSP2Setup(struct mGUIRunner* runner) {
 	stream.postAudioFrame = NULL;
 	stream.postAudioBuffer = _postAudioBuffer;
 	stream.postVideoFrame = NULL;
+	stream.audioRateChanged = _audioRateChanged;
 	runner->core->setAVStream(runner->core, &stream);
 
 	frameLimiter = true;
@@ -374,12 +392,6 @@ void mPSP2Setup(struct mGUIRunner* runner) {
 }
 
 void mPSP2LoadROM(struct mGUIRunner* runner) {
-	float rate = 60.0f / 1.001f;
-	sceDisplayGetRefreshRate(&rate);
-	double ratio = GBAAudioCalculateRatio(1, rate, 1);
-	blip_set_rates(runner->core->getAudioChannel(runner->core, 0), runner->core->frequency(runner->core), 48000 * ratio);
-	blip_set_rates(runner->core->getAudioChannel(runner->core, 1), runner->core->frequency(runner->core), 48000 * ratio);
-
 	switch (runner->core->platform(runner->core)) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA:
@@ -401,24 +413,22 @@ void mPSP2LoadROM(struct mGUIRunner* runner) {
 
 	mCoreConfigGetBoolValue(&runner->config, "interframeBlending", &interframeBlending);
 
-	// Backcompat: Old versions of mGBA use an older binding system that has different mappings for L/R
-	if (!sceKernelIsPSVitaTV()) {
-		int key = mInputMapKey(&runner->core->inputMap, PSP2_INPUT, __builtin_ctz(SCE_CTRL_L2));
-		if (key >= 0) {
-			mPSP2MapKey(&runner->core->inputMap, SCE_CTRL_L1, key);
-		}
-		key = mInputMapKey(&runner->core->inputMap, PSP2_INPUT, __builtin_ctz(SCE_CTRL_R2));
-		if (key >= 0) {
-			mPSP2MapKey(&runner->core->inputMap, SCE_CTRL_R1, key);
-		}
-	}
-
 	MutexInit(&audioContext.mutex);
 	ConditionInit(&audioContext.cond);
-	memset(audioContext.buffer, 0, sizeof(audioContext.buffer));
-	audioContext.readOffset = 0;
-	audioContext.writeOffset = 0;
+	mAudioBufferClear(&audioContext.buffer);
+	audioContext.nextAudioBuffer = 0;
+	audioContext.currentAudioBuffer = 0;
 	audioContext.running = true;
+
+	float rate = 60.0f / 1.001f;
+	sceDisplayGetRefreshRate(&rate);
+	fpsRatio = mCoreCalculateFramerateRatio(runner->core, rate);
+	unsigned sampleRate = runner->core->audioSampleRate(runner->core);
+	if (!sampleRate) {
+		sampleRate = 32768;
+	}
+	mAudioBufferClear(&audioContext.buffer);
+	mAudioResamplerSetSource(&audioContext.resampler, runner->core->getAudioBuffer(runner->core), sampleRate / fpsRatio, true);
 	ThreadCreate(&audioThread, _audioThread, &audioContext);
 }
 
@@ -482,7 +492,8 @@ void mPSP2Unpaused(struct mGUIRunner* runner) {
 
 void mPSP2Teardown(struct mGUIRunner* runner) {
 	UNUSED(runner);
-	CircleBufferDeinit(&rumble.history);
+	mAudioResamplerDeinit(&audioContext.resampler);
+	mAudioBufferDeinit(&audioContext.buffer);
 	vita2d_free_texture(tex[0]);
 	vita2d_free_texture(tex[1]);
 	vita2d_free_texture(screenshot);
@@ -614,7 +625,7 @@ void mPSP2Swap(struct mGUIRunner* runner) {
 
 void mPSP2Draw(struct mGUIRunner* runner, bool faded) {
 	unsigned width, height;
-	runner->core->desiredVideoDimensions(runner->core, &width, &height);
+	runner->core->currentVideoSize(runner->core, &width, &height);
 	if (interframeBlending) {
 		_drawTex(tex[!currentTex], width, height, faded, false);
 	}
@@ -646,6 +657,39 @@ bool mPSP2SystemPoll(struct mGUIRunner* runner) {
 		mCoreAutoloadSave(runner->core);
 	}
 	return true;
+}
+
+int mPSP2ReadTouchLR(const struct mInputMap* map) {
+	SceTouchData touch[4];
+	int activeKeys = 0;
+	int touches = sceTouchPeek(SCE_TOUCH_PORT_BACK, touch, 4);
+	int i;
+	for (i = 0; i < touches; ++i) {
+		if (touch[i].reportNum < 1) {
+			continue;
+		}
+		bool left = touch[i].report[0].x < (panelInfo[SCE_TOUCH_PORT_BACK].maxAaX - panelInfo[SCE_TOUCH_PORT_BACK].minAaX) / 2;
+		bool top = touch[i].report[0].y < (panelInfo[SCE_TOUCH_PORT_BACK].maxAaY - panelInfo[SCE_TOUCH_PORT_BACK].minAaY) / 2;
+		int button;
+		if (left) {
+			if (top) {
+				button = __builtin_ctz(SCE_CTRL_L2);
+			} else {
+				button = __builtin_ctz(SCE_CTRL_L3);
+			}
+		} else {
+			if (top) {
+				button = __builtin_ctz(SCE_CTRL_R2);
+			} else {
+				button = __builtin_ctz(SCE_CTRL_R3);
+			}
+		}
+		int key = mInputMapKey(map, PSP2_INPUT, button);
+		if (key != -1) {
+			activeKeys |= 1 << key;
+		}
+	}
+	return activeKeys;
 }
 
 __attribute__((noreturn, weak)) void __assert_func(const char* file, int line, const char* func, const char* expr) {

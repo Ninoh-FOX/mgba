@@ -16,6 +16,7 @@
 #include <mgba-util/memory.h>
 #include <mgba-util/math.h>
 #include <mgba-util/patch.h>
+#include <mgba-util/string.h>
 #include <mgba-util/vfs.h>
 
 const uint32_t CGB_SM83_FREQUENCY = 0x800000;
@@ -27,6 +28,25 @@ static const uint8_t _knownHeader[4] = {0xCE, 0xED, 0x66, 0x66};
 static const uint8_t _knownHeaderSachen[4] = {0x7C, 0xE7, 0xC0, 0x00};
 static const uint8_t _registeredTrademark[] = {0x3C, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x3C};
 
+static const uint8_t _cgbBiosHram[GB_SIZE_HRAM] = {
+	0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
+	0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+	0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
+	0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+	0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
+	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x71, 0x02, 0x4D, 0x01, 0xC1, 0xFF,
+	0x0D, 0x00, 0xD3, 0x05, 0xF9, 0x00, 0x00,
+};
+
 #define DMG0_BIOS_CHECKSUM 0xC2F5CC97
 #define DMG_BIOS_CHECKSUM 0x59C8598E
 #define MGB_BIOS_CHECKSUM 0xE6920754
@@ -34,7 +54,9 @@ static const uint8_t _registeredTrademark[] = {0x3C, 0x42, 0xB9, 0xA5, 0xB9, 0xA
 #define SGB2_BIOS_CHECKSUM 0X53D0DD63
 #define CGB_BIOS_CHECKSUM 0x41884E46
 #define CGB0_BIOS_CHECKSUM 0xE8EF5318
+#define CGBE_BIOS_CHECKSUM 0xE95DC95D
 #define AGB_BIOS_CHECKSUM 0xFFD6B0F1
+#define AGB0_BIOS_CHECKSUM 0x570337EA
 
 mLOG_DEFINE_CATEGORY(GB, "GB", "gb");
 
@@ -84,6 +106,7 @@ static void GBInit(void* cpu, struct mCPUComponent* component) {
 	gb->isPristine = false;
 	gb->pristineRomSize = 0;
 	gb->yankedRomSize = 0;
+	gb->sramSize = 0;
 
 	memset(&gb->gbx, 0, sizeof(gb->gbx));
 
@@ -106,7 +129,7 @@ static void GBDeinit(struct mCPUComponent* component) {
 
 bool GBLoadGBX(struct GBXMetadata* metadata, struct VFile* vf) {
 	uint8_t footer[16];
-	if (vf->seek(vf, -sizeof(footer), SEEK_END) < 0) {
+	if (vf->seek(vf, -(off_t) sizeof(footer), SEEK_END) < 0) {
 		return false;
 	}
 	if (vf->read(vf, footer, sizeof(footer)) < (ssize_t) sizeof(footer)) {
@@ -151,7 +174,7 @@ bool GBLoadGBX(struct GBXMetadata* metadata, struct VFile* vf) {
 	if (memcmp(footer, "MBC1", 4) == 0) {
 		metadata->mapperVars.u8[0] = 5;
 	} else if (memcmp(footer, "MB1M", 4) == 0) {
-		metadata->mapperVars.u8[0] = 4;		
+		metadata->mapperVars.u8[0] = 4;
 	}
 	return true;
 }
@@ -229,7 +252,7 @@ static void GBSramDeinit(struct GB* gb) {
 	} else if (gb->memory.sram) {
 		mappedMemoryFree(gb->memory.sram, gb->sramSize);
 	}
-	gb->memory.sram = 0;
+	gb->memory.sram = NULL;
 }
 
 bool GBLoadSave(struct GB* gb, struct VFile* vf) {
@@ -260,9 +283,13 @@ void GBResizeSram(struct GB* gb, size_t size) {
 	}
 	struct VFile* vf = gb->sramVf;
 	if (vf) {
+		// We have a vf
+		ssize_t vfSize = vf->size(vf);
 		if (vf == gb->sramRealVf) {
-			ssize_t vfSize = vf->size(vf);
+			// This is the real save file, not a masked one
 			if (vfSize >= 0 && (size_t) vfSize < size) {
+				// We need to grow the file
+				// Make sure to copy the footer data, if any
 				uint8_t extdataBuffer[0x100];
 				if (vfSize & 0xFF) {
 					vf->seek(vf, -(vfSize & 0xFF), SEEK_END);
@@ -270,6 +297,7 @@ void GBResizeSram(struct GB* gb, size_t size) {
 				}
 				if (gb->memory.sram) {
 					vf->unmap(vf, gb->memory.sram, gb->sramSize);
+					gb->memory.sram = NULL;
 				}
 				vf->truncate(vf, size + (vfSize & 0xFF));
 				if (vfSize & 0xFF) {
@@ -281,24 +309,36 @@ void GBResizeSram(struct GB* gb, size_t size) {
 					memset(&gb->memory.sram[vfSize], 0xFF, size - vfSize);
 				}
 			} else if (size > gb->sramSize || !gb->memory.sram) {
+				// We aren't growing the file, but we are changing our mapping of it
 				if (gb->memory.sram) {
 					vf->unmap(vf, gb->memory.sram, gb->sramSize);
+					gb->memory.sram = NULL;
 				}
 				if (size) {
 					gb->memory.sram = vf->map(vf, size, MAP_WRITE);
 				}
 			}
 		} else {
+			// This is a masked save file
 			if (gb->memory.sram) {
 				vf->unmap(vf, gb->memory.sram, gb->sramSize);
 			}
-			if (vf->size(vf) < gb->sramSize) {
-				void* sram = vf->map(vf, vf->size(vf), MAP_READ);
-				struct VFile* newVf = VFileMemChunk(sram, vf->size(vf));
-				vf->unmap(vf, sram,vf->size(vf));
-				vf = newVf;
-				gb->sramVf = newVf;
-				vf->truncate(vf, size);
+			if ((vfSize <= 0 && size) || (size_t) vfSize < size) {
+				// The loaded mask file is too small. Since these can be read-only,
+				// we need to make a new one of the right size
+				if (vfSize < 0) {
+					vfSize = 0;
+				}
+				gb->sramVf = VFileMemChunk(NULL, size);
+				uint8_t* sram = gb->sramVf->map(gb->sramVf, size, MAP_WRITE);
+				if (vfSize > 0) {
+					vf->seek(vf, 0, SEEK_SET);
+					vf->read(vf, sram, vfSize);
+				}
+				memset(&sram[vfSize], 0xFF, size - vfSize);
+				gb->sramVf->unmap(gb->sramVf, sram, size);
+				vf->close(vf);
+				vf = gb->sramVf;
 			}
 			if (size) {
 				gb->memory.sram = vf->map(vf, size, MAP_READ);
@@ -308,6 +348,8 @@ void GBResizeSram(struct GB* gb, size_t size) {
 			gb->memory.sram = NULL;
 		}
 	} else if (size) {
+		// There's no vf, so let's make it only memory-backed
+		// TODO: Investigate just using a VFileMemChunk instead of this hybrid approach
 		uint8_t* newSram = anonymousMemoryMap(size);
 		if (gb->memory.sram) {
 			if (size > gb->sramSize) {
@@ -319,6 +361,7 @@ void GBResizeSram(struct GB* gb, size_t size) {
 			mappedMemoryFree(gb->memory.sram, gb->sramSize);
 		} else {
 			memset(newSram, 0xFF, size);
+			gb->sramSize = size;
 		}
 		gb->memory.sram = newSram;
 	}
@@ -405,7 +448,9 @@ void GBUnloadROM(struct GB* gb) {
 
 	if (gb->romVf) {
 #ifndef FIXED_ROM_BUFFER
-		gb->romVf->unmap(gb->romVf, gb->memory.rom, gb->pristineRomSize);
+		if (gb->isPristine && gb->memory.rom) {
+			gb->romVf->unmap(gb->romVf, gb->memory.rom, gb->pristineRomSize);
+		}
 #endif
 		gb->romVf->close(gb->romVf);
 		gb->romVf = NULL;
@@ -413,6 +458,8 @@ void GBUnloadROM(struct GB* gb) {
 	gb->memory.rom = NULL;
 	gb->memory.mbcType = GB_MBC_AUTODETECT;
 	gb->isPristine = false;
+	gb->pristineRomSize = 0;
+	gb->memory.romSize = 0;
 
 	if (!gb->sramDirty) {
 		gb->sramMaskWriteback = false;
@@ -422,6 +469,7 @@ void GBUnloadROM(struct GB* gb) {
 	if (gb->sramRealVf) {
 		gb->sramRealVf->close(gb->sramRealVf);
 	}
+	gb->sramSize = 0;
 	gb->sramRealVf = NULL;
 	gb->sramVf = NULL;
 	if (gb->memory.cam && gb->memory.cam->stopRequestImage) {
@@ -453,17 +501,18 @@ void GBApplyPatch(struct GB* gb, struct Patch* patch) {
 	if (patchedSize > GB_SIZE_CART_MAX) {
 		patchedSize = GB_SIZE_CART_MAX;
 	}
+
+	const struct GBCartridge* cart = (const struct GBCartridge*) &gb->memory.rom[0x100];
+	uint8_t type = cart->type;
 	void* newRom = anonymousMemoryMap(GB_SIZE_CART_MAX);
 	if (!patch->applyPatch(patch, gb->memory.rom, gb->pristineRomSize, newRom, patchedSize)) {
 		mappedMemoryFree(newRom, GB_SIZE_CART_MAX);
 		return;
 	}
-	if (gb->romVf) {
+	if (gb->romVf && gb->isPristine) {
 #ifndef FIXED_ROM_BUFFER
 		gb->romVf->unmap(gb->romVf, gb->memory.rom, gb->pristineRomSize);
 #endif
-		gb->romVf->close(gb->romVf);
-		gb->romVf = NULL;
 	}
 	gb->isPristine = false;
 	if (gb->memory.romBase == gb->memory.rom) {
@@ -471,6 +520,12 @@ void GBApplyPatch(struct GB* gb, struct Patch* patch) {
 	}
 	gb->memory.rom = newRom;
 	gb->memory.romSize = patchedSize;
+
+	cart = (const struct GBCartridge*) &gb->memory.rom[0x100];
+	if (cart->type != type) {
+		gb->memory.mbcType = GB_MBC_AUTODETECT;
+		GBMBCInit(gb);
+	}
 	gb->romCrc32 = doCrc32(gb->memory.rom, gb->memory.romSize);
 	gb->cpu->memory.setActiveRegion(gb->cpu, gb->cpu->pc);
 }
@@ -521,8 +576,29 @@ bool GBIsBIOS(struct VFile* vf) {
 	case SGB2_BIOS_CHECKSUM:
 	case CGB_BIOS_CHECKSUM:
 	case CGB0_BIOS_CHECKSUM:
+	case CGBE_BIOS_CHECKSUM:
 	case AGB_BIOS_CHECKSUM:
+	case AGB0_BIOS_CHECKSUM:
 		return true;
+	default:
+		return false;
+	}
+}
+
+bool GBIsCompatibleBIOS(struct VFile* vf, enum GBModel model) {
+	switch (_GBBiosCRC32(vf)) {
+	case DMG_BIOS_CHECKSUM:
+	case DMG0_BIOS_CHECKSUM:
+	case MGB_BIOS_CHECKSUM:
+	case SGB_BIOS_CHECKSUM:
+	case SGB2_BIOS_CHECKSUM:
+		return model < GB_MODEL_CGB;
+	case CGB_BIOS_CHECKSUM:
+	case CGB0_BIOS_CHECKSUM:
+	case CGBE_BIOS_CHECKSUM:
+	case AGB_BIOS_CHECKSUM:
+	case AGB0_BIOS_CHECKSUM:
+		return model >= GB_MODEL_CGB;
 	default:
 		return false;
 	}
@@ -560,7 +636,7 @@ void GBReset(struct SM83Core* cpu) {
 	GBMemoryReset(gb);
 
 	if (gb->biosVf) {
-		if (!GBIsBIOS(gb->biosVf)) {
+		if (!GBIsCompatibleBIOS(gb->biosVf, gb->model)) {
 			gb->biosVf->close(gb->biosVf);
 			gb->biosVf = NULL;
 		} else {
@@ -689,6 +765,7 @@ void GBSkipBIOS(struct GB* gb) {
 			gb->memory.io[GB_REG_SVBK] = 0xFF;
 			GBVideoDisableCGB(&gb->video);
 		}
+		memcpy(gb->memory.hram, _cgbBiosHram, sizeof(gb->memory.hram));
 		nextDiv = 0xC;
 		break;
 	}
@@ -815,9 +892,12 @@ void GBDetectModel(struct GB* gb) {
 			gb->model = GB_MODEL_SGB2;
 			break;
 		case CGB_BIOS_CHECKSUM:
+		case CGB0_BIOS_CHECKSUM:
+		case CGBE_BIOS_CHECKSUM:
 			gb->model = GB_MODEL_CGB;
 			break;
 		case AGB_BIOS_CHECKSUM:
+		case AGB0_BIOS_CHECKSUM:
 			gb->model = GB_MODEL_AGB;
 			break;
 		default:
@@ -845,7 +925,7 @@ int GBValidModels(const uint8_t* bank0) {
 	} else if (cart->cgb == 0xC0) {
 		models = GB_MODEL_CGB;
 	} else {
-		models = GB_MODEL_MGB;		
+		models = GB_MODEL_MGB;
 	}
 	if (cart->sgb == 0x03 && cart->oldLicensee == 0x33) {
 		models |= GB_MODEL_SGB;
@@ -892,7 +972,7 @@ void GBProcessEvents(struct SM83Core* cpu) {
 
 			nextEvent = cycles;
 			do {
-#ifdef USE_DEBUGGERS
+#ifdef ENABLE_DEBUGGERS
 				gb->timing.globalCycles += nextEvent;
 #endif
 				nextEvent = mTimingTick(&gb->timing, nextEvent);
@@ -1009,7 +1089,7 @@ void GBStop(struct SM83Core* cpu) {
 void GBIllegal(struct SM83Core* cpu) {
 	struct GB* gb = (struct GB*) cpu->master;
 	mLOG(GB, GAME_ERROR, "Hit illegal opcode at address %04X:%02X", cpu->pc, cpu->bus);
-#ifdef USE_DEBUGGERS
+#ifdef ENABLE_DEBUGGERS
 	if (cpu->components && cpu->components[CPU_COMPONENT_DEBUGGER]) {
 		struct mDebuggerEntryInfo info = {
 			.address = cpu->pc,
@@ -1052,7 +1132,7 @@ bool GBIsROM(struct VFile* vf) {
 	}
 
 	uint8_t footer[16];
-	vf->seek(vf, -sizeof(footer), SEEK_END);
+	vf->seek(vf, -(off_t) sizeof(footer), SEEK_END);
 	if (vf->read(vf, footer, sizeof(footer)) < (ssize_t) sizeof(footer)) {
 		return false;
 	}
@@ -1068,38 +1148,28 @@ bool GBIsROM(struct VFile* vf) {
 	return false;
 }
 
-void GBGetGameTitle(const struct GB* gb, char* out) {
-	const struct GBCartridge* cart = NULL;
-	if (gb->memory.rom) {
-		cart = (const struct GBCartridge*) &gb->memory.rom[0x100];
-	}
-	if (!cart) {
+void GBGetGameInfo(const struct GB* gb, struct mGameInfo* info) {
+	memset(info, 0, sizeof(*info));
+	if (!gb->memory.rom) {
 		return;
 	}
-	if (cart->oldLicensee != 0x33) {
-		memcpy(out, cart->titleLong, 16);
-	} else {
-		memcpy(out, cart->titleShort, 11);
-	}
-}
 
-void GBGetGameCode(const struct GB* gb, char* out) {
-	memset(out, 0, 8);
-	const struct GBCartridge* cart = NULL;
-	if (gb->memory.rom) {
-		cart = (const struct GBCartridge*) &gb->memory.rom[0x100];
-	}
-	if (!cart) {
-		return;
-	}
+	const struct GBCartridge* cart = (const struct GBCartridge*) &gb->memory.rom[0x100];
 	if (cart->cgb == 0xC0) {
-		memcpy(out, "CGB-????", 8);
+		strlcpy(info->system, "CGB", sizeof(info->system));
 	} else {
-		memcpy(out, "DMG-????", 8);
+		strlcpy(info->system, "DMG", sizeof(info->system));
 	}
-	if (cart->oldLicensee == 0x33) {
-		memcpy(&out[4], cart->maker, 4);
+
+	if (cart->oldLicensee != 0x33) {
+		memcpy(info->title, cart->titleLong, 16);
+		snprintf(info->maker, sizeof(info->maker), "%02X", cart->oldLicensee);
+	} else {
+		memcpy(info->title, cart->titleShort, 11);
+		memcpy(info->code, cart->maker, 4);
+		memcpy(info->maker, &cart->licensee, 2);
 	}
+	info->version = cart->version;
 }
 
 void GBFrameStarted(struct GB* gb) {
@@ -1126,9 +1196,15 @@ void GBFrameEnded(struct GB* gb) {
 		}
 	}
 
+	struct mRumble* rumble = gb->memory.rumble;
+	if (rumble && rumble->integrate) {
+		gb->memory.lastRumble = mTimingCurrentTime(&gb->timing);
+		rumble->integrate(rumble, GB_VIDEO_TOTAL_LENGTH);
+	}
+
 	// TODO: Move to common code
 	if (gb->stream && gb->stream->postVideoFrame) {
-		const color_t* pixels;
+		const mColor* pixels;
 		size_t stride;
 		gb->video.renderer->getPixels(gb->video.renderer, &stride, (const void**) &pixels);
 		gb->stream->postVideoFrame(gb->stream, pixels, stride);

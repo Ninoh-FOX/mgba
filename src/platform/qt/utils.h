@@ -13,6 +13,7 @@
 #include <QRect>
 #include <QSize>
 #include <QString>
+#include <QVector>
 
 #include <algorithm>
 #include <functional>
@@ -30,7 +31,7 @@ enum class Endian {
 };
 
 QString niceSizeFormat(size_t filesize);
-QString nicePlatformFormat(mPlatform platform);
+QString nicePlatformFormat(mPlatform platform, int validModels = 0);
 
 bool convertAddress(const QHostAddress* input, Address* output);
 
@@ -72,7 +73,74 @@ constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
 }
 #endif
 
-QString romFilters(bool includeMvl = false);
+template<typename T, typename U>
+constexpr T saturateCast(U value) {
+	if (std::numeric_limits<T>::is_signed == std::numeric_limits<U>::is_signed) {
+		if (value > std::numeric_limits<T>::max()) {
+			return std::numeric_limits<T>::max();
+		}
+		if (value < std::numeric_limits<T>::min()) {
+			return std::numeric_limits<T>::min();
+		}
+	} else if (std::numeric_limits<T>::is_signed) {
+		if (value > static_cast<uintmax_t>(std::numeric_limits<T>::max())) {
+			std::numeric_limits<T>::max();
+		}
+	} else {
+		if (value < 0) {
+			return 0;
+		}
+		if (static_cast<uintmax_t>(value) > std::numeric_limits<T>::max()) {
+			std::numeric_limits<T>::max();
+		}
+	}
+	return static_cast<T>(value);
+}
+
+template<>
+constexpr unsigned saturateCast<unsigned, int>(int value) {
+	if (value < 0) {
+		return 0;
+	}
+	return static_cast<unsigned>(value);
+}
+
+template<>
+constexpr int saturateCast<int, unsigned>(unsigned value) {
+	if (value > static_cast<unsigned>(std::numeric_limits<int>::max())) {
+		return std::numeric_limits<int>::max();
+	}
+	return static_cast<int>(value);
+}
+
+QString romFilters(bool includeMvl = false, mPlatform platform = mPLATFORM_NONE, bool rawOnly = false);
 bool extractMatchingFile(VDir* dir, std::function<QString (VDirEntry*)> filter);
+
+QString keyName(int key);
+
+struct SpanSet {
+	struct Span {
+		int left;
+		int right;
+
+		inline bool operator<(const Span& other) const { return left < other.left; }
+		inline bool operator>(const Span& other) const { return left > other.left; }
+	};
+
+	void add(int pos);
+	void merge();
+	void sort(bool reverse = false);
+
+	QVector<Span> spans;
+};
+
+template<typename T>
+QSet<T> qListToSet(const QList<T>& list) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	return QSet<T>::fromList(list);
+#else
+	return QSet<T>(list.begin(), list.end());
+#endif
+}
 
 }

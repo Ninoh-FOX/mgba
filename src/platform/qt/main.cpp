@@ -14,6 +14,10 @@
 #include <mgba/core/version.h>
 #include <mgba/gba/interface.h>
 
+#ifdef BUILD_SDL
+#include "platform/sdl/sdl-events.h"
+#endif
+
 #include <QLibraryInfo>
 #include <QTranslator>
 
@@ -24,6 +28,7 @@
 #ifdef QT_STATIC
 #include <QtPlugin>
 #ifdef Q_OS_WIN
+Q_IMPORT_PLUGIN(QJpegPlugin);
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin);
 #ifdef BUILD_QT_MULTIMEDIA
@@ -38,12 +43,14 @@ Q_IMPORT_PLUGIN(AVFServicePlugin);
 #endif
 #elif defined(Q_OS_UNIX)
 Q_IMPORT_PLUGIN(QXcbIntegrationPlugin);
+Q_IMPORT_PLUGIN(QWaylandIntegrationPlugin);
 #endif
 #endif
 
 #ifdef Q_OS_WIN
 #include <process.h>
 #include <wincon.h>
+extern "C" __declspec (dllexport) DWORD NoHotPatch = 0x1;
 #else
 #include <unistd.h>
 #endif
@@ -84,7 +91,9 @@ int main(int argc, char* argv[]) {
 
 	QApplication::setApplicationName(projectName);
 	QApplication::setApplicationVersion(projectVersion);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
+#endif
 
 #ifdef BUILD_GLES2
 	QSurfaceFormat format;
@@ -98,9 +107,18 @@ int main(int argc, char* argv[]) {
 	QApplication::setWindowIcon(QIcon(":/res/mgba-256.png"));
 #endif
 
+#ifdef Q_OS_UNIX
+	QApplication::setDesktopFileName(QString("io.mgba.mGBA"));
+#endif
+
 	QTranslator qtTranslator;
-	qtTranslator.load(locale, "qt", "_", QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-	application.installTranslator(&qtTranslator);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	if (qtTranslator.load(locale, "qt", "_", QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+#else
+	if (qtTranslator.load(locale, "qt", "_", QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+#endif
+		application.installTranslator(&qtTranslator);
+	}
 
 #ifdef QT_STATIC
 	QTranslator qtStaticTranslator;
@@ -109,14 +127,14 @@ int main(int argc, char* argv[]) {
 #endif
 
 	QTranslator langTranslator;
-	langTranslator.load(locale, binaryName, "-", ":/translations/");
-	application.installTranslator(&langTranslator);
+	if (langTranslator.load(locale, binaryName, "-", ":/translations/")) {
+		application.installTranslator(&langTranslator);
+	}
 
 	Window* w = application.newWindow();
-	w->loadConfig();
 	w->argumentsPassed();
 
-	w->show();
+	application.initMultiplayer();
 
 	int ret = application.exec();
 	if (ret != 0) {

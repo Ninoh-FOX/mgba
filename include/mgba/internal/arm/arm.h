@@ -132,6 +132,14 @@ struct ARMMemory {
 	uint32_t activeNonseqCycles16;
 	int32_t (*stall)(struct ARMCore*, int32_t wait);
 	void (*setActiveRegion)(struct ARMCore*, uint32_t address);
+
+	enum mMemoryAccessSource accessSource;
+};
+
+struct ARMCoprocessor {
+	int32_t (*mrc)(struct ARMCore*, int crn, int crm, int opcode1, int opcode2);
+	void (*mcr)(struct ARMCore*, int crn, int crm, int opcode1, int opcode2, int32_t value);
+	void (*cdp)(struct ARMCore*, int crn, int crm, int crd, int opcode1, int opcode2);
 };
 
 struct ARMInterruptHandler {
@@ -179,6 +187,7 @@ struct ARMCore {
 
 	struct ARMMemory memory;
 	struct ARMInterruptHandler irqh;
+	struct ARMCoprocessor cp[16];
 
 	struct mCPUComponent* master;
 

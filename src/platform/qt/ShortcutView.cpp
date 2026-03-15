@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "ShortcutView.h"
 
-#include "GamepadButtonEvent.h"
 #include "InputController.h"
+#include "input/GamepadButtonEvent.h"
 #include "ShortcutController.h"
 #include "ShortcutModel.h"
 
@@ -54,6 +54,7 @@ void ShortcutView::setInputController(InputController* controller) {
 	}
 	m_input = controller;
 	m_input->stealFocus(this);
+	m_ui.keyEdit->setInputController(controller);
 }
 
 void ShortcutView::load(const QModelIndex& index) {

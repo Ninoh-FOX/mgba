@@ -5,19 +5,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #pragma once
 
-#include "GamepadAxisEvent.h"
-#include "GamepadHatEvent.h"
+#include "input/GamepadAxisEvent.h"
+#include "input/GamepadHatEvent.h"
 
 #include <QLineEdit>
 #include <QTimer>
 
 namespace QGBA {
 
+class InputController;
+
 class KeyEditor : public QLineEdit {
 Q_OBJECT
 
 public:
 	KeyEditor(QWidget* parent = nullptr);
+
+	void setInputController(InputController* controller);
 
 	int value() const { return m_key; }
 
@@ -53,10 +57,11 @@ private:
 
 	void updateButtonText();
 
-	int m_key = -1;
+	int m_key = Qt::Key_unknown;
 	int m_axis = -1;
 	int m_hat = -1;
 	bool m_button = false;
+	InputController* m_controller;
 	GamepadAxisEvent::Direction m_direction;
 	GamepadHatEvent::Direction m_hatDirection;
 	QTimer m_lastKey;

@@ -19,7 +19,7 @@
 #ifdef M_CORE_GB
 #include <mgba/internal/gb/gb.h>
 #endif
-#include <mgba-util/export.h>
+#include <mgba-util/image/export.h>
 #include <mgba-util/vfs.h>
 
 using namespace QGBA;
@@ -60,8 +60,6 @@ PaletteView::PaletteView(std::shared_ptr<CoreController> controller, QWidget* pa
 	connect(m_ui.objGrid, &Swatch::indexPressed, [this, count] (int index) { selectIndex(index + count); });
 	connect(m_ui.exportBG, &QAbstractButton::clicked, [this, count] () { exportPalette(0, count); });
 	connect(m_ui.exportOBJ, &QAbstractButton::clicked, [this, count] () { exportPalette(count, count); });
-
-	connect(controller.get(), &CoreController::stopping, this, &QWidget::close);
 }
 
 void PaletteView::updatePalette() {
@@ -141,13 +139,13 @@ void PaletteView::exportPalette(int start, int length) {
 	}
 	VFile* vf = VFileDevice::open(filename, O_WRONLY | O_CREAT | O_TRUNC);
 	if (!vf) {
-		LOG(QT, ERROR) << tr("Failed to open output palette file: %1").arg(filename);
+		qCritical() << tr("Failed to open output palette file: %1").arg(filename);
 		return;
 	}
 	if (filename.endsWith(".pal", Qt::CaseInsensitive)) {
-		exportPaletteRIFF(vf, length, &static_cast<GBA*>(m_controller->thread()->core->board)->video.palette[start]);
+		mPaletteExportRIFF(vf, length, &static_cast<GBA*>(m_controller->thread()->core->board)->video.palette[start]);
 	} else if (filename.endsWith(".act", Qt::CaseInsensitive)) {
-		exportPaletteACT(vf, length, &static_cast<GBA*>(m_controller->thread()->core->board)->video.palette[start]);
+		mPaletteExportACT(vf, length, &static_cast<GBA*>(m_controller->thread()->core->board)->video.palette[start]);
 	}
 	vf->close(vf);
 }

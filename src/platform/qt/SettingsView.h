@@ -7,10 +7,12 @@
 
 #include <QDialog>
 #include <QMap>
+#include <QPointer>
 #include <QTimer>
 
 #include "ColorPicker.h"
 #include "LogConfigModel.h"
+#include "ShaderSelector.h"
 
 #include <mgba/core/core.h>
 
@@ -25,7 +27,6 @@ namespace QGBA {
 class ConfigController;
 class InputController;
 class ShortcutController;
-class ShaderSelector;
 
 class SettingsView : public QDialog {
 Q_OBJECT
@@ -51,8 +52,6 @@ public:
 	SettingsView(ConfigController* controller, InputController* inputController, ShortcutController* shortcutController, LogController* logController, QWidget* parent = nullptr);
 	~SettingsView();
 
-	void setShaderSelector(ShaderSelector* shaderSelector);
-
 signals:
 	void biosLoaded(int platform, const QString&);
 	void audioDriverChanged();
@@ -63,14 +62,17 @@ signals:
 	void pathsChanged();
 	void languageChanged();
 	void libraryCleared();
-	void audioHleChanged();
+	void saveSettingsRequested();
+	void openAutorunScripts();
 
 public slots:
 	void selectPage(Page);
+	void setShaderSelector(ShaderSelector* shaderSelector);
 
 private slots:
 	void selectBios(QLineEdit*);
 	void selectPath(QLineEdit*, QCheckBox*);
+	void selectImage(QLineEdit*);
 	void updateConfig();
 	void reloadConfig();
 	void updateChecked();
@@ -80,7 +82,8 @@ private:
 
 	ConfigController* m_controller;
 	InputController* m_input;
-	ShaderSelector* m_shader = nullptr;
+	QPointer<ShaderSelector> m_shader;
+	QLabel* m_dummyShader;
 	LogConfigModel m_logModel;
 	QTimer m_checkTimer;
 

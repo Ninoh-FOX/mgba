@@ -43,8 +43,8 @@ struct mInputMap {
 struct mInputAxis {
 	int highDirection;
 	int lowDirection;
-	int32_t deadHigh;
-	int32_t deadLow;
+	int16_t deadHigh;
+	int16_t deadLow;
 };
 
 void mInputMapInit(struct mInputMap*, const struct mInputPlatformInfo* info);
@@ -55,8 +55,9 @@ int mInputMapKeyBits(const struct mInputMap* map, uint32_t type, uint32_t bits, 
 void mInputBindKey(struct mInputMap*, uint32_t type, int key, int input);
 int mInputQueryBinding(const struct mInputMap*, uint32_t type, int input);
 void mInputUnbindKey(struct mInputMap*, uint32_t type, int input);
+void mInputUnbindAllKeys(struct mInputMap*, uint32_t type);
 
-int mInputMapAxis(const struct mInputMap*, uint32_t type, int axis, int value);
+int mInputMapAxis(const struct mInputMap*, uint32_t type, int axis, int16_t value);
 int mInputClearAxis(const struct mInputMap*, uint32_t type, int axis, int keys);
 void mInputBindAxis(struct mInputMap*, uint32_t type, int axis, const struct mInputAxis* description);
 void mInputUnbindAxis(struct mInputMap*, uint32_t type, int axis);
@@ -69,6 +70,7 @@ void mInputBindHat(struct mInputMap*, uint32_t type, int id, const struct mInput
 bool mInputQueryHat(const struct mInputMap*, uint32_t type, int id, struct mInputHatBindings* bindings);
 void mInputUnbindHat(struct mInputMap*, uint32_t type, int id);
 void mInputUnbindAllHats(struct mInputMap*, uint32_t type);
+void mInputEnumerateHats(const struct mInputMap*, uint32_t type, void (handler(int hat, const struct mInputHatBindings* bindings, void* user)), void* user);
 
 bool mInputMapLoad(struct mInputMap*, uint32_t type, const struct Configuration*);
 void mInputMapSave(const struct mInputMap*, uint32_t type, struct Configuration*);

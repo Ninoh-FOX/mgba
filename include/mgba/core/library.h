@@ -10,8 +10,12 @@
 
 CXX_GUARD_START
 
+#ifdef ENABLE_VFS
+
 #include <mgba/core/core.h>
 #include <mgba-util/vector.h>
+
+#define M_LIBRARY_MODEL_UNKNOWN -1
 
 struct mLibraryEntry {
 	const char* base;
@@ -22,6 +26,9 @@ struct mLibraryEntry {
 	enum mPlatform platform;
 	size_t filesize;
 	uint32_t crc32;
+	uint8_t md5[16];
+	uint8_t sha1[20];
+	int platformModels;
 };
 
 #ifdef USE_SQLITE3
@@ -45,6 +52,8 @@ struct VFile* mLibraryOpenVFile(struct mLibrary* library, const struct mLibraryE
 
 struct NoIntroDB;
 void mLibraryAttachGameDB(struct mLibrary* library, const struct NoIntroDB* db);
+
+#endif
 
 #endif
 

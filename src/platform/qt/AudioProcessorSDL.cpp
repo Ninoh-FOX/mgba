@@ -17,7 +17,7 @@ AudioProcessorSDL::AudioProcessorSDL(QObject* parent)
 }
 
 void AudioProcessorSDL::setInput(std::shared_ptr<CoreController> controller) {
-	AudioProcessor::setInput(controller);
+	AudioProcessor::setInput(std::move(controller));
 	if (m_audio.core && input()->core != m_audio.core) {
 		mSDLDeinitAudio(&m_audio);
 		mSDLInitAudio(&m_audio, input());
@@ -31,7 +31,7 @@ void AudioProcessorSDL::stop() {
 
 bool AudioProcessorSDL::start() {
 	if (!input()) {
-		LOG(QT, WARN) << tr("Can't start an audio processor without input");
+		qWarning() << tr("Can't start an audio processor without input");
 		return false;
 	}
 

@@ -51,8 +51,8 @@ void AssetTile::setController(std::shared_ptr<CoreController> controller) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA:
 		m_addressWidth = 8;
-		m_addressBase = BASE_VRAM;
-		m_boundaryBase = BASE_VRAM | 0x10000;
+		m_addressBase = GBA_BASE_VRAM;
+		m_boundaryBase = GBA_BASE_VRAM | 0x10000;
 		break;
 #endif
 #ifdef M_CORE_GB
@@ -86,7 +86,7 @@ void AssetTile::selectIndex(int index) {
 		return;
 	}
 	m_index = index;
-	const color_t* data;
+	const mColor* data;
 	mTileCache* tileCache = m_tileCaches[index >= m_boundary];
 
 	unsigned bpp = 8 << tileCache->bpp;
@@ -130,10 +130,10 @@ void AssetTile::setFlip(bool h, bool v) {
 }
 
 void AssetTile::selectColor(int index) {
-	const color_t* data;
+	const mColor* data;
 	mTileCache* tileCache = m_tileCaches[m_index >= m_boundary];
 	data = mTileCacheGetTile(tileCache, m_index >= m_boundary ? m_index - m_boundary : m_index, m_paletteId);
-	color_t color = data[index];
+	mColor color = data[index];
 	m_ui.color->setColor(0, color);
 	m_ui.color->update();
 

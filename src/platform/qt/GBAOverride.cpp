@@ -10,26 +10,19 @@
 
 using namespace QGBA;
 
-void GBAOverride::apply(struct mCore* core) {
-	if (core->platform(core) != mPLATFORM_GBA) {
-		return;
-	}
-	GBA* gba = static_cast<GBA*>(core->board);
-	if (!vbaBugCompatSet) {
-		override.vbaBugCompat = gba->vbaBugCompat;
-	}
-	GBAOverrideApply(gba, &override);
-}
-
 void GBAOverride::identify(const struct mCore* core) {
 	if (core->platform(core) != mPLATFORM_GBA) {
 		return;
 	}
-	char gameId[8];
-	core->getGameCode(core, gameId);
-	memcpy(override.id, &gameId[4], 4);
+	mGameInfo info;
+	core->getGameInfo(core, &info);
+	memcpy(override.id, info.code, 4);
 }
 
 void GBAOverride::save(struct Configuration* config) const {
 	GBAOverrideSave(config, &override);
+}
+
+const void* GBAOverride::raw() const {
+	return &override;
 }

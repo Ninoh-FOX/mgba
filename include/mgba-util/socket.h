@@ -204,6 +204,7 @@ static inline Socket SocketOpenTCP(int port, const struct Address* bindAddress) 
 	err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
 #endif
 	if (err) {
+		SocketCloseQuiet(sock);
 		return INVALID_SOCKET;
 	}
 
@@ -233,7 +234,7 @@ static inline Socket SocketOpenTCP(int port, const struct Address* bindAddress) 
 #else
 		err = bind(sock, (const struct sockaddr*) &bindInfo, sizeof(bindInfo));
 #endif
-#if !defined(__3DS__) && !defined(GEKKO)
+#ifdef HAS_IPV6
 	} else {
 		struct sockaddr_in6 bindInfo;
 		memset(&bindInfo, 0, sizeof(bindInfo));
@@ -332,7 +333,7 @@ static inline Socket SocketAccept(Socket socket, struct Address* address) {
 #else
 		return accept(socket, (struct sockaddr*) &addrInfo, &len);
 #endif
-#if !defined(__3DS__) && !defined(GEKKO)
+#ifdef HAS_IPV6
 	} else {
 		struct sockaddr_in6 addrInfo;
 		memset(&addrInfo, 0, sizeof(addrInfo));
@@ -433,9 +434,9 @@ static inline int SocketPoll(size_t nSockets, Socket* reads, Socket* writes, Soc
 #else
 	int result = select(maxFd, &rset, &wset, &eset, timeoutMillis < 0 ? 0 : &tv);
 #endif
-	int r = 0;
-	int w = 0;
-	int e = 0;
+	size_t r = 0;
+	size_t w = 0;
+	size_t e = 0;
 	Socket j;
 	for (j = 0; j < maxFd; ++j) {
 		if (reads && FD_ISSET(j, &rset)) {
@@ -449,6 +450,21 @@ static inline int SocketPoll(size_t nSockets, Socket* reads, Socket* writes, Soc
 		if (errors && FD_ISSET(j, &eset)) {
 			errors[e] = j;
 			++e;
+		}
+	}
+	if (reads) {
+		for (; r < nSockets; ++r) {
+			reads[r] = INVALID_SOCKET;
+		}
+	}
+	if (writes) {
+		for (; w < nSockets; ++w) {
+			writes[w] = INVALID_SOCKET;
+		}
+	}
+	if (errors) {
+		for (; e < nSockets; ++e) {
+			errors[e] = INVALID_SOCKET;
 		}
 	}
 	return result;

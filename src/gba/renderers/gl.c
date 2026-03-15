@@ -13,9 +13,14 @@
 #include <mgba/internal/gba/renderers/cache-set.h>
 #include <mgba-util/memory.h>
 
+#define OPENGL_MAGIC 0x6E726C67
+
 static void GBAVideoGLRendererInit(struct GBAVideoRenderer* renderer);
 static void GBAVideoGLRendererDeinit(struct GBAVideoRenderer* renderer);
 static void GBAVideoGLRendererReset(struct GBAVideoRenderer* renderer);
+static uint32_t GBAVideoGLRendererId(const struct GBAVideoRenderer* renderer);
+static bool GBAVideoGLRendererLoadState(struct GBAVideoRenderer* renderer, const void* state, size_t size);
+static void GBAVideoGLRendererSaveState(struct GBAVideoRenderer* renderer, void** state, size_t* size);
 static void GBAVideoGLRendererWriteVRAM(struct GBAVideoRenderer* renderer, uint32_t address);
 static void GBAVideoGLRendererWriteOAM(struct GBAVideoRenderer* renderer, uint32_t oam);
 static void GBAVideoGLRendererWritePalette(struct GBAVideoRenderer* renderer, uint32_t address, uint16_t value);
@@ -233,6 +238,29 @@ static const char* const _interpolate =
 	"	aff[2] = transform[start + 2].zw;\n"
 	"	mat[3] = transform[start + 3].xy;\n"
 	"	aff[3] = transform[start + 3].zw;\n"
+	"}\n"
+
+	"ivec2 affineInterpolate() {\n"
+	"	ivec2 mat[4];\n"
+	"	ivec2 offset[4];\n"
+	"	vec2 incoord = texCoord;\n"
+	"	if (mosaic.x > 1) {\n"
+	"		incoord.x = float(MOSAIC(incoord.x, mosaic.x));\n"
+	"	}\n"
+	"	if (mosaic.y > 1) {\n"
+	"		incoord.y = float(MOSAIC(incoord.y, mosaic.y));\n"
+	"	}\n"
+	"	loadAffine(int(incoord.y), mat, offset);\n"
+	"	float y = fract(incoord.y);\n"
+	"	float start = 2. / 3.;\n"
+	"	if (int(incoord.y) - range.x < 4) {\n"
+	"		y = incoord.y - float(range.x);\n"
+	"		start -= 1.;\n"
+	"	}\n"
+	"	float lin = start + y / 3.;\n"
+	"	vec2 mixedTransform = interpolate(mat, lin);\n"
+	"	vec2 mixedOffset = interpolate(offset, lin);\n"
+	"	return ivec2(mixedTransform * incoord.x + mixedOffset);\n"
 	"}\n";
 
 static const char* const _renderMode2 =
@@ -250,8 +278,7 @@ static const char* const _renderMode2 =
 	"OUT(0) out vec4 color;\n"
 
 	"int fetchTile(ivec2 coord);\n"
-	"vec2 interpolate(ivec2 arr[4], float x);\n"
-	"void loadAffine(int y, out ivec2 mat[4], out ivec2 aff[4]);\n"
+	"ivec2 affineInterpolate();\n"
 
 	"int renderTile(ivec2 coord) {\n"
 	"	int map = (coord.x >> 11) + (((coord.y >> 7) & 0x7F0) << size);\n"
@@ -278,26 +305,7 @@ static const char* const _renderMode2 =
 	"}\n"
 
 	"void main() {\n"
-	"	ivec2 mat[4];\n"
-	"	ivec2 offset[4];\n"
-	"	vec2 incoord = texCoord;\n"
-	"	if (mosaic.x > 1) {\n"
-	"		incoord.x = float(MOSAIC(incoord.x, mosaic.x));\n"
-	"	}\n"
-	"	if (mosaic.y > 1) {\n"
-	"		incoord.y = float(MOSAIC(incoord.y, mosaic.y));\n"
-	"	}\n"
-	"	loadAffine(int(incoord.y), mat, offset);\n"
-	"	float y = fract(incoord.y);\n"
-	"	float start = 0.75;\n"
-	"	if (int(incoord.y) - range.x < 4) {\n"
-	"		y = incoord.y - float(range.x);\n"
-	"		start = 0.;\n"
-	"	}\n"
-	"	float lin = start + y * 0.25;\n"
-	"	vec2 mixedTransform = interpolate(mat, lin);\n"
-	"	vec2 mixedOffset = interpolate(offset, lin);\n"
-	"	int paletteEntry = fetchTile(ivec2(mixedTransform * incoord.x + mixedOffset));\n"
+	"	int paletteEntry = fetchTile(affineInterpolate());\n"
 	"	color = texelFetch(palette, ivec2(paletteEntry, int(texCoord.y)), 0);\n"
 	"}";
 
@@ -325,30 +333,10 @@ static const char* const _renderMode35 =
 	"uniform ivec2 mosaic;\n"
 	"OUT(0) out vec4 color;\n"
 
-	"vec2 interpolate(ivec2 arr[4], float x);\n"
-	"void loadAffine(int y, out ivec2 mat[4], out ivec2 aff[4]);\n"
+	"ivec2 affineInterpolate();\n"
 
 	"void main() {\n"
-	"	ivec2 mat[4];\n"
-	"	ivec2 offset[4];\n"
-	"	vec2 incoord = texCoord;\n"
-	"	if (mosaic.x > 1) {\n"
-	"		incoord.x = float(MOSAIC(incoord.x, mosaic.x));\n"
-	"	}\n"
-	"	if (mosaic.y > 1) {\n"
-	"		incoord.y = float(MOSAIC(incoord.y, mosaic.y));\n"
-	"	}\n"
-	"	loadAffine(int(incoord.y), mat, offset);\n"
-	"	float y = fract(incoord.y);\n"
-	"	float start = 0.75;\n"
-	"	if (int(incoord.y) - range.x < 4) {\n"
-	"		y = incoord.y - float(range.x);\n"
-	"		start = 0.;\n"
-	"	}\n"
-	"	float lin = start + y * 0.25;\n"
-	"	vec2 mixedTransform = interpolate(mat, lin);\n"
-	"	vec2 mixedOffset = interpolate(offset, lin);\n"
-	"	ivec2 coord = ivec2(mixedTransform * incoord.x + mixedOffset);\n"
+	"	ivec2 coord = affineInterpolate();\n"
 	"	if (coord.x < 0 || coord.x >= (size.x << 8)) {\n"
 	"		discard;\n"
 	"	}\n"
@@ -386,30 +374,10 @@ static const char* const _renderMode4 =
 	"uniform ivec2 mosaic;\n"
 	"OUT(0) out vec4 color;\n"
 
-	"vec2 interpolate(ivec2 arr[4], float x);\n"
-	"void loadAffine(int y, out ivec2 mat[4], out ivec2 aff[4]);\n"
+	"ivec2 affineInterpolate();\n"
 
 	"void main() {\n"
-	"	ivec2 mat[4];\n"
-	"	ivec2 offset[4];\n"
-	"	vec2 incoord = texCoord;\n"
-	"	if (mosaic.x > 1) {\n"
-	"		incoord.x = float(MOSAIC(incoord.x, mosaic.x));\n"
-	"	}\n"
-	"	if (mosaic.y > 1) {\n"
-	"		incoord.y = float(MOSAIC(incoord.y, mosaic.y));\n"
-	"	}\n"
-	"	loadAffine(int(incoord.y), mat, offset);\n"
-	"	float y = fract(incoord.y);\n"
-	"	float start = 0.75;\n"
-	"	if (int(incoord.y) - range.x < 4) {\n"
-	"		y = incoord.y - float(range.x);\n"
-	"		start = 0.;\n"
-	"	}\n"
-	"	float lin = start + y * 0.25;\n"
-	"	vec2 mixedTransform = interpolate(mat, lin);\n"
-	"	vec2 mixedOffset = interpolate(offset, lin);\n"
-	"	ivec2 coord = ivec2(mixedTransform * incoord.x + mixedOffset);\n"
+	"	ivec2 coord = affineInterpolate();\n"
 	"	if (coord.x < 0 || coord.x >= (size.x << 8)) {\n"
 	"		discard;\n"
 	"	}\n"
@@ -523,6 +491,9 @@ static const struct GBAVideoGLUniform _uniformsWindow[] = {
 	{ "flags", GBA_GL_WIN_FLAGS, },
 	{ "win0", GBA_GL_WIN_WIN0, },
 	{ "win1", GBA_GL_WIN_WIN1, },
+	{ "circle0", GBA_GL_WIN_CIRCLE0, },
+	{ "circle1", GBA_GL_WIN_CIRCLE1, },
+	{ "disableInterp", GBA_GL_WIN_DISABLE_INTERP, },
 	{ 0 }
 };
 
@@ -533,6 +504,9 @@ static const char* const _renderWindow =
 	"uniform ivec3 flags;\n"
 	"uniform ivec4 win0[160];\n"
 	"uniform ivec4 win1[160];\n"
+	"uniform vec3 circle0;\n"
+	"uniform vec3 circle1;\n"
+	"uniform bool disableInterp;\n"
 	"OUT(0) out ivec4 window;\n"
 
 	"bool crop(vec4 windowParams) {\n"
@@ -560,19 +534,26 @@ static const char* const _renderWindow =
 	"}\n"
 
 	"vec4 interpolate(vec4 top, vec4 bottom) {\n"
-	"	if (distance(top, bottom) > 40.) {\n"
+	"	if (disableInterp || distance(top, bottom) > 40.) {\n"
 	"		return top;\n"
 	"	}\n"
 	"	return vec4(mix(bottom.xy, top.xy, fract(texCoord.y)), top.zw);\n"
+	"}\n"
+
+	"bool test(vec3 circle, vec4 top, vec4 bottom) {\n"
+	"	if (circle.z > 0.) {\n"
+	"		return distance(circle.xy, texCoord.xy) <= circle.z;\n"
+	"	}\n"
+	"	return crop(interpolate(top, bottom));\n"
 	"}\n"
 
 	"void main() {\n"
 	"	ivec4 windowFlags = ivec4(flags.z, blend, 0);\n"
 	"	int top = int(texCoord.y);\n"
 	"	int bottom = max(top - 1, 0);\n"
-	"	if ((dispcnt & 0x20) != 0 && crop(interpolate(vec4(win0[top]), vec4(win0[bottom])))) { \n"
+	"	if ((dispcnt & 0x20) != 0 && test(circle0, vec4(win0[top]), vec4(win0[bottom]))) {\n"
 	"		windowFlags.x = flags.x;\n"
-	"	} else if ((dispcnt & 0x40) != 0 && crop(interpolate(vec4(win1[top]), vec4(win1[bottom])))) {\n"
+	"	} else if ((dispcnt & 0x40) != 0 && test(circle1, vec4(win1[top]), vec4(win1[bottom]))) {\n"
 	"		windowFlags.x = flags.y;\n"
 	"	}\n"
 	"	window = windowFlags;\n"
@@ -682,9 +663,13 @@ static const GLint _vertices[] = {
 };
 
 void GBAVideoGLRendererCreate(struct GBAVideoGLRenderer* renderer) {
+	memset(renderer, 0, sizeof(*renderer));
 	renderer->d.init = GBAVideoGLRendererInit;
 	renderer->d.reset = GBAVideoGLRendererReset;
 	renderer->d.deinit = GBAVideoGLRendererDeinit;
+	renderer->d.rendererId = GBAVideoGLRendererId;
+	renderer->d.loadState = GBAVideoGLRendererLoadState;
+	renderer->d.saveState = GBAVideoGLRendererSaveState;
 	renderer->d.writeVideoRegister = GBAVideoGLRendererWriteVideoRegister;
 	renderer->d.writeVRAM = GBAVideoGLRendererWriteVRAM;
 	renderer->d.writeOAM = GBAVideoGLRendererWriteOAM;
@@ -931,7 +916,7 @@ void GBAVideoGLRendererReset(struct GBAVideoRenderer* renderer) {
 	glRenderer->nextPalette = 0;
 	glRenderer->paletteDirtyScanlines = GBA_VIDEO_VERTICAL_PIXELS;
 	memset(glRenderer->shadowRegs, 0, sizeof(glRenderer->shadowRegs));
-	glRenderer->shadowRegs[REG_DISPCNT >> 1] = glRenderer->dispcnt;
+	glRenderer->shadowRegs[GBA_REG(DISPCNT)] = glRenderer->dispcnt;
 	glRenderer->regsDirty = 0xFFFFFFFFFFFEULL;
 
 	glRenderer->objOffsetX = 0;
@@ -979,6 +964,26 @@ void GBAVideoGLRendererReset(struct GBAVideoRenderer* renderer) {
 	}
 }
 
+static uint32_t GBAVideoGLRendererId(const struct GBAVideoRenderer* renderer) {
+	UNUSED(renderer);
+	return OPENGL_MAGIC;
+}
+
+static bool GBAVideoGLRendererLoadState(struct GBAVideoRenderer* renderer, const void* state, size_t size) {
+	UNUSED(renderer);
+	UNUSED(state);
+	UNUSED(size);
+	// TODO
+	return false;
+}
+
+static void GBAVideoGLRendererSaveState(struct GBAVideoRenderer* renderer, void** state, size_t* size) {
+	UNUSED(renderer);
+	*state = NULL;
+	*size = 0;
+	// TODO
+}
+
 void GBAVideoGLRendererWriteVRAM(struct GBAVideoRenderer* renderer, uint32_t address) {
 	struct GBAVideoGLRenderer* glRenderer = (struct GBAVideoGLRenderer*) renderer;
 	if (renderer->cache) {
@@ -1015,107 +1020,107 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 
 	bool dirty = false;
 	switch (address) {
-	case REG_DISPCNT:
+	case GBA_REG_DISPCNT:
 		value &= 0xFFF7;
 		dirty = true;
 		break;
-	case REG_BG0CNT:
-	case REG_BG1CNT:
+	case GBA_REG_BG0CNT:
+	case GBA_REG_BG1CNT:
 		value &= 0xDFFF;
 		dirty = true;
 		break;
-	case REG_BG0HOFS:
+	case GBA_REG_BG0HOFS:
 		value &= 0x01FF;
 		glRenderer->bg[0].x = value;
 		break;
-	case REG_BG0VOFS:
+	case GBA_REG_BG0VOFS:
 		value &= 0x01FF;
 		glRenderer->bg[0].y = value;
 		break;
-	case REG_BG1HOFS:
+	case GBA_REG_BG1HOFS:
 		value &= 0x01FF;
 		glRenderer->bg[1].x = value;
 		break;
-	case REG_BG1VOFS:
+	case GBA_REG_BG1VOFS:
 		value &= 0x01FF;
 		glRenderer->bg[1].y = value;
 		break;
-	case REG_BG2HOFS:
+	case GBA_REG_BG2HOFS:
 		value &= 0x01FF;
 		glRenderer->bg[2].x = value;
 		break;
-	case REG_BG2VOFS:
+	case GBA_REG_BG2VOFS:
 		value &= 0x01FF;
 		glRenderer->bg[2].y = value;
 		break;
-	case REG_BG3HOFS:
+	case GBA_REG_BG3HOFS:
 		value &= 0x01FF;
 		glRenderer->bg[3].x = value;
 		break;
-	case REG_BG3VOFS:
+	case GBA_REG_BG3VOFS:
 		value &= 0x01FF;
 		glRenderer->bg[3].y = value;
 		break;
-	case REG_BG2PA:
+	case GBA_REG_BG2PA:
 		glRenderer->bg[2].affine.dx = value;
 		break;
-	case REG_BG2PB:
+	case GBA_REG_BG2PB:
 		glRenderer->bg[2].affine.dmx = value;
 		break;
-	case REG_BG2PC:
+	case GBA_REG_BG2PC:
 		glRenderer->bg[2].affine.dy = value;
 		break;
-	case REG_BG2PD:
+	case GBA_REG_BG2PD:
 		glRenderer->bg[2].affine.dmy = value;
 		break;
-	case REG_BG2X_LO:
+	case GBA_REG_BG2X_LO:
 		GBAVideoGLRendererWriteBGX_LO(&glRenderer->bg[2], value);
 		break;
-	case REG_BG2X_HI:
+	case GBA_REG_BG2X_HI:
 		GBAVideoGLRendererWriteBGX_HI(&glRenderer->bg[2], value);
 		break;
-	case REG_BG2Y_LO:
+	case GBA_REG_BG2Y_LO:
 		GBAVideoGLRendererWriteBGY_LO(&glRenderer->bg[2], value);
 		break;
-	case REG_BG2Y_HI:
+	case GBA_REG_BG2Y_HI:
 		GBAVideoGLRendererWriteBGY_HI(&glRenderer->bg[2], value);
 		break;
-	case REG_BG3PA:
+	case GBA_REG_BG3PA:
 		glRenderer->bg[3].affine.dx = value;
 		break;
-	case REG_BG3PB:
+	case GBA_REG_BG3PB:
 		glRenderer->bg[3].affine.dmx = value;
 		break;
-	case REG_BG3PC:
+	case GBA_REG_BG3PC:
 		glRenderer->bg[3].affine.dy = value;
 		break;
-	case REG_BG3PD:
+	case GBA_REG_BG3PD:
 		glRenderer->bg[3].affine.dmy = value;
 		break;
-	case REG_BG3X_LO:
+	case GBA_REG_BG3X_LO:
 		GBAVideoGLRendererWriteBGX_LO(&glRenderer->bg[3], value);
 		break;
-	case REG_BG3X_HI:
+	case GBA_REG_BG3X_HI:
 		GBAVideoGLRendererWriteBGX_HI(&glRenderer->bg[3], value);
 		break;
-	case REG_BG3Y_LO:
+	case GBA_REG_BG3Y_LO:
 		GBAVideoGLRendererWriteBGY_LO(&glRenderer->bg[3], value);
 		break;
-	case REG_BG3Y_HI:
+	case GBA_REG_BG3Y_HI:
 		GBAVideoGLRendererWriteBGY_HI(&glRenderer->bg[3], value);
 		break;
-	case REG_BLDALPHA:
+	case GBA_REG_BLDALPHA:
 		value &= 0x1F1F;
 		dirty = true;
 		break;
-	case REG_BLDY:
+	case GBA_REG_BLDY:
 		value &= 0x1F;
 		if (value > 0x10) {
 			value = 0x10;
 		}
 		dirty = true;
 		break;
-			case REG_WIN0H:
+			case GBA_REG_WIN0H:
 		glRenderer->winN[0].h.end = value;
 		glRenderer->winN[0].h.start = value >> 8;
 		if (glRenderer->winN[0].h.start > GBA_VIDEO_HORIZONTAL_PIXELS && glRenderer->winN[0].h.start > glRenderer->winN[0].h.end) {
@@ -1128,7 +1133,7 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 			}
 		}
 		break;
-	case REG_WIN1H:
+	case GBA_REG_WIN1H:
 		glRenderer->winN[1].h.end = value;
 		glRenderer->winN[1].h.start = value >> 8;
 		if (glRenderer->winN[1].h.start > GBA_VIDEO_HORIZONTAL_PIXELS && glRenderer->winN[1].h.start > glRenderer->winN[1].h.end) {
@@ -1141,7 +1146,7 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 			}
 		}
 		break;
-	case REG_WIN0V:
+	case GBA_REG_WIN0V:
 		glRenderer->winN[0].v.end = value;
 		glRenderer->winN[0].v.start = value >> 8;
 		if (glRenderer->winN[0].v.start > GBA_VIDEO_VERTICAL_PIXELS && glRenderer->winN[0].v.start > glRenderer->winN[0].v.end) {
@@ -1154,7 +1159,7 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 			}
 		}
 		break;
-	case REG_WIN1V:
+	case GBA_REG_WIN1V:
 		glRenderer->winN[1].v.end = value;
 		glRenderer->winN[1].v.start = value >> 8;
 		if (glRenderer->winN[1].v.start > GBA_VIDEO_VERTICAL_PIXELS && glRenderer->winN[1].v.start > glRenderer->winN[1].v.end) {
@@ -1167,8 +1172,8 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 			}
 		}
 		break;
-	case REG_WININ:
-	case REG_WINOUT:
+	case GBA_REG_WININ:
+	case GBA_REG_WINOUT:
 		value &= 0x3F3F;
 		dirty = true;
 		break;
@@ -1189,26 +1194,26 @@ uint16_t GBAVideoGLRendererWriteVideoRegister(struct GBAVideoRenderer* renderer,
 
 void _cleanRegister(struct GBAVideoGLRenderer* glRenderer, int address, uint16_t value) {
 	switch (address) {
-	case REG_DISPCNT:
+	case GBA_REG_DISPCNT:
 		glRenderer->dispcnt = value;
 		GBAVideoGLRendererUpdateDISPCNT(glRenderer);
 		break;
-	case REG_BG0CNT:
+	case GBA_REG_BG0CNT:
 		GBAVideoGLRendererWriteBGCNT(&glRenderer->bg[0], value);
 		break;
-	case REG_BG1CNT:
+	case GBA_REG_BG1CNT:
 		GBAVideoGLRendererWriteBGCNT(&glRenderer->bg[1], value);
 		break;
-	case REG_BG2CNT:
+	case GBA_REG_BG2CNT:
 		GBAVideoGLRendererWriteBGCNT(&glRenderer->bg[2], value);
 		break;
-	case REG_BG3CNT:
+	case GBA_REG_BG3CNT:
 		GBAVideoGLRendererWriteBGCNT(&glRenderer->bg[3], value);
 		break;
-	case REG_BLDCNT:
+	case GBA_REG_BLDCNT:
 		GBAVideoGLRendererWriteBLDCNT(glRenderer, value);
 		break;
-	case REG_BLDALPHA:
+	case GBA_REG_BLDALPHA:
 		glRenderer->blda = value & 0x1F;
 		if (glRenderer->blda > 0x10) {
 			glRenderer->blda = 0x10;
@@ -1218,18 +1223,18 @@ void _cleanRegister(struct GBAVideoGLRenderer* glRenderer, int address, uint16_t
 			glRenderer->bldb = 0x10;
 		}
 		break;
-	case REG_BLDY:
+	case GBA_REG_BLDY:
 		glRenderer->bldy = value;
 		break;
-	case REG_WININ:
+	case GBA_REG_WININ:
 		glRenderer->winN[0].control = value;
 		glRenderer->winN[1].control = value >> 8;
 		break;
-	case REG_WINOUT:
+	case GBA_REG_WINOUT:
 		glRenderer->winout = value;
 		glRenderer->objwin = value >> 8;
 		break;
-	case REG_MOSAIC:
+	case GBA_REG_MOSAIC:
 		glRenderer->mosaic = value;
 		break;
 	default:
@@ -1961,6 +1966,127 @@ void GBAVideoGLRendererDrawBackgroundMode5(struct GBAVideoGLRenderer* renderer, 
 	glDrawBuffers(1, (GLenum[]) { GL_COLOR_ATTACHMENT0 });
 }
 
+static void _detectCircle(struct GBAVideoGLRenderer* renderer, int y, int window) {
+	int lastStart = 0;
+	int lastEnd = 0;
+
+	int startX = 0;
+	int endX = 0;
+
+	int firstY = -1;
+	float centerX;
+	float centerY = -1;
+	float radius = 0;
+	bool invalid = false;
+
+	int i;
+	for (i = renderer->firstY; i <= y; ++i) {
+		lastStart = startX;
+		lastEnd = endX;
+		startX = renderer->winNHistory[window][i * 4];
+		endX = renderer->winNHistory[window][i * 4 + 1];
+		int startY = renderer->winNHistory[window][i * 4 + 2];
+		int endY = renderer->winNHistory[window][i * 4 + 3];
+
+		if (startX == endX || i < startY || i >= endY) {
+			if (firstY >= 0) {
+				// The bottom edge of the circle
+				centerY = (firstY + i) / 2.f;
+				firstY = -1;
+			}
+			continue;
+		}
+		if (lastEnd - lastStart <= 0) {
+			continue;
+		}
+
+		// The previous segment was non-zero
+		if (startX >= GBA_VIDEO_HORIZONTAL_PIXELS) {
+			invalid = true;
+			break;
+		}
+
+		int startDiff = lastStart - startX;
+		int endDiff = endX - lastEnd;
+		// Make sure the slopes match, otherwise this isn't a circle
+		if (startDiff - endDiff < -1 || startDiff - endDiff > 1) {
+			invalid = true;
+			break;
+		}
+
+		if (startX < lastStart) {
+			centerX = (startX + endX) / 2.f;
+			if (radius > 0) {
+				// We found two separate shapes, which the interpolation can't handle
+				invalid = true;
+				break;
+			}
+		} else if (startX > lastStart && radius <= 0) {
+			radius = (lastEnd - lastStart) / 2.f;
+		}
+
+		if (firstY < 0 && i - 1 >= startY && i - 1 < endY) {
+			firstY = i - 1;
+		}
+	}
+
+	if (radius <= 0) {
+		invalid = true;
+	}
+	if (centerY < 0) {
+		invalid = true;
+	}
+
+	// Check validity
+	for (i = renderer->firstY; i <= y && !invalid; ++i) {
+		int startX = renderer->winNHistory[window][i * 4];
+		int endX = renderer->winNHistory[window][i * 4 + 1];
+		int startY = renderer->winNHistory[window][i * 4 + 2];
+		int endY = renderer->winNHistory[window][i * 4 + 3];
+
+		bool xActive = startX < endX;
+		bool yActive = i >= startY && i < endY;
+
+		if (xActive && yActive) {
+			// Real window would be active, make sure simulated window would too
+			if (centerY - i > radius) {
+				// y is above the radius
+				invalid = true;
+				break;
+			}
+			if (i - centerY > radius) {
+				// y is below the radius
+				invalid = true;
+				break;
+			}
+
+			float cosine = fabsf(i - centerY);
+			float sine = sqrtf(radius * radius - cosine * cosine);
+			if (fabsf(centerX - sine - startX) <= 1 && fabsf(centerX + sine - endX) <= 1) {
+				continue;
+			}
+
+			if (radius >= cosine + 1) {
+				sine = sqrtf(radius * radius - (cosine + 1) * (cosine + 1));
+				if (fabsf(centerX - sine - startX) <= 1 && fabsf(centerX + sine - endX) <= 1) {
+					continue;
+				}
+			}
+			// y is active on the wrong parts of the scanline
+			invalid = true;
+		} else if (centerY - i < radius && i - centerY < radius) {
+			// Real window would be inactive, make sure simulated window would too
+			invalid = true;
+		}
+	}
+
+	if (invalid) {
+		glUniform3f(renderer->windowShader.uniforms[GBA_GL_WIN_CIRCLE0 + window], 0, 0, 0);
+	} else {
+		glUniform3f(renderer->windowShader.uniforms[GBA_GL_WIN_CIRCLE0 + window], centerX, centerY, radius - 0.499);
+	}
+}
+
 void GBAVideoGLRendererDrawWindow(struct GBAVideoGLRenderer* renderer, int y) {
 	const struct GBAVideoGLShader* shader = &renderer->windowShader;
 	const GLuint* uniforms = shader->uniforms;
@@ -1987,6 +2113,9 @@ void GBAVideoGLRendererDrawWindow(struct GBAVideoGLRenderer* renderer, int y) {
 		glUniform3i(uniforms[GBA_GL_WIN_FLAGS], renderer->winN[0].control, renderer->winN[1].control, renderer->winout);
 		glUniform4iv(uniforms[GBA_GL_WIN_WIN0], GBA_VIDEO_VERTICAL_PIXELS, renderer->winNHistory[0]);
 		glUniform4iv(uniforms[GBA_GL_WIN_WIN1], GBA_VIDEO_VERTICAL_PIXELS, renderer->winNHistory[1]);
+		glUniform1i(uniforms[GBA_GL_WIN_DISABLE_INTERP], renderer->scale < 2);
+		_detectCircle(renderer, y, 0);
+		_detectCircle(renderer, y, 1);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		break;
 	}

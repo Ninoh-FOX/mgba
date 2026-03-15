@@ -31,7 +31,7 @@
 using namespace QGBA;
 
 FrameView::FrameView(std::shared_ptr<CoreController> controller, QWidget* parent)
-	: AssetView(controller, parent)
+	: AssetView(std::move(controller), parent)
 {
 	m_ui.setupUi(this);
 
@@ -159,7 +159,7 @@ void FrameView::updateTilesGBA(bool) {
 
 		uint16_t* io = static_cast<GBA*>(m_controller->thread()->core->board)->memory.io;
 		QRgb backdrop = M_RGB5_TO_RGB8(static_cast<GBA*>(m_controller->thread()->core->board)->video.palette[0]);
-		GBARegisterDISPCNT gbaDispcnt = io[REG_DISPCNT >> 1];
+		GBARegisterDISPCNT gbaDispcnt = io[GBA_REG(DISPCNT)];
 		int mode = GBARegisterDISPCNTGetMode(gbaDispcnt);
 
 		std::array<bool, 4> enabled{
@@ -233,14 +233,14 @@ void FrameView::updateTilesGBA(bool) {
 				if (!enabled[bg]) {
 					continue;
 				}
-				if (GBARegisterBGCNTGetPriority(io[(REG_BG0CNT >> 1) + bg]) != priority) {
+				if (GBARegisterBGCNTGetPriority(io[GBA_REG(BG0CNT) + bg]) != priority) {
 					continue;
 				}
 
 				QPointF offset;
 				if (mode == 0) {
-					offset.setX(-(io[(REG_BG0HOFS >> 1) + (bg << 1)] & 0x1FF));
-					offset.setY(-(io[(REG_BG0VOFS >> 1) + (bg << 1)] & 0x1FF));
+					offset.setX(-(io[GBA_REG(BG0HOFS) + (bg << 1)] & 0x1FF));
+					offset.setY(-(io[GBA_REG(BG0VOFS) + (bg << 1)] & 0x1FF));
 				};
 				m_queue.append({
 					{ LayerId::BACKGROUND, bg },
@@ -505,12 +505,20 @@ bool FrameView::eventFilter(QObject*, QEvent* event) {
 	QPointF pos;
 	switch (event->type()) {
 	case QEvent::MouseButtonPress:
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 		pos = static_cast<QMouseEvent*>(event)->localPos();
+#else
+		pos = static_cast<QMouseEvent*>(event)->position();
+#endif
 		pos /= m_ui.magnification->value();
 		selectLayer(pos);
 		return true;
 	case QEvent::MouseButtonDblClick:
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 		pos = static_cast<QMouseEvent*>(event)->localPos();
+#else
+		pos = static_cast<QMouseEvent*>(event)->position();
+#endif
 		pos /= m_ui.magnification->value();
 		disableLayer(pos);
 		return true;
@@ -548,6 +556,11 @@ void FrameView::newVl() {
 		m_vl->deinit(m_vl);
 	}
 	m_vl = mCoreFindVF(m_currentFrame);
+	if (!m_vl) {
+		m_currentFrame->close(m_currentFrame);
+		m_currentFrame = nullptr;
+		return;
+	}
 	m_vl->init(m_vl);
 	m_vl->loadROM(m_vl, m_currentFrame);
 	m_currentFrame = nullptr;
@@ -559,9 +572,9 @@ void FrameView::newVl() {
 	}
 #endif
 	unsigned width, height;
-	m_vl->desiredVideoDimensions(m_vl, &width, &height);
+	m_vl->baseVideoSize(m_vl, &width, &height);
 	m_framebuffer = QImage(width, height, QImage::Format_RGBX8888);
-	m_vl->setVideoBuffer(m_vl, reinterpret_cast<color_t*>(m_framebuffer.bits()), width);
+	m_vl->setVideoBuffer(m_vl, reinterpret_cast<mColor*>(m_framebuffer.bits()), width);
 	m_vl->reset(m_vl);
 }
 
@@ -581,7 +594,16 @@ void FrameView::exportFrame() {
 		return;
 	}
 	CoreController::Interrupter interrupter(m_controller);
-	m_framebuffer.save(filename, "PNG");
+
+	unsigned width, height;
+	m_vl->currentVideoSize(m_vl, &width, &height);
+
+	if ((int)width != m_framebuffer.width() || (int)height != m_framebuffer.height()) {
+		QImage crop = m_framebuffer.copy(0, 0, width, height);
+		crop.save(filename, "PNG");
+	} else {
+		m_framebuffer.save(filename, "PNG");
+	}
 }
 
 void FrameView::reset() {

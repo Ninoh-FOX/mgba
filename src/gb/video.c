@@ -6,7 +6,6 @@
 #include <mgba/internal/gb/video.h>
 
 #include <mgba/core/sync.h>
-#include <mgba/core/thread.h>
 #include <mgba/core/cache-set.h>
 #include <mgba/internal/gb/gb.h>
 #include <mgba/internal/gb/io.h>
@@ -756,7 +755,7 @@ void GBVideoWriteLCDC(struct GBVideo* video, GBRegisterLCDC value) {
 		video->ly = 0;
 		video->p->memory.io[GB_REG_LY] = 0;
 		video->renderer->writePalette(video->renderer, 0, video->dmgPalette[0]);
-	
+
 		mTimingDeschedule(&video->p->timing, &video->modeEvent);
 		mTimingDeschedule(&video->p->timing, &video->frameEvent);
 		mTimingSchedule(&video->p->timing, &video->frameEvent, GB_VIDEO_TOTAL_LENGTH << 1);
@@ -770,7 +769,10 @@ void GBVideoWriteSTAT(struct GBVideo* video, GBRegisterSTAT value) {
 	if (!GBRegisterLCDCIsEnable(video->p->memory.io[GB_REG_LCDC]) || video->p->model >= GB_MODEL_CGB) {
 		return;
 	}
-	if (!_statIRQAsserted(oldStat) && video->mode < 3) {
+	// Writing to STAT on a DMG selects all STAT IRQ types for one cycle.
+	// However, the signal that the mode 2 IRQ relies on is only high for
+	// one cycle, which we don't handle yet. TODO: Handle it.
+	if (!_statIRQAsserted(oldStat) && (video->mode < 2 || GBRegisterSTATIsLYC(video->stat))) {
 		// TODO: variable for the IRQ line value?
 		video->p->memory.io[GB_REG_IF] |= (1 << GB_IRQ_LCDSTAT);
 		GBUpdateIRQs(video->p);

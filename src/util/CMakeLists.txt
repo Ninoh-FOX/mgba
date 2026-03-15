@@ -6,20 +6,29 @@ set(BASE_SOURCE_FILES
 	formatting.c
 	gbk-table.c
 	hash.c
+	md5.c
+	sha1.c
 	string.c
 	table.c
+	vector.c
 	vfs.c)
 
 set(SOURCE_FILES
 	${BASE_SOURCE_FILES}
+	audio-buffer.c
+	audio-resampler.c
 	convolve.c
 	elf-read.c
-	export.c
+	geometry.c
+	image.c
+	image/export.c
+	image/font.c
+	image/png-io.c
+	interpolator.c
 	patch.c
 	patch-fast.c
 	patch-ips.c
 	patch-ups.c
-	png-io.c
 	ring-fifo.c
 	sfo.c
 	text-codec.c)
@@ -32,6 +41,11 @@ set(GUI_FILES
 	gui/menu.c)
 
 set(TEST_FILES
+	test/circle-buffer.c
+	test/color.c
+	test/geometry.c
+	test/hash.c
+	test/image.c
 	test/sfo.c
 	test/string-parser.c
 	test/string-utf8.c

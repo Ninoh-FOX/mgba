@@ -41,7 +41,6 @@ CheatsView::CheatsView(std::shared_ptr<CoreController> controller, QWidget* pare
 	connect(m_ui.addSet, &QAbstractButton::clicked, this, &CheatsView::addSet);
 	connect(m_ui.remove, &QAbstractButton::clicked, this, &CheatsView::removeSet);
 	connect(m_ui.add, &QAbstractButton::clicked, this, &CheatsView::enterCheat);
-	connect(controller.get(), &CoreController::stopping, this, &CheatsView::close);
 	connect(controller.get(), &CoreController::stateLoaded, &m_model, &CheatsModel::invalidated);
 
 	switch (controller->platform()) {
@@ -184,7 +183,7 @@ void CheatsView::enterCheat() {
 		set->refresh(set, m_controller->cheatDevice());
 	}
 	if (failure) {
-		LOG(QT, ERROR) << tr("Some cheats could not be added. Please ensure they're formatted correctly and/or try other cheat types.");
+		qCritical() << tr("Some cheats could not be added. Please ensure they're formatted correctly and/or try other cheat types.");
 	}
 	m_ui.codeEntry->clear();
 }

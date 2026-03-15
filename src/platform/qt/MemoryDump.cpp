@@ -13,7 +13,7 @@ using namespace QGBA;
 
 MemoryDump::MemoryDump(std::shared_ptr<CoreController> controller, QWidget* parent)
 	: QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint)
-	, m_controller(controller)
+	, m_controller(std::move(controller))
 {
 	m_ui.setupUi(this);
 
@@ -27,7 +27,7 @@ void MemoryDump::save() {
 	}
 	QFile outfile(filename);
 	if (!outfile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-		LOG(QT, WARN) << tr("Failed to open output file: %1").arg(filename);
+		qWarning() << tr("Failed to open output file: %1").arg(filename);
 		return;
 	}
 	QByteArray out(serialize());

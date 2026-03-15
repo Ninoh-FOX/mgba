@@ -38,9 +38,9 @@ public:
 
 	void connect(std::function<void(const QVariant&)>, QObject* parent = nullptr);
 
-	Action* addValue(const QString& text, const QVariant& value, ActionMapper* actions = nullptr, const QString& menu = {});
-	Action* addValue(const QString& text, const char* value, ActionMapper* actions = nullptr, const QString& menu = {});
-	Action* addBoolean(const QString& text, ActionMapper* actions = nullptr, const QString& menu = {});
+	std::shared_ptr<Action> addValue(const QString& text, const QVariant& value, ActionMapper* actions = nullptr, const QString& menu = {});
+	std::shared_ptr<Action> addValue(const QString& text, const char* value, ActionMapper* actions = nullptr, const QString& menu = {});
+	std::shared_ptr<Action> addBoolean(const QString& text, ActionMapper* actions = nullptr, const QString& menu = {});
 
 	QString name() const { return m_name; }
 
@@ -56,7 +56,7 @@ signals:
 
 private:
 	QHash<QObject*, std::function<void(const QVariant&)>> m_slots;
-	QList<std::pair<Action*, QVariant>> m_actions;
+	QList<std::pair<std::shared_ptr<Action>, QVariant>> m_actions;
 	QString m_name;
 };
 
@@ -90,7 +90,7 @@ public:
 	QVariant takeArgvOption(const QString& key);
 
 	QStringList getMRU(MRU = MRU::ROM) const;
-	void setMRU(const QStringList& mru, MRU = MRU::ROM);
+	QList<QVariant> getList(const QString& group) const;
 
 	Configuration* overrides() { return mCoreConfigGetOverrides(&m_config); }
 	void saveOverride(const Override&);
@@ -102,6 +102,7 @@ public:
 
 	const mArguments* args() const { return &m_args; }
 	const mGraphicsOpts* graphicsOpts() const { return &m_graphicsOpts; }
+	QStringList fileNames() const { return m_fnames; }
 	void usage(const char* arg0) const;
 
 	static const QString& configDir();
@@ -115,6 +116,8 @@ public slots:
 	void setOption(const char* key, const char* value);
 	void setOption(const char* key, const QVariant& value);
 	void setQtOption(const QString& key, const QVariant& value, const QString& group = QString());
+	void setMRU(const QStringList& mru, MRU = MRU::ROM);
+	void setList(const QString& group, const QList<QVariant>& list);
 
 	void makePortable();
 	void write();
@@ -129,8 +132,9 @@ private:
 	mArguments m_args{};
 	mGraphicsOpts m_graphicsOpts{};
 	std::array<mSubParser, 2> m_subparsers;
+	QStringList m_fnames;
 	bool m_parsed = false;
-	
+
 	QHash<QString, QVariant> m_argvOptions;
 	QHash<QString, ConfigOption*> m_optionSet;
 	std::unique_ptr<QSettings> m_settings;

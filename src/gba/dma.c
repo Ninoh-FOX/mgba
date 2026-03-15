@@ -33,14 +33,14 @@ void GBADMAReset(struct GBA* gba) {
 	gba->memory.activeDMA = -1;
 }
 static bool _isValidDMASAD(int dma, uint32_t address) {
-	if (dma == 0 && address >= BASE_CART0 && address < BASE_CART_SRAM) {
+	if (dma == 0 && address >= GBA_BASE_ROM0 && address < GBA_BASE_SRAM) {
 		return false;
 	}
-	return address >= BASE_WORKING_RAM;
+	return address >= GBA_BASE_EWRAM;
 }
 
 static bool _isValidDMADAD(int dma, uint32_t address) {
-	return dma == 3 || address < BASE_CART0;
+	return dma == 3 || address < GBA_BASE_ROM0;
 }
 
 uint32_t GBADMAWriteSAD(struct GBA* gba, int dma, uint32_t address) {
@@ -206,7 +206,7 @@ void _dmaEvent(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 			dma->reg = GBADMARegisterClearEnable(dma->reg);
 
 			// Clear the enable bit in memory
-			memory->io[(REG_DMA0CNT_HI + memory->activeDMA * (REG_DMA1CNT_HI - REG_DMA0CNT_HI)) >> 1] &= 0x7FE0;
+			memory->io[(GBA_REG_DMA0CNT_HI + memory->activeDMA * (GBA_REG_DMA1CNT_HI - GBA_REG_DMA0CNT_HI)) >> 1] &= 0x7FE0;
 		}
 		if (GBADMARegisterGetDestControl(dma->reg) == GBA_DMA_INCREMENT_RELOAD) {
 			dma->nextDest = dma->dest;
@@ -252,23 +252,31 @@ void GBADMAService(struct GBA* gba, int number, struct GBADMA* info) {
 	uint32_t dest = info->nextDest;
 	uint32_t sourceRegion = source >> BASE_OFFSET;
 	uint32_t destRegion = dest >> BASE_OFFSET;
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
 	int32_t cycles = 2;
 
 	gba->cpuBlocked = true;
 	gba->performingDMA = 1 | (number << 1);
+	cpu->memory.accessSource = mACCESS_DMA;
 
 	if (info->count == info->nextCount) {
 		if (width == 4) {
 			cycles += memory->waitstatesNonseq32[sourceRegion] + memory->waitstatesNonseq32[destRegion];
+			info->cycles = memory->waitstatesSeq32[sourceRegion] + memory->waitstatesSeq32[destRegion];
 		} else {
 			cycles += memory->waitstatesNonseq16[sourceRegion] + memory->waitstatesNonseq16[destRegion];
+			info->cycles = memory->waitstatesSeq16[sourceRegion] + memory->waitstatesSeq16[destRegion];
 		}
 	} else {
-		if (width == 4) {
-			cycles += memory->waitstatesSeq32[sourceRegion] + memory->waitstatesSeq32[destRegion];
-		} else {
-			cycles += memory->waitstatesSeq16[sourceRegion] + memory->waitstatesSeq16[destRegion];
+		// Crossed region boundary; recalculate cached cycles
+		if (UNLIKELY(!(source & 0x00FFFFFC) || !(dest & 0x00FFFFFC))) {
+			if (width == 4) {
+				info->cycles = memory->waitstatesSeq32[sourceRegion] + memory->waitstatesSeq32[destRegion];
+			} else {
+				info->cycles = memory->waitstatesSeq16[sourceRegion] + memory->waitstatesSeq16[destRegion];
+			}
 		}
+		cycles += info->cycles;
 	}
 	info->when += cycles;
 
@@ -278,19 +286,19 @@ void GBADMAService(struct GBA* gba, int number, struct GBADMA* info) {
 		}
 		cpu->memory.store32(cpu, dest, memory->dmaTransferRegister, 0);
 	} else {
-		if (sourceRegion == REGION_CART2_EX && (memory->savedata.type == SAVEDATA_EEPROM || memory->savedata.type == SAVEDATA_EEPROM512)) {
+		if (sourceRegion == GBA_REGION_ROM2_EX && (memory->savedata.type == GBA_SAVEDATA_EEPROM || memory->savedata.type == GBA_SAVEDATA_EEPROM512)) {
 			memory->dmaTransferRegister = GBASavedataReadEEPROM(&memory->savedata);
 			memory->dmaTransferRegister |= memory->dmaTransferRegister << 16;
 		} else if (source) {
 			memory->dmaTransferRegister = cpu->memory.load16(cpu, source, 0);
 			memory->dmaTransferRegister |= memory->dmaTransferRegister << 16;
 		}
-		if (destRegion == REGION_CART2_EX) {
-			if (memory->savedata.type == SAVEDATA_AUTODETECT) {
+		if (UNLIKELY(destRegion == GBA_REGION_ROM2_EX)) {
+			if (memory->savedata.type == GBA_SAVEDATA_AUTODETECT) {
 				mLOG(GBA_MEM, INFO, "Detected EEPROM savegame");
 				GBASavedataInitEEPROM(&memory->savedata);
 			}
-			if (memory->savedata.type == SAVEDATA_EEPROM512 || memory->savedata.type == SAVEDATA_EEPROM) {
+			if (memory->savedata.type == GBA_SAVEDATA_EEPROM512 || memory->savedata.type == GBA_SAVEDATA_EEPROM) {
 				GBASavedataWriteEEPROM(&memory->savedata, memory->dmaTransferRegister, info->nextCount);
 			}
 		} else {
@@ -300,7 +308,7 @@ void GBADMAService(struct GBA* gba, int number, struct GBADMA* info) {
 	gba->bus = memory->dmaTransferRegister;
 
 	int sourceOffset;
-	if (info->nextSource >= BASE_CART0 && info->nextSource < BASE_CART_SRAM && GBADMARegisterGetSrcControl(info->reg) < 3) {
+	if (info->nextSource >= GBA_BASE_ROM0 && info->nextSource < GBA_BASE_SRAM && GBADMARegisterGetSrcControl(info->reg) < 3) {
 		sourceOffset = width;
 	} else {
 		sourceOffset = DMA_OFFSET[GBADMARegisterGetSrcControl(info->reg)] * width;
@@ -313,21 +321,43 @@ void GBADMAService(struct GBA* gba, int number, struct GBADMA* info) {
 	--info->nextCount;
 
 	gba->performingDMA = 0;
+	cpu->memory.accessSource = oldAccess;
 
 	int i;
 	for (i = 0; i < 4; ++i) {
 		struct GBADMA* dma = &memory->dma[i];
-		int32_t time = dma->when - info->when;
-		if (time < 0 && GBADMARegisterIsEnable(dma->reg) && dma->nextCount) {
-			dma->when = info->when;
+		if (GBADMARegisterIsEnable(dma->reg) && dma->nextCount) {
+			int32_t time = dma->when - info->when;
+			if (time < 0) {
+				dma->when = info->when;
+			}
 		}
 	}
 
 	if (!info->nextCount) {
 		info->nextCount |= 0x80000000;
-		if (sourceRegion < REGION_CART0 || destRegion < REGION_CART0) {
+		if (sourceRegion < GBA_REGION_ROM0 || destRegion < GBA_REGION_ROM0) {
 			info->when += 2;
 		}
 	}
 	GBADMAUpdate(gba);
+}
+
+void GBADMARecalculateCycles(struct GBA* gba) {
+	int i;
+	for (i = 0; i < 4; ++i) {
+		struct GBADMA* dma = &gba->memory.dma[i];
+		if (!GBADMARegisterIsEnable(dma->reg)) {
+			continue;
+		}
+
+		uint32_t width = GBADMARegisterGetWidth(dma->reg);
+		uint32_t sourceRegion = dma->nextSource >> BASE_OFFSET;
+		uint32_t destRegion = dma->nextDest >> BASE_OFFSET;
+		if (width) {
+			dma->cycles = gba->memory.waitstatesSeq32[sourceRegion] + gba->memory.waitstatesSeq32[destRegion];
+		} else {
+			dma->cycles = gba->memory.waitstatesSeq16[sourceRegion] + gba->memory.waitstatesSeq16[destRegion];
+		}
+	}
 }

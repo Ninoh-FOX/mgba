@@ -14,6 +14,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QFileInfo>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QScrollBar>
@@ -80,13 +81,17 @@ MemoryModel::MemoryModel(QWidget* parent)
 
 	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	int hintWidth;
 	m_margins = QMargins(3, m_cellHeight + 1, 3, 0);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
 	m_margins += QMargins(metrics.horizontalAdvance("0FFFFFF0 "), 0, metrics.horizontalAdvance(" AAAAAAAAAAAAAAAA"), 0);
+	hintWidth = metrics.horizontalAdvance(" 0FFFFFF0  FFFFFFFF  FFFFFFFF  FFFFFFFF  FFFFFFFF  AAAAAAAAAAAAAAAA");
 #else
 	m_margins += QMargins(metrics.width("0FFFFFF0 "), 0, metrics.width(" AAAAAAAAAAAAAAAA"), 0);
+	hintWidth = metrics.width(" 0FFFFFF0  FFFFFFFF  FFFFFFFF  FFFFFFFF  FFFFFFFF  AAAAAAAAAAAAAAAA");
 #endif
 	m_cellSize = QSizeF((viewport()->size().width() - (m_margins.left() + m_margins.right())) / 16.0, m_cellHeight);
+	setMinimumWidth(hintWidth);
 
 	connect(verticalScrollBar(), &QSlider::sliderMoved, [this](int position) {
 		m_top = position;
@@ -150,7 +155,12 @@ void MemoryModel::loadTBLFromPath(const QString& path) {
 		return;
 	}
 	m_codec = std::unique_ptr<TextCodec, TextCodecFree>(new TextCodec);
-	TextCodecLoadTBL(m_codec.get(), vf, true);
+	if (!TextCodecLoadTBL(m_codec.get(), vf, true)) {
+		m_codec.reset();
+	} else {
+		QFileInfo pathInfo(path);
+		m_tbl = pathInfo.baseName();
+	}
 	vf->close(vf);
 }
 
@@ -215,7 +225,7 @@ void MemoryModel::save() {
 	}
 	QFile outfile(filename);
 	if (!outfile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-		LOG(QT, WARN) << tr("Failed to open output file: %1").arg(filename);
+		qWarning() << tr("Failed to open output file: %1").arg(filename);
 		return;
 	}
 	QByteArray out(serialize());
@@ -229,7 +239,7 @@ void MemoryModel::load() {
 	}
 	QFile infile(filename);
 	if (!infile.open(QIODevice::ReadOnly)) {
-		LOG(QT, WARN) << tr("Failed to open input file: %1").arg(filename);
+		qWarning() << tr("Failed to open input file: %1").arg(filename);
 		return;
 	}
 	QByteArray bytestring(infile.readAll());
@@ -321,7 +331,7 @@ QString MemoryModel::decodeText(const QByteArray& bytes) {
 		text = QString::fromUtf8(array);
 	} else {
 		for (uint8_t c : bytes) {
-			text.append((uchar) c);
+			text.append(QChar(c));
 		}
 	}
 	return text;
@@ -344,7 +354,7 @@ void MemoryModel::paintEvent(QPaintEvent*) {
 	painter.drawStaticText(QPointF((m_margins.left() - m_regionName.size().width() - 1) / 2.0, 0), m_regionName);
 	painter.drawText(
 	    QRect(QPoint(viewport()->size().width() - m_margins.right(), 0), QSize(m_margins.right(), m_margins.top())),
-	    Qt::AlignHCenter, m_codec ? tr("TBL") : tr("ISO-8859-1"));
+	    Qt::AlignHCenter, m_codec ? m_tbl : tr("ISO-8859-1"));
 	for (int x = 0; x < 16; ++x) {
 		painter.drawText(QRectF(QPointF(m_cellSize.width() * x + m_margins.left(), 0), m_cellSize), Qt::AlignHCenter,
 		                 QString::number(x, 16).toUpper());
@@ -488,7 +498,7 @@ void MemoryModel::paintEvent(QPaintEvent*) {
 			for (int i = 0; i < text.size() && i < m_align; ++i) {
 				const QChar c = text.at(i);
 				const QPointF location(viewport()->size().width() - (16 - x - i) * m_margins.right() / 17.0 - m_letterWidth * 0.5, yp);
-				if (c < 256) {
+				if (c.unicode() < 256) {
 					painter.drawStaticText(location, m_staticLatin1[c.cell()]);
 				} else {
 					painter.drawText(location, c);
@@ -511,8 +521,13 @@ void MemoryModel::wheelEvent(QWheelEvent* event) {
 }
 
 void MemoryModel::mousePressEvent(QMouseEvent* event) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	if (event->x() < m_margins.left() || event->y() < m_margins.top() ||
 	    event->x() > size().width() - m_margins.right()) {
+#else
+	if (event->position().x() < m_margins.left() || event->position().y() < m_margins.top() ||
+	    event->position().x() > size().width() - m_margins.right()) {
+#endif
 		m_selection = qMakePair(0, 0);
 		return;
 	}
@@ -540,8 +555,13 @@ void MemoryModel::mousePressEvent(QMouseEvent* event) {
 }
 
 void MemoryModel::mouseMoveEvent(QMouseEvent* event) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	if (event->x() < m_margins.left() || event->y() < m_margins.top() ||
 	    event->x() > size().width() - m_margins.right()) {
+#else
+	if (event->position().x() < m_margins.left() || event->position().y() < m_margins.top() ||
+	    event->position().x() > size().width() - m_margins.right()) {
+#endif
 		return;
 	}
 

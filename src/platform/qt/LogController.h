@@ -48,6 +48,7 @@ public:
 	Stream operator()(int category, int level);
 
 	static LogController* global();
+	static QtMessageHandler installMessageHandler();
 	static QString toString(int level);
 	static int categoryId(const char*);
 
@@ -79,8 +80,8 @@ public slots:
 
 private:
 	mLogFilter m_filter;
-	bool m_logToFile;
-	bool m_logToStdout;
+	bool m_logToFile = false;
+	bool m_logToStdout = false;
 	std::unique_ptr<QFile> m_logFile;
 	std::unique_ptr<QTextStream> m_logStream;
 

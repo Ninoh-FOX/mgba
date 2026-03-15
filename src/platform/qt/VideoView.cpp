@@ -20,6 +20,7 @@ using namespace QGBA;
 QMap<QString, QString> VideoView::s_acodecMap;
 QMap<QString, QString> VideoView::s_vcodecMap;
 QMap<QString, QString> VideoView::s_containerMap;
+QMap<QString, QStringList> VideoView::s_extensionMap;
 
 bool VideoView::Preset::compatible(const Preset& other) const {
 	if (!other.container.isNull() && !container.isNull() && other.container != container) {
@@ -46,7 +47,7 @@ bool VideoView::Preset::compatible(const Preset& other) const {
 	return true;
 }
 
-VideoView::VideoView(QWidget* parent)
+VideoView::VideoView(std::shared_ptr<CoreController> controller, QWidget* parent)
 	: QWidget(parent)
 {
 	m_ui.setupUi(this);
@@ -64,12 +65,30 @@ VideoView::VideoView(QWidget* parent)
 		s_vcodecMap["hevc"] = "libx265";
 		s_vcodecMap["hevc nvenc"] = "hevc_nvenc";
 		s_vcodecMap["theora"] = "libtheora";
+		s_vcodecMap["ut video"] = "utvideo";
 		s_vcodecMap["vp8"] = "libvpx";
 		s_vcodecMap["vp9"] = "libvpx-vp9";
 		s_vcodecMap["xvid"] = "libxvid";
 	}
 	if (s_containerMap.empty()) {
 		s_containerMap["mkv"] = "matroska";
+	}
+	if (s_extensionMap.empty()) {
+		s_extensionMap["matroska"] += ".mkv";
+		s_extensionMap["matroska"] += ".mka";
+		s_extensionMap["webm"] += ".webm";
+		s_extensionMap["avi"] += ".avi";
+		s_extensionMap["mp4"] += ".mp4";
+		s_extensionMap["mp4"] += ".m4v";
+		s_extensionMap["mp4"] += ".m4a";
+
+		s_extensionMap["flac"] += ".flac";
+		s_extensionMap["mpeg"] += ".mpg";
+		s_extensionMap["mpeg"] += ".mpeg";
+		s_extensionMap["mpegts"] += ".ts";
+		s_extensionMap["mp3"] += ".mp3";
+		s_extensionMap["ogg"] += ".ogg";
+		s_extensionMap["ogv"] += ".ogv";
 	}
 
 	connect(m_ui.buttonBox, &QDialogButtonBox::rejected, this, &VideoView::close);
@@ -114,6 +133,8 @@ VideoView::VideoView(QWidget* parent)
 
 	m_ui.presetYoutube->setChecked(true); // Use the Youtube preset by default
 	showAdvanced(false);
+
+	setController(controller);
 }
 
 void VideoView::updatePresets() {
@@ -195,11 +216,14 @@ void VideoView::setController(std::shared_ptr<CoreController> controller) {
 }
 
 void VideoView::startRecording() {
+	if (QFileInfo(m_filename).suffix().isEmpty()) {
+		changeExtension();
+	}
 	if (!validateSettings()) {
 		return;
 	}
 	if (!FFmpegEncoderOpen(&m_encoder, m_filename.toUtf8().constData())) {
-		LOG(QT, ERROR) << tr("Failed to open output video file: %1").arg(m_filename);
+		qCritical() << tr("Failed to open output video file: %1").arg(m_filename);
 		return;
 	}
 	m_ui.start->setEnabled(false);
@@ -238,6 +262,7 @@ void VideoView::selectFile() {
 	QString filename = GBAApp::app()->getSaveFileName(this, tr("Select output file"));
 	if (!filename.isEmpty()) {
 		m_ui.filename->setText(filename);
+		changeExtension();
 	}
 }
 
@@ -289,6 +314,7 @@ void VideoView::setContainer(const QString& container) {
 		m_containerCstr = nullptr;
 		m_container = QString();
 	}
+	changeExtension();
 	validateSettings();
 	uncheckIncompatible();
 }
@@ -456,6 +482,30 @@ void VideoView::uncheckIncompatible() {
 	if (current.compatible(m_presets[m_ui.preset1080])) {
 		safelyCheck(m_ui.preset1080);
 	}
+}
+
+void VideoView::changeExtension() {
+	if (m_filename.isEmpty()) {
+		return;
+	}
+
+	if (!s_extensionMap.contains(m_container)) {
+		return;
+	}
+
+	QStringList extensions = s_extensionMap.value(m_container);
+	QString filename = m_filename;
+	int index = m_filename.lastIndexOf(".");
+	if (index >= 0) {
+		if (extensions.contains(filename.mid(index))) {
+			// This extension is already valid
+			return;
+		}
+		filename.truncate(index);
+	}
+	filename += extensions.front();
+
+	m_ui.filename->setText(filename);
 }
 
 QString VideoView::sanitizeCodec(const QString& codec, const QMap<QString, QString>& mapping) {

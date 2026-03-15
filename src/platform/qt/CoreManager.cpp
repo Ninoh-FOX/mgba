@@ -16,6 +16,7 @@
 #endif
 
 #include <mgba/core/core.h>
+#include <mgba-util/string.h>
 #include <mgba-util/vfs.h>
 
 using namespace QGBA;
@@ -48,7 +49,7 @@ CoreController* CoreManager::loadGame(const QString& path) {
 			dir->close(dir);
 			return loadGame(vf, fname, base);
 		} else {
-			LOG(QT, ERROR) << tr("Failed to open game file: %1").arg(path);
+			qCritical() << tr("Failed to open game file: %1").arg(path);
 		}
 		return nullptr;
 	}
@@ -86,7 +87,7 @@ CoreController* CoreManager::loadGame(VFile* vf, const QString& path, const QStr
 	mCore* core = mCoreFindVF(vf);
 	if (!core) {
 		vf->close(vf);
-		LOG(QT, ERROR) << tr("Could not load game. Are you sure it's in the correct format?");
+		qCritical() << tr("Could not load game. Are you sure it's in the correct format?");
 		return nullptr;
 	}
 
@@ -113,7 +114,7 @@ CoreController* CoreManager::loadGame(VFile* vf, const QString& path, const QStr
 	bytes = info.dir().canonicalPath().toUtf8();
 	mDirectorySetAttachBase(&core->dirs, VDirOpen(bytes.constData()));
 	if (!mCoreAutoloadSave(core)) {
-		LOG(QT, ERROR) << tr("Failed to open save file; in-game saves cannot be updated. Please ensure the save directory is writable without additional privileges (e.g. UAC on Windows).");
+		qCritical() << tr("Failed to open save file; in-game saves cannot be updated. Please ensure the save directory is writable without additional privileges (e.g. UAC on Windows).");
 	}
 	mCoreAutoloadCheats(core);
 
@@ -121,6 +122,7 @@ CoreController* CoreManager::loadGame(VFile* vf, const QString& path, const QStr
 	if (m_multiplayer) {
 		cc->setMultiplayerController(m_multiplayer);
 	}
+	cc->setPath(path, info.dir().canonicalPath());
 	emit coreLoaded(cc);
 	return cc;
 }
@@ -161,15 +163,17 @@ CoreController* CoreManager::loadBIOS(int platform, const QString& path) {
 	mCoreConfigSetOverrideIntValue(&core->config, "skipBios", 0);
 
 	QByteArray bytes(info.baseName().toUtf8());
-	strncpy(core->dirs.baseName, bytes.constData(), sizeof(core->dirs.baseName));
+	strlcpy(core->dirs.baseName, bytes.constData(), sizeof(core->dirs.baseName));
 
 	bytes = info.dir().canonicalPath().toUtf8();
 	mDirectorySetAttachBase(&core->dirs, VDirOpen(bytes.constData()));
 
 	CoreController* cc = new CoreController(core);
+	cc->blockSave();
 	if (m_multiplayer) {
 		cc->setMultiplayerController(m_multiplayer);
 	}
+	cc->setPath(path, info.dir().canonicalPath());
 	emit coreLoaded(cc);
 	return cc;
 }

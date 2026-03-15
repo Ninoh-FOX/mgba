@@ -18,12 +18,17 @@
 
 #ifdef M_CORE_GB
 #include "GameBoy.h"
-#include <mgba/internal/gb/overrides.h>
+#include <mgba/gb/interface.h>
 #endif
 
 #include <mgba/core/serialize.h>
 #include <mgba/core/version.h>
 #include <mgba/internal/gba/gba.h>
+
+#ifdef BUILD_SDL
+#define SDL_MAIN_HANDLED
+#include "platform/sdl/sdl-events.h"
+#endif
 
 using namespace QGBA;
 
@@ -47,7 +52,7 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 #ifdef M_CORE_GB
 	m_pageIndex[Page::GB] = 9;
 
-	for (auto model : GameBoy::modelList()) {
+	for (auto& model : GameBoy::modelList()) {
 		m_ui.gbModel->addItem(GameBoy::modelName(model), model);
 		m_ui.sgbModel->addItem(GameBoy::modelName(model), model);
 		m_ui.cgbModel->addItem(GameBoy::modelName(model), model);
@@ -63,6 +68,8 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 #endif
 
 	reloadConfig();
+
+	connect(m_ui.autorunScripts, &QAbstractButton::pressed, this, &SettingsView::openAutorunScripts);
 
 	connect(m_ui.volume, static_cast<void (QSlider::*)(int)>(&QSlider::valueChanged), [this](int v) {
 		if (v < m_ui.volumeFf->value()) {
@@ -138,6 +145,9 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 	});
 	connect(m_ui.cheatsBrowse, &QAbstractButton::pressed, [this] () {
 		selectPath(m_ui.cheatsPath, m_ui.cheatsSameDir);
+	});
+	connect(m_ui.bgImageBrowse, &QAbstractButton::pressed, [this] () {
+		selectImage(m_ui.bgImage);
 	});
 	connect(m_ui.clearCache, &QAbstractButton::pressed, this, &SettingsView::libraryCleared);
 
@@ -326,9 +336,13 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 
 	GBAKeyEditor* buttonEditor = nullptr;
 #ifdef BUILD_SDL
-	inputController->recalibrateAxes();
-	const char* profile = inputController->profileForType(SDL_BINDING_BUTTON);
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+	QString profile = inputController->profileForType(SDL_BINDING_CONTROLLER);
+	buttonEditor = new GBAKeyEditor(inputController, SDL_BINDING_CONTROLLER, profile);
+#else
+	QString profile = inputController->profileForType(SDL_BINDING_BUTTON);
 	buttonEditor = new GBAKeyEditor(inputController, SDL_BINDING_BUTTON, profile);
+#endif
 	addPage(tr("Controllers"), buttonEditor, Page::CONTROLLERS);
 	connect(m_ui.buttonBox, &QDialogButtonBox::accepted, buttonEditor, &GBAKeyEditor::save);
 #endif
@@ -345,17 +359,27 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 	});
 
 	QLocale englishLocale("en");
-	m_ui.languages->addItem(englishLocale.nativeLanguageName(), englishLocale);
+	m_ui.languages->addItem("English", englishLocale);
 	QDir ts(":/translations/");
-	for (auto name : ts.entryList()) {
+	for (auto& name : ts.entryList()) {
 		if (!name.endsWith(".qm") || !name.startsWith(binaryName)) {
 			continue;
 		}
 		QLocale locale(name.remove(QString("%0-").arg(binaryName)).remove(".qm"));
-		if (locale.language() == QLocale::English) {
+		if (locale.language() == QLocale::English || locale.language() == QLocale::C) {
 			continue;
 		}
-		m_ui.languages->addItem(locale.nativeLanguageName(), locale);
+		QString endonym = locale.nativeLanguageName();
+		// Manualy handle some cases that Qt can't seem to do properly
+		if (locale.language() == QLocale::Spanish) {
+			// Qt insists this is called español de España, regardless of if we set the country
+			endonym = u8"Español";
+		} else if (locale.language() == QLocale::Portuguese && locale.country() == QLocale::Brazil) {
+			// Qt insists that Brazilian Portuguese is just called Português
+			endonym = u8"Português brasileiro";
+		}
+		endonym[0] = endonym[0].toUpper();
+		m_ui.languages->addItem(endonym, locale);
 		if (locale.bcp47Name() == QLocale().bcp47Name()) {
 			m_ui.languages->setCurrentIndex(m_ui.languages->count() - 1);
 		}
@@ -385,29 +409,42 @@ SettingsView::SettingsView(ConfigController* controller, InputController* inputC
 	shortcutView->setController(shortcutController);
 	shortcutView->setInputController(inputController);
 	addPage(tr("Shortcuts"), shortcutView, Page::SHORTCUTS);
+
+#if defined(BUILD_GLES2) || defined(USE_EPOXY)
+	m_dummyShader = new QLabel(tr("Shaders are not supported when the display driver is not OpenGL.\n\n"
+		"If it is set to OpenGL and you still see this, your graphics card or drivers may be too old."));
+	m_dummyShader->setWordWrap(true);
+	m_dummyShader->setAlignment(Qt::AlignCenter);
+	addPage(tr("Shaders"), m_dummyShader, Page::SHADERS);
+#endif
 }
 
 SettingsView::~SettingsView() {
-#if defined(BUILD_GL) || defined(BUILD_GLES2)
-	setShaderSelector(nullptr);
+#if defined(BUILD_GLES2) || defined(USE_EPOXY)
+	if (m_shader) {
+		m_shader->setParent(nullptr);
+	}
 #endif
 }
 
 void SettingsView::setShaderSelector(ShaderSelector* shaderSelector) {
-#if defined(BUILD_GL) || defined(BUILD_GLES2)
-	if (m_shader) {
-		auto items = m_ui.tabs->findItems(tr("Shaders"), Qt::MatchFixedString);
-		for (const auto& item : items) {
-			m_ui.tabs->removeItemWidget(item);
-		}
-		m_ui.stackedWidget->removeWidget(m_shader);
-		m_shader->setParent(nullptr);
+#if  defined(BUILD_GLES2) || defined(USE_EPOXY)
+	auto items = m_ui.tabs->findItems(tr("Shaders"), Qt::MatchFixedString);
+	for (QListWidgetItem* item : items) {
+		delete item;
+	}
+	if (!m_shader) {
+		m_ui.stackedWidget->removeWidget(m_dummyShader);
+	} else {
+		QObject::disconnect(m_shader, nullptr, this, nullptr);
 	}
 	m_shader = shaderSelector;
 	if (shaderSelector) {
-		m_ui.stackedWidget->addWidget(m_shader);
-		m_ui.tabs->addItem(tr("Shaders"));
-		connect(m_ui.buttonBox, &QDialogButtonBox::accepted, m_shader, &ShaderSelector::saved);
+		QObject::connect(this, &SettingsView::saveSettingsRequested, m_shader, &ShaderSelector::saveSettings);
+		QObject::connect(m_ui.buttonBox, &QDialogButtonBox::rejected, m_shader, &ShaderSelector::revert);
+		addPage(tr("Shaders"), m_shader, Page::SHADERS);
+	} else {
+		addPage(tr("Shaders"), m_dummyShader, Page::SHADERS);
 	}
 #endif
 }
@@ -442,6 +479,13 @@ void SettingsView::selectPath(QLineEdit* field, QCheckBox* sameDir) {
 	}
 }
 
+void SettingsView::selectImage(QLineEdit* field) {
+	QString path = GBAApp::app()->getOpenFileName(this, tr("Select image"), tr("Image file (*.png *.jpg *.jpeg)"));
+	if (!path.isNull()) {
+		field->setText(makePortablePath(path));
+	}
+}
+
 void SettingsView::updateConfig() {
 	saveSetting("gba.bios", m_ui.gbaBios);
 	saveSetting("gb.bios", m_ui.gbBios);
@@ -467,6 +511,7 @@ void SettingsView::updateConfig() {
 	saveSetting("fastForwardMute", m_ui.muteFf);
 	saveSetting("rewindEnable", m_ui.rewind);
 	saveSetting("rewindBufferCapacity", m_ui.rewindCapacity);
+	saveSetting("rewindBufferInterval", m_ui.rewindBufferInterval);
 	saveSetting("resampleVideo", m_ui.resampleVideo);
 	saveSetting("allowOpposingDirections", m_ui.allowOpposingDirections);
 	saveSetting("suspendScreensaver", m_ui.suspendScreensaver);
@@ -498,6 +543,7 @@ void SettingsView::updateConfig() {
 	saveSetting("vbaBugCompat", m_ui.vbaBugCompat);
 	saveSetting("updateAutoCheck", m_ui.updateAutoCheck);
 	saveSetting("showFilenameInLibrary", m_ui.showFilenameInLibrary);
+	saveSetting("backgroundImage", m_ui.bgImage);
 
 	if (m_ui.audioBufferSize->currentText().toInt() > 8192) {
 		m_ui.audioBufferSize->setCurrentText("8192");
@@ -558,7 +604,6 @@ void SettingsView::updateConfig() {
 	if (displayDriver != m_controller->getQtOption("displayDriver")) {
 		m_controller->setQtOption("displayDriver", displayDriver);
 		Display::setDriver(static_cast<Display::Driver>(displayDriver.toInt()));
-		setShaderSelector(nullptr);
 		emit displayDriverChanged();
 	}
 
@@ -584,12 +629,6 @@ void SettingsView::updateConfig() {
 	if (language != m_controller->getQtOption("language").toLocale() && !(language.bcp47Name() == QLocale::system().bcp47Name() && m_controller->getQtOption("language").isNull())) {
 		m_controller->setQtOption("language", language.bcp47Name());
 		emit languageChanged();
-	}
-
-	bool oldAudioHle = m_controller->getOption("gba.audioHle", "0") != "0";
-	if (oldAudioHle != m_ui.audioHle->isChecked()) {
-		saveSetting("gba.audioHle", m_ui.audioHle);
-		emit audioHleChanged();
 	}
 
 	if (m_ui.multiplayerAudioAll->isChecked()) {
@@ -660,6 +699,8 @@ void SettingsView::updateConfig() {
 	saveSetting("gb.colors", gbColors);
 #endif
 
+	emit saveSettingsRequested();
+
 	m_controller->write();
 
 	emit pathsChanged();
@@ -694,18 +735,21 @@ void SettingsView::reloadConfig() {
 	loadSetting("fastForwardMute", m_ui.muteFf, m_ui.mute->isChecked());
 	loadSetting("rewindEnable", m_ui.rewind);
 	loadSetting("rewindBufferCapacity", m_ui.rewindCapacity);
+	loadSetting("rewindBufferInterval", m_ui.rewindBufferInterval);
 	loadSetting("resampleVideo", m_ui.resampleVideo);
 	loadSetting("allowOpposingDirections", m_ui.allowOpposingDirections);
 	loadSetting("suspendScreensaver", m_ui.suspendScreensaver);
 	loadSetting("pauseOnFocusLost", m_ui.pauseOnFocusLost);
 	loadSetting("pauseOnMinimize", m_ui.pauseOnMinimize);
+	loadSetting("muteOnFocusLost", m_ui.muteOnFocusLost);
+	loadSetting("muteOnMinimize", m_ui.muteOnMinimize);
 	loadSetting("savegamePath", m_ui.savegamePath);
 	loadSetting("savestatePath", m_ui.savestatePath);
 	loadSetting("screenshotPath", m_ui.screenshotPath);
 	loadSetting("patchPath", m_ui.patchPath);
 	loadSetting("cheatsPath", m_ui.cheatsPath);
 	loadSetting("showLibrary", m_ui.showLibrary);
-	loadSetting("preload", m_ui.preload);
+	loadSetting("preload", m_ui.preload, true);
 	loadSetting("showFps", m_ui.showFps, true);
 	loadSetting("cheatAutoload", m_ui.cheatAutoload, true);
 	loadSetting("cheatAutosave", m_ui.cheatAutosave, true);
@@ -716,12 +760,12 @@ void SettingsView::reloadConfig() {
 	loadSetting("logToStdout", m_ui.logToStdout);
 	loadSetting("logFile", m_ui.logFile);
 	loadSetting("useDiscordPresence", m_ui.useDiscordPresence);
-	loadSetting("gba.audioHle", m_ui.audioHle);
 	loadSetting("dynamicTitle", m_ui.dynamicTitle, true);
 	loadSetting("gba.forceGbp", m_ui.forceGbp);
 	loadSetting("vbaBugCompat", m_ui.vbaBugCompat, true);
 	loadSetting("updateAutoCheck", m_ui.updateAutoCheck);
 	loadSetting("showFilenameInLibrary", m_ui.showFilenameInLibrary);
+	loadSetting("backgroundImage", m_ui.bgImage);
 
 	m_ui.libraryStyle->setCurrentIndex(loadSetting("libraryStyle").toInt());
 

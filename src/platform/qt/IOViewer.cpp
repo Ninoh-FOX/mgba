@@ -60,7 +60,7 @@ const QList<IOViewer::RegisterDescription>& IOViewer::registerDescriptions(mPlat
 		{ tr("Enable Window 1"), 14 },
 		{ tr("Enable OBJ Window"), 15 },
 	});
-	// 0x04000002: Green swap
+	// 0x04000002: STEREOCNT
 	regGBA.append({
 		{ tr("Swap green components"), 0 },
 	});
@@ -1025,7 +1025,7 @@ const QList<IOViewer::RegisterDescription>& IOViewer::registerDescriptions(mPlat
 	regGBA.append({
 		{ tr("Enable IRQs"), 0 },
 	});
-	s_registers[mPLATFORM_GBA] = regGBA;
+	s_registers[mPLATFORM_GBA] = std::move(regGBA);
 #endif
 #ifdef M_CORE_GB
 	QList<IOViewer::RegisterDescription> regGB;
@@ -1323,7 +1323,7 @@ const QList<IOViewer::RegisterDescription>& IOViewer::registerDescriptions(mPlat
 	});
 	// 0xFF40: LCDC
 	regGB.append({
-		{ tr("Background enable/priority"), 1 },
+		{ tr("Background enable/priority"), 0 },
 		{ tr("Enable sprites"), 1 },
 		{ tr("Double-height sprites"), 2 },
 		{ tr("Background tile map"), 3, 1, {
@@ -1555,7 +1555,7 @@ const QList<IOViewer::RegisterDescription>& IOViewer::registerDescriptions(mPlat
 		{ tr("Serial"), 3 },
 		{ tr("Joypad"), 4 },
 	});
-	s_registers[mPLATFORM_GB] = regGB;
+	s_registers[mPLATFORM_GB] = std::move(regGB);
 #endif
 	return s_registers[platform];
 }
@@ -1579,8 +1579,8 @@ IOViewer::IOViewer(std::shared_ptr<CoreController> controller, QWidget* parent)
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA:
 		regs = GBAIORegisterNames;
-		maxRegs = REG_MAX >> 1;
-		m_base = BASE_IO;
+		maxRegs = GBA_REG_MAX >> 1;
+		m_base = GBA_BASE_IO;
 		m_width = 1;
 		break;
 #endif
@@ -1651,8 +1651,6 @@ IOViewer::IOViewer(std::shared_ptr<CoreController> controller, QWidget* parent)
 	}
 
 	selectRegister(0);
-
-	connect(controller.get(), &CoreController::stopping, this, &QWidget::close);
 }
 
 void IOViewer::updateRegister() {
@@ -1689,7 +1687,15 @@ void IOViewer::bitFlipped() {
 void IOViewer::writeback() {
 	{
 		CoreController::Interrupter interrupter(m_controller);
-		GBAIOWrite(static_cast<GBA*>(m_controller->thread()->core->board), m_register, m_value);
+		mCore* core = m_controller->thread()->core;
+		switch (m_width) {
+		case 0:
+			core->busWrite8(core, m_base + m_register, m_value);
+			break;
+		case 1:
+			core->busWrite16(core, m_base + m_register, m_value);
+			break;
+		}
 	}
 	updateRegister();
 }

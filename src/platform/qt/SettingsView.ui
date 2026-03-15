@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>885</width>
-    <height>797</height>
+    <width>880</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,7 +95,7 @@
    <item row="1" column="1">
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>9</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="av">
       <layout class="QVBoxLayout" name="formLayout">
@@ -569,14 +569,21 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0" colspan="2">
+       <item row="6" column="1">
+        <widget class="QPushButton" name="autorunScripts">
+         <property name="text">
+          <string>Edit autorun scripts</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
         <widget class="Line" name="line_9">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QCheckBox" name="autosave">
          <property name="text">
           <string>Periodically autosave state</string>
@@ -586,7 +593,7 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <widget class="QCheckBox" name="cheatAutosave">
          <property name="text">
           <string>Save entered cheats</string>
@@ -596,21 +603,21 @@
          </property>
         </widget>
        </item>
-       <item row="9" column="0" colspan="2">
+       <item row="10" column="0" colspan="2">
         <widget class="Line" name="line_21">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="10" column="0">
+       <item row="11" column="0">
         <widget class="QLabel" name="label_51">
          <property name="text">
           <string>Save state extra data:</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="1">
+       <item row="11" column="1">
         <widget class="QCheckBox" name="saveStateScreenshot">
          <property name="text">
           <string>Screenshot</string>
@@ -620,7 +627,7 @@
          </property>
         </widget>
        </item>
-       <item row="11" column="1">
+       <item row="12" column="1">
         <widget class="QCheckBox" name="saveStateSave">
          <property name="text">
           <string>Save game</string>
@@ -630,7 +637,7 @@
          </property>
         </widget>
        </item>
-       <item row="12" column="1">
+       <item row="13" column="1">
         <widget class="QCheckBox" name="saveStateCheats">
          <property name="text">
           <string>Cheat codes</string>
@@ -640,21 +647,21 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="0" colspan="2">
+       <item row="14" column="0" colspan="2">
         <widget class="Line" name="line_22">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="14" column="0">
+       <item row="15" column="0">
         <widget class="QLabel" name="label_52">
          <property name="text">
           <string>Load state extra data:</string>
          </property>
         </widget>
        </item>
-       <item row="14" column="1">
+       <item row="15" column="1">
         <widget class="QCheckBox" name="loadStateScreenshot">
          <property name="text">
           <string>Screenshot</string>
@@ -664,28 +671,28 @@
          </property>
         </widget>
        </item>
-       <item row="15" column="1">
+       <item row="16" column="1">
         <widget class="QCheckBox" name="loadStateSave">
          <property name="text">
           <string>Save game</string>
          </property>
         </widget>
        </item>
-       <item row="16" column="1">
+       <item row="17" column="1">
         <widget class="QCheckBox" name="loadStateCheats">
          <property name="text">
           <string>Cheat codes</string>
          </property>
         </widget>
        </item>
-       <item row="17" column="0" colspan="2">
+       <item row="18" column="0" colspan="2">
         <widget class="Line" name="line_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="18" column="1">
+       <item row="19" column="1">
         <widget class="QCheckBox" name="useDiscordPresence">
          <property name="text">
           <string>Enable Discord Rich Presence</string>
@@ -906,6 +913,41 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="19" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_22">
+         <item>
+          <widget class="QLineEdit" name="bgImage">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="bgImageBrowse">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="18" column="0" colspan="2">
+        <widget class="Line" name="line_13">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0">
+        <widget class="QLabel" name="label_53">
+         <property name="text">
+          <string>Custom border:</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -1160,21 +1202,51 @@
          </item>
         </layout>
        </item>
-       <item row="6" column="0" colspan="2">
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_54">
+         <property name="text">
+          <string>Rewind speed:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_23">
+         <item>
+          <widget class="QSpinBox" name="rewindBufferInterval">
+           <property name="suffix">
+            <string notr="true">×</string>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>10</number>
+           </property>
+           <property name="singleStep">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="7" column="0" colspan="2">
         <widget class="Line" name="line_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="label_15">
          <property name="text">
           <string>Idle loops:</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QComboBox" name="idleOptimization">
          <item>
           <property name="text">
@@ -1193,21 +1265,24 @@
          </item>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <widget class="QCheckBox" name="preload">
          <property name="text">
           <string>Preload entire ROM into memory</string>
          </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
-       <item row="9" column="1">
+       <item row="10" column="1">
         <widget class="QCheckBox" name="forceGbp">
          <property name="text">
           <string>Enable Game Boy Player features by default</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="1">
+       <item row="11" column="1">
         <widget class="QCheckBox" name="vbaBugCompat">
          <property name="text">
           <string>Enable VBA bug compatibility in ROM hacks</string>
@@ -1242,14 +1317,7 @@
          </item>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QCheckBox" name="audioHle">
-         <property name="text">
-          <string>XQ GBA audio (experimental)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
+       <item row="1" column="0" colspan="2">
         <widget class="QGroupBox" name="oglEnhance">
          <property name="title">
           <string>OpenGL enhancements</string>
@@ -1836,8 +1904,8 @@
              <widget class="QFrame" name="color0">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1855,8 +1923,8 @@
              <widget class="QFrame" name="color1">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1874,8 +1942,8 @@
              <widget class="QFrame" name="color2">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1893,8 +1961,8 @@
              <widget class="QFrame" name="color3">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1923,8 +1991,8 @@
              <widget class="QFrame" name="color4">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1942,8 +2010,8 @@
              <widget class="QFrame" name="color5">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1961,8 +2029,8 @@
              <widget class="QFrame" name="color6">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -1980,8 +2048,8 @@
              <widget class="QFrame" name="color7">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -2010,8 +2078,8 @@
              <widget class="QFrame" name="color8">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -2029,8 +2097,8 @@
              <widget class="QFrame" name="color9">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -2048,8 +2116,8 @@
              <widget class="QFrame" name="color10">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -2067,8 +2135,8 @@
              <widget class="QFrame" name="color11">
               <property name="minimumSize">
                <size>
-                <width>30</width>
-                <height>30</height>
+                <width>24</width>
+                <height>24</height>
                </size>
               </property>
               <property name="autoFillBackground">
@@ -2091,45 +2159,37 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QRadioButton" name="gbColor">
-            <property name="text">
-             <string>Default color palette only</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">gbColors</string>
-            </attribute>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QRadioButton" name="sgbColor">
-            <property name="text">
-             <string>SGB color palette if available</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">gbColors</string>
-            </attribute>
-           </widget>
-          </item>
-          <item row="7" column="1">
-           <widget class="QRadioButton" name="cgbColor">
-            <property name="text">
-             <string>GBC color palette if available</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">gbColors</string>
-            </attribute>
-           </widget>
-          </item>
-          <item row="8" column="1">
-           <widget class="QRadioButton" name="scgbColor">
-            <property name="text">
-             <string>SGB (preferred) or GBC color palette if available</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">gbColors</string>
-            </attribute>
-           </widget>
+          <item row="5" column="0" colspan="2">
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="1">
+             <widget class="QRadioButton" name="sgbColor">
+              <property name="text">
+               <string>SGB color palette if available</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="gbColor">
+              <property name="text">
+               <string>Default color palette only</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="cgbColor">
+              <property name="text">
+               <string>GBC color palette if available</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QRadioButton" name="scgbColor">
+              <property name="text">
+               <string>SGB (preferred) or GBC color palette if available</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>

@@ -5,11 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include <mgba-util/string.h>
 
-#include <mgba-util/vector.h>
-
 #include <string.h>
-
-DEFINE_VECTOR(StringList, char*);
 
 #ifndef HAVE_STRNDUP
 char* strndup(const char* start, size_t len) {
@@ -128,11 +124,13 @@ static const uint8_t _utf8len[0x40] = {
 };
 
 uint32_t utf8Char(const char** unicode, size_t* length) {
-	if (*length == 0) {
+	if (length && *length == 0) {
 		return 0;
 	}
 	unsigned char byte = **unicode;
-	--*length;
+	if (length) {
+		--*length;
+	}
 	++*unicode;
 	if (!(byte & 0x80)) {
 		return byte;
@@ -144,7 +142,7 @@ uint32_t utf8Char(const char** unicode, size_t* length) {
 	if (numBytes == 0) {
 		return 0xFFFD;
 	}
-	if (*length + 1 < numBytes) {
+	if (length && *length + 1 < numBytes) {
 		*length = 0;
 		return 0xFFFD;
 	}
@@ -152,7 +150,9 @@ uint32_t utf8Char(const char** unicode, size_t* length) {
 	for (i = 1; i < numBytes; ++i) {
 		unichar <<= 6;
 		byte = **unicode;
-		--*length;
+		if (length) {
+			--*length;
+		}
 		++*unicode;
 		if ((byte & 0xC0) != 0x80) {
 			return 0;
@@ -181,16 +181,12 @@ size_t toUtf8(uint32_t unichar, char* buffer) {
 		buffer[2] = (unichar & 0x3F) | 0x80;
 		return 3;
 	}
-	if (unichar < 0x200000) {
-		buffer[0] = (unichar >> 18) | 0xF0;
-		buffer[1] = ((unichar >> 12) & 0x3F) | 0x80;
-		buffer[2] = ((unichar >> 6) & 0x3F) | 0x80;
-		buffer[3] = (unichar & 0x3F) | 0x80;
-		return 4;
-	}
 
-	// This shouldn't be possible
-	return 0;
+	buffer[0] = (unichar >> 18) | 0xF0;
+	buffer[1] = ((unichar >> 12) & 0x3F) | 0x80;
+	buffer[2] = ((unichar >> 6) & 0x3F) | 0x80;
+	buffer[3] = (unichar & 0x3F) | 0x80;
+	return 4;
 }
 
 size_t toUtf16(uint32_t unichar, uint16_t* buffer) {
@@ -293,9 +289,6 @@ char* latin1ToUtf8(const char* latin1, size_t length) {
 	size_t utf8TotalBytes = 0;
 	size_t utf8Length = 0;
 	for (offset = 0; offset < length; ++offset) {
-		if (length == 0) {
-			break;
-		}
 		uint8_t unichar = latin1[offset];
 		size_t bytes = toUtf8(unichar, buffer);
 		utf8Length += bytes;

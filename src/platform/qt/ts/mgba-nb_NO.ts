@@ -2,6 +2,57 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="nb_NO" sourcelanguage="en_US">
 <context>
+    <name>LibraryTree</name>
+    <message>
+        <location filename="../library/LibraryModel.cpp" line="427"/>
+        <source>Name</source>
+        <translation type="unfinished">Navn</translation>
+    </message>
+    <message>
+        <location filename="../library/LibraryModel.cpp" line="429"/>
+        <source>Location</source>
+        <translation type="unfinished">Sted</translation>
+    </message>
+    <message>
+        <location filename="../library/LibraryModel.cpp" line="431"/>
+        <source>Platform</source>
+        <translation type="unfinished">Plattform</translation>
+    </message>
+    <message>
+        <location filename="../library/LibraryModel.cpp" line="433"/>
+        <source>Size</source>
+        <translation type="unfinished">Størrelse</translation>
+    </message>
+    <message>
+        <location filename="../library/LibraryModel.cpp" line="435"/>
+        <source>CRC32</source>
+        <translation type="unfinished">CRC32</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA</name>
+    <message>
+        <location filename="../utils.cpp" line="109"/>
+        <source>Game Boy Advance ROMs (%1)</source>
+        <translation>Game Boy Advance ROM-filer (%1)</translation>
+    </message>
+    <message>
+        <location filename="../utils.cpp" line="135"/>
+        <source>Game Boy ROMs (%1)</source>
+        <translation>Game Boy ROM-filer (%1)</translation>
+    </message>
+    <message>
+        <location filename="../utils.cpp" line="140"/>
+        <source>All ROMs (%1)</source>
+        <translation>Alle ROM-filer (%1)</translation>
+    </message>
+    <message>
+        <location filename="../utils.cpp" line="142"/>
+        <source>%1 Video Logs (*.mvl)</source>
+        <translation>%1-videologger (*.mvl)</translation>
+    </message>
+</context>
+<context>
     <name>QGBA::AboutScreen</name>
     <message>
         <location filename="../AboutScreen.ui" line="14"/>
@@ -11,7 +62,7 @@
     <message>
         <location filename="../AboutScreen.ui" line="23"/>
         <source>&lt;a href=&quot;http://mgba.io/&quot;&gt;Website&lt;/a&gt; • &lt;a href=&quot;https://forums.mgba.io/&quot;&gt;Forums / Support&lt;/a&gt; • &lt;a href=&quot;https://patreon.com/mgba&quot;&gt;Donate&lt;/a&gt; • &lt;a href=&quot;https://github.com/mgba-emu/mgba/tree/{gitBranch}&quot;&gt;Source&lt;/a&gt;</source>
-        <translation>&lt;a href=&quot;http://mgba.io/&quot;&gt;Nettside&lt;/a&gt; • &lt;a href=&quot;https://forums.mgba.io/&quot;&gt;Forum / støtte&lt;/a&gt; • &lt;a href=&quot;https://patreon.com/mgba&quot;&gt;Doner&lt;/a&gt; • &lt;a href=&quot;https://github.com/mgba-emu/mgba/tree/{gitBranch}&quot;&gt;Kildekode&lt;/a&gt;</translation>
+        <translation>&lt;a href=&quot;https://mgba.io/&quot;&gt;Nettside&lt;/a&gt; • &lt;a href=&quot;https://forums.mgba.io/&quot;&gt;Forum / støtte&lt;/a&gt; • &lt;a href=&quot;https://patreon.com/mgba&quot;&gt;Doner&lt;/a&gt; • &lt;a href=&quot;https://github.com/mgba-emu/mgba/tree/{gitBranch}&quot;&gt;Kildekode&lt;/a&gt;</translation>
     </message>
     <message>
         <location filename="../AboutScreen.ui" line="41"/>
@@ -41,13 +92,14 @@ Game Boy Advance er et registrert varemerke tilhørende Nintendo Co., Ltd.</tran
     <message>
         <location filename="../ApplicationUpdatePrompt.ui" line="14"/>
         <source>An update is available</source>
-        <translation type="unfinished"></translation>
+        <translation>En oppdatering er tilgjengelig</translation>
     </message>
     <message>
         <location filename="../ApplicationUpdatePrompt.cpp" line="26"/>
         <source>An update to %1 is available.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>En oppdatering til %1 er tilgjengelig.
+</translation>
     </message>
     <message>
         <location filename="../ApplicationUpdatePrompt.cpp" line="38"/>
@@ -73,40 +125,40 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ApplicationUpdatePrompt.cpp" line="63"/>
         <source>Downloading update...</source>
-        <translation type="unfinished">Laster ned ny versjon …</translation>
+        <translation>Laster ned oppdatering …</translation>
     </message>
     <message>
         <location filename="../ApplicationUpdatePrompt.cpp" line="79"/>
         <source>Downloading failed. Please update manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedlastingen mislyktes. Vennligst oppdater manuelt.</translation>
     </message>
     <message>
         <location filename="../ApplicationUpdatePrompt.cpp" line="82"/>
         <source>Downloading done. Press OK to restart %1 and install the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedlastingen er fullført. Trykk OK for å starte %1 på nytt og installere oppdateringen.</translation>
     </message>
 </context>
 <context>
     <name>QGBA::ApplicationUpdater</name>
     <message>
-        <location filename="../ApplicationUpdater.cpp" line="88"/>
+        <location filename="../ApplicationUpdater.cpp" line="90"/>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../ApplicationUpdater.cpp" line="91"/>
-        <source>Development</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabil</translation>
     </message>
     <message>
         <location filename="../ApplicationUpdater.cpp" line="93"/>
-        <source>Unknown</source>
-        <translation type="unfinished">Ukjent</translation>
+        <source>Development</source>
+        <translation>Utvikling</translation>
     </message>
     <message>
-        <location filename="../ApplicationUpdater.cpp" line="224"/>
+        <location filename="../ApplicationUpdater.cpp" line="95"/>
+        <source>Unknown</source>
+        <translation>Ukjent</translation>
+    </message>
+    <message>
+        <location filename="../ApplicationUpdater.cpp" line="236"/>
         <source>(None)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Ingen)</translation>
     </message>
 </context>
 <context>
@@ -114,12 +166,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ArchiveInspector.ui" line="14"/>
         <source>Open in archive...</source>
-        <translation type="unfinished">Åpne i arkiv …</translation>
+        <translation>Åpne i arkiv …</translation>
     </message>
     <message>
         <location filename="../ArchiveInspector.ui" line="20"/>
         <source>Loading...</source>
-        <translation type="unfinished">Laster inn …</translation>
+        <translation>Laster inn ...</translation>
     </message>
 </context>
 <context>
@@ -165,17 +217,17 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::AudioDevice</name>
     <message>
-        <location filename="../AudioDevice.cpp" line="26"/>
+        <location filename="../AudioDevice.cpp" line="34"/>
         <source>Can&apos;t set format of context-less audio device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../AudioDevice.cpp" line="44"/>
+        <location filename="../AudioDevice.cpp" line="55"/>
         <source>Audio device is missing its core</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../AudioDevice.cpp" line="62"/>
+        <location filename="../AudioDevice.cpp" line="83"/>
         <source>Writing data to read-only audio device</source>
         <translation>Skriver data til skrivebeskyttet lydenhet</translation>
     </message>
@@ -183,7 +235,7 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::AudioProcessorQt</name>
     <message>
-        <location filename="../AudioProcessorQt.cpp" line="43"/>
+        <location filename="../AudioProcessorQt.cpp" line="56"/>
         <source>Can&apos;t start an audio processor without input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -193,6 +245,52 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../AudioProcessorSDL.cpp" line="34"/>
         <source>Can&apos;t start an audio processor without input</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::AutorunScriptModel</name>
+    <message>
+        <location filename="../scripting/AutorunScriptModel.cpp" line="26"/>
+        <source>Could not load autorun script settings: unknown script info format %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::AutorunScriptView</name>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="14"/>
+        <source>Autorun scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="20"/>
+        <source>Add</source>
+        <translation type="unfinished">Legg til</translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="30"/>
+        <source>Remove</source>
+        <translation type="unfinished">Fjern</translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="53"/>
+        <source>Move up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="63"/>
+        <source>Move down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.ui" line="73"/>
+        <source>Run scripts when starting a game</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/AutorunScriptView.cpp" line="28"/>
+        <source>Select a script</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -221,7 +319,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../BattleChipView.ui" line="94"/>
         <source>Load</source>
-        <translation type="unfinished">Last inn</translation>
+        <translation>Last inn</translation>
     </message>
     <message>
         <location filename="../BattleChipView.ui" line="114"/>
@@ -241,7 +339,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../BattleChipView.ui" line="180"/>
         <source>Inserted</source>
-        <translation type="unfinished"></translation>
+        <translation>Satt inn</translation>
     </message>
     <message>
         <location filename="../BattleChipView.ui" line="194"/>
@@ -259,28 +357,28 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Vis avanserte innstillinger</translation>
     </message>
     <message>
-        <location filename="../BattleChipView.cpp" line="117"/>
+        <location filename="../BattleChipView.cpp" line="115"/>
         <source>BattleChip data missing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../BattleChipView.cpp" line="118"/>
+        <location filename="../BattleChipView.cpp" line="116"/>
         <source>BattleChip data is missing. BattleChip Gates will still work, but some graphics will be missing. Would you like to download the data now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../BattleChipView.cpp" line="184"/>
-        <location filename="../BattleChipView.cpp" line="203"/>
+        <location filename="../BattleChipView.cpp" line="182"/>
+        <location filename="../BattleChipView.cpp" line="201"/>
         <source>Select deck file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../BattleChipView.cpp" line="215"/>
+        <location filename="../BattleChipView.cpp" line="213"/>
         <source>Incompatible deck</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../BattleChipView.cpp" line="216"/>
+        <location filename="../BattleChipView.cpp" line="214"/>
         <source>The selected deck is not compatible with this Chip Gate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -290,7 +388,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../CheatsModel.cpp" line="53"/>
         <source>(untitled)</source>
-        <translation type="unfinished"></translation>
+        <translation>(uten tittel)</translation>
     </message>
     <message>
         <location filename="../CheatsModel.cpp" line="211"/>
@@ -308,7 +406,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../CheatsView.ui" line="39"/>
         <source>Add New Code</source>
-        <translation type="unfinished"></translation>
+        <translation>Legg til ny kode</translation>
     </message>
     <message>
         <location filename="../CheatsView.ui" line="60"/>
@@ -318,12 +416,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../CheatsView.ui" line="93"/>
         <source>Add Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Legg til linjer</translation>
     </message>
     <message>
         <location filename="../CheatsView.ui" line="100"/>
         <source>Code type</source>
-        <translation type="unfinished"></translation>
+        <translation>Kodetype</translation>
     </message>
     <message>
         <location filename="../CheatsView.ui" line="53"/>
@@ -341,19 +439,19 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Skriv inn koder her …</translation>
     </message>
     <message>
-        <location filename="../CheatsView.cpp" line="50"/>
-        <location filename="../CheatsView.cpp" line="58"/>
+        <location filename="../CheatsView.cpp" line="49"/>
+        <location filename="../CheatsView.cpp" line="57"/>
         <source>Autodetect (recommended)</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-oppdag (anbefales)</translation>
     </message>
     <message>
-        <location filename="../CheatsView.cpp" line="88"/>
-        <location filename="../CheatsView.cpp" line="95"/>
+        <location filename="../CheatsView.cpp" line="87"/>
+        <location filename="../CheatsView.cpp" line="94"/>
         <source>Select cheats file</source>
-        <translation type="unfinished">Velg juksekodefil</translation>
+        <translation>Velg juksekodefil</translation>
     </message>
     <message>
-        <location filename="../CheatsView.cpp" line="187"/>
+        <location filename="../CheatsView.cpp" line="186"/>
         <source>Some cheats could not be added. Please ensure they&apos;re formatted correctly and/or try other cheat types.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -361,48 +459,48 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::CoreController</name>
     <message>
-        <location filename="../CoreController.cpp" line="99"/>
+        <location filename="../CoreController.cpp" line="104"/>
         <source>Reset r%1-%2 %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="505"/>
-        <location filename="../CoreController.cpp" line="525"/>
+        <location filename="../CoreController.cpp" line="552"/>
+        <location filename="../CoreController.cpp" line="569"/>
         <source>Rewinding not currently enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="568"/>
+        <location filename="../CoreController.cpp" line="608"/>
         <source>Reset the game?</source>
-        <translation type="unfinished"></translation>
+        <translation>Vil du starte spillet på nytt?</translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="569"/>
+        <location filename="../CoreController.cpp" line="609"/>
         <source>Most games will require a reset to load the new save. Do you want to reset now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="784"/>
+        <location filename="../CoreController.cpp" line="827"/>
         <source>Failed to open save file: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="830"/>
+        <location filename="../CoreController.cpp" line="885"/>
         <source>Failed to open game file: %1</source>
         <translation>Klarte ikke å åpne spillfil: %1</translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="859"/>
+        <location filename="../CoreController.cpp" line="915"/>
         <source>Can&apos;t yank pack in unexpected platform!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="970"/>
+        <location filename="../CoreController.cpp" line="1030"/>
         <source>Failed to open snapshot file for reading: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreController.cpp" line="987"/>
+        <location filename="../CoreController.cpp" line="1047"/>
         <source>Failed to open snapshot file for writing: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -410,17 +508,17 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::CoreManager</name>
     <message>
-        <location filename="../CoreManager.cpp" line="55"/>
+        <location filename="../CoreManager.cpp" line="52"/>
         <source>Failed to open game file: %1</source>
         <translation>Klarte ikke å åpne spillfil: %1</translation>
     </message>
     <message>
-        <location filename="../CoreManager.cpp" line="91"/>
+        <location filename="../CoreManager.cpp" line="90"/>
         <source>Could not load game. Are you sure it&apos;s in the correct format?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../CoreManager.cpp" line="118"/>
+        <location filename="../CoreManager.cpp" line="117"/>
         <source>Failed to open save file; in-game saves cannot be updated. Please ensure the save directory is writable without additional privileges (e.g. UAC on Windows).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -440,14 +538,22 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../DebuggerConsole.ui" line="27"/>
         <source>Break</source>
-        <translation type="unfinished"></translation>
+        <translation>Stopp</translation>
     </message>
 </context>
 <context>
     <name>QGBA::DebuggerConsoleController</name>
     <message>
-        <location filename="../DebuggerConsoleController.cpp" line="171"/>
+        <location filename="../DebuggerConsoleController.cpp" line="176"/>
         <source>Could not open CLI history for writing</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::DisplayGL</name>
+    <message>
+        <location filename="../DisplayGL.cpp" line="313"/>
+        <source>Failed to create an OpenGL 3 context, trying old-style...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -491,12 +597,206 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../DolphinConnector.cpp" line="57"/>
         <source>Couldn&apos;t Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke koble til</translation>
     </message>
     <message>
         <location filename="../DolphinConnector.cpp" line="58"/>
         <source>Could not connect to Dolphin.</source>
+        <translation>Klarte ikke å koble til Dolphin.</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::ForwarderGenerator</name>
+    <message>
+        <location filename="../ForwarderGenerator.cpp" line="83"/>
+        <source>3DS</source>
+        <translation>3DS</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderGenerator.cpp" line="85"/>
+        <source>Vita</source>
+        <translation>Vita</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::ForwarderGenerator3DS</name>
+    <message>
+        <location filename="../ForwarderGenerator3DS.cpp" line="29"/>
+        <source>Icon</source>
+        <translation>Ikon</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderGenerator3DS.cpp" line="30"/>
+        <source>Banner</source>
+        <translation>Plakat</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::ForwarderGeneratorVita</name>
+    <message>
+        <location filename="../ForwarderGeneratorVita.cpp" line="25"/>
+        <source>Bubble</source>
+        <translation>Boble</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderGeneratorVita.cpp" line="26"/>
+        <source>Background</source>
+        <translation>Bakgrunn</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderGeneratorVita.cpp" line="27"/>
+        <source>Startup</source>
+        <translation>Oppstart</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::ForwarderView</name>
+    <message>
+        <location filename="../ForwarderView.ui" line="14"/>
+        <source>Create forwarder</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="20"/>
+        <source>Files</source>
+        <translation>Filer</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="26"/>
+        <source>ROM file:</source>
+        <translation>ROM-fil:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="36"/>
+        <location filename="../ForwarderView.ui" line="53"/>
+        <location filename="../ForwarderView.ui" line="112"/>
+        <source>Browse</source>
+        <translation>Bla</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="43"/>
+        <source>Output filename:</source>
+        <translation>Utdata-filnavn:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="60"/>
+        <source>Forwarder base:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="74"/>
+        <source>Latest stable version</source>
+        <translation>Nyeste stabile versjon</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="79"/>
+        <source>Latest development build</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="84"/>
+        <source>Specific file</source>
+        <translation>Spesifikk fil</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="95"/>
+        <source>Base file:</source>
+        <translation>Grunnfil:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="135"/>
+        <source>System</source>
+        <translation>System</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="141"/>
+        <source>3DS</source>
+        <translation>3DS</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="151"/>
+        <source>Vita</source>
+        <translation>Vita</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="174"/>
+        <source>Presentation</source>
+        <translation>Presentasjon</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="182"/>
+        <source>Title:</source>
+        <translation>Tittel:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="195"/>
+        <source>Images:</source>
+        <translation>Bilder:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="215"/>
+        <source>Use default image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="328"/>
+        <source>Preferred size:</source>
+        <translation>Ønsket størrelse:</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.ui" line="395"/>
+        <source>Select image file</source>
+        <translation>Velg bildefil</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="22"/>
+        <source>Select ROM file</source>
+        <translation>Velg ROM-fil</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="23"/>
+        <source>Select output filename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="24"/>
+        <source>Select base file</source>
+        <translation>Velg grunnfil</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="36"/>
+        <source>Build finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="37"/>
+        <source>Forwarder finished building</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="44"/>
+        <source>Build failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="45"/>
+        <source>Failed to build forwarder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="176"/>
+        <source>%1 installable package (*.%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="192"/>
+        <source>Select an image</source>
+        <translation>Velg et bilde</translation>
+    </message>
+    <message>
+        <location filename="../ForwarderView.cpp" line="192"/>
+        <source>Image files (*.png *.jpg *.bmp)</source>
+        <translation>Bildefiler (*.png *.jpg *.bmp)</translation>
     </message>
 </context>
 <context>
@@ -519,7 +819,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../FrameView.ui" line="84"/>
         <source>Backdrop color</source>
-        <translation type="unfinished"></translation>
+        <translation>Bakgrunnsfarge</translation>
     </message>
     <message>
         <location filename="../FrameView.ui" line="132"/>
@@ -537,52 +837,52 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Tilbakestill</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="578"/>
+        <location filename="../FrameView.cpp" line="591"/>
         <source>Export frame</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="579"/>
+        <location filename="../FrameView.cpp" line="592"/>
         <source>Portable Network Graphics (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Portable Network Graphics (*.png)</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="600"/>
+        <location filename="../FrameView.cpp" line="622"/>
         <source>None</source>
         <translation>Ingen</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="602"/>
+        <location filename="../FrameView.cpp" line="624"/>
         <source>Background</source>
         <translation>Bakgrunn</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="605"/>
+        <location filename="../FrameView.cpp" line="627"/>
         <source>Window</source>
         <translation>Vindu</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="608"/>
+        <location filename="../FrameView.cpp" line="630"/>
         <source>Objwin</source>
-        <translation type="unfinished"></translation>
+        <translation>Objwin</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="613"/>
+        <location filename="../FrameView.cpp" line="635"/>
         <source>Sprite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="616"/>
+        <location filename="../FrameView.cpp" line="638"/>
         <source>Backdrop</source>
-        <translation type="unfinished"></translation>
+        <translation>Bakgrunn</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="619"/>
+        <location filename="../FrameView.cpp" line="641"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Ramme</translation>
     </message>
     <message>
-        <location filename="../FrameView.cpp" line="625"/>
+        <location filename="../FrameView.cpp" line="647"/>
         <source>%1 %2</source>
         <translation>%1 %2</translation>
     </message>
@@ -590,7 +890,7 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::GBAApp</name>
     <message>
-        <location filename="../GBAApp.cpp" line="73"/>
+        <location filename="../GBAApp.cpp" line="79"/>
         <source>Enable Discord Rich Presence</source>
         <translation type="unfinished"></translation>
     </message>
@@ -598,24 +898,24 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::GBAKeyEditor</name>
     <message>
-        <location filename="../GBAKeyEditor.cpp" line="67"/>
+        <location filename="../GBAKeyEditor.cpp" line="69"/>
         <source>Clear Button</source>
-        <translation type="unfinished"></translation>
+        <translation>Tøm knapper</translation>
     </message>
     <message>
-        <location filename="../GBAKeyEditor.cpp" line="79"/>
+        <location filename="../GBAKeyEditor.cpp" line="81"/>
         <source>Clear Analog</source>
-        <translation type="unfinished"></translation>
+        <translation>Tøm analoge</translation>
     </message>
     <message>
-        <location filename="../GBAKeyEditor.cpp" line="90"/>
+        <location filename="../GBAKeyEditor.cpp" line="92"/>
         <source>Refresh</source>
         <translation>Gjenoppfrisk</translation>
     </message>
     <message>
-        <location filename="../GBAKeyEditor.cpp" line="100"/>
+        <location filename="../GBAKeyEditor.cpp" line="102"/>
         <source>Set all</source>
-        <translation type="unfinished"></translation>
+        <translation>Sett alle</translation>
     </message>
 </context>
 <context>
@@ -633,7 +933,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../GDBWindow.cpp" line="39"/>
         <source>Bind address</source>
-        <translation type="unfinished"></translation>
+        <translation>Bindingsadresse</translation>
     </message>
     <message>
         <location filename="../GDBWindow.cpp" line="52"/>
@@ -643,7 +943,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../GDBWindow.cpp" line="63"/>
         <source>Standard GDB</source>
-        <translation type="unfinished"></translation>
+        <translation>Standard GDB</translation>
     </message>
     <message>
         <location filename="../GDBWindow.cpp" line="68"/>
@@ -658,7 +958,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../GDBWindow.cpp" line="82"/>
         <source>Break</source>
-        <translation type="unfinished"></translation>
+        <translation>Stopp</translation>
     </message>
     <message>
         <location filename="../GDBWindow.cpp" line="124"/>
@@ -729,17 +1029,17 @@ Nedlastningsstørrelse: %3</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../GIFView.cpp" line="61"/>
+        <location filename="../GIFView.cpp" line="63"/>
         <source>Failed to open output file: %1</source>
         <translation>Klarte ikke å åpne utdatafil: %1</translation>
     </message>
     <message>
-        <location filename="../GIFView.cpp" line="88"/>
+        <location filename="../GIFView.cpp" line="90"/>
         <source>Select output file</source>
         <translation>Velg utdatafil</translation>
     </message>
     <message>
-        <location filename="../GIFView.cpp" line="88"/>
+        <location filename="../GIFView.cpp" line="90"/>
         <source>Graphics Interchange Format (*.gif);;WebP ( *.webp);;Animated Portable Network Graphics (*.png *.apng)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -747,149 +1047,79 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::GameBoy</name>
     <message>
-        <location filename="../GameBoy.cpp" line="55"/>
-        <location filename="../GameBoy.cpp" line="74"/>
+        <location filename="../GameBoy.cpp" line="62"/>
+        <location filename="../GameBoy.cpp" line="81"/>
         <source>Autodetect</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-oppdag</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="56"/>
+        <location filename="../GameBoy.cpp" line="63"/>
         <source>Game Boy (DMG)</source>
         <translation>Game Boy (DMG)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="57"/>
+        <location filename="../GameBoy.cpp" line="64"/>
         <source>Game Boy Pocket (MGB)</source>
         <translation>Game Boy Pocket (MGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="58"/>
+        <location filename="../GameBoy.cpp" line="65"/>
         <source>Super Game Boy (SGB)</source>
         <translation>Super Game Boy (SGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="59"/>
+        <location filename="../GameBoy.cpp" line="66"/>
         <source>Super Game Boy 2 (SGB)</source>
         <translation>Super Game Boy 2 (SGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="60"/>
+        <location filename="../GameBoy.cpp" line="67"/>
         <source>Game Boy Color (CGB)</source>
         <translation>Game Boy Color (CGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="61"/>
+        <location filename="../GameBoy.cpp" line="68"/>
         <source>Game Boy Advance (AGB)</source>
         <translation>Game Boy Advance (AGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="62"/>
+        <location filename="../GameBoy.cpp" line="69"/>
         <source>Super Game Boy Color (SGB + CGB)</source>
         <translation>Super Game Boy Color (SGB + CGB)</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="75"/>
+        <location filename="../GameBoy.cpp" line="82"/>
         <source>ROM Only</source>
         <translation>Kun ROM</translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="76"/>
-        <source>MBC1</source>
-        <translation>MBC1</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="77"/>
-        <source>MBC2</source>
-        <translation>MBC2</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="78"/>
-        <source>MBC3</source>
-        <translation>MBC3</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="79"/>
-        <source>MBC3 + RTC</source>
-        <translation>MBC3 + RTC</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="80"/>
-        <source>MBC5</source>
-        <translation>MBC5</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="81"/>
-        <source>MBC5 + Rumble</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="82"/>
-        <source>MBC6</source>
-        <translation>MBC6</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="83"/>
-        <source>MBC7 (Tilt)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="84"/>
-        <source>MMM01</source>
-        <translation>MMM01</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="85"/>
-        <source>HuC-1</source>
-        <translation>HuC-1</translation>
-    </message>
-    <message>
         <location filename="../GameBoy.cpp" line="86"/>
-        <source>HuC-3</source>
-        <translation>HuC-3</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="87"/>
-        <source>Pocket Cam</source>
+        <source>%1 + RTC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../GameBoy.cpp" line="88"/>
-        <source>TAMA5</source>
-        <translation>TAMA5</translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="89"/>
-        <source>Wisdom Tree</source>
+        <source>%1 + Rumble</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../GameBoy.cpp" line="90"/>
-        <source>NT (new)</source>
+        <source>%1 (Tilt)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="91"/>
-        <source>Pokémon Jade/Diamond</source>
+        <location filename="../GameBoy.cpp" line="98"/>
+        <source>%1 (old 1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="92"/>
-        <source>BBD</source>
+        <location filename="../GameBoy.cpp" line="99"/>
+        <source>%1 (old 2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../GameBoy.cpp" line="93"/>
-        <source>Hitek</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="94"/>
-        <source>Sachen (MMC1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../GameBoy.cpp" line="95"/>
-        <source>Sachen (MMC2)</source>
+        <location filename="../GameBoy.cpp" line="100"/>
+        <source>%1 (new)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -898,12 +1128,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.ui" line="14"/>
         <source>I/O Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O-visning</translation>
     </message>
     <message>
         <location filename="../IOViewer.ui" line="26"/>
         <source>0x0000</source>
-        <translation type="unfinished"></translation>
+        <translation>0x0000</translation>
     </message>
     <message>
         <location filename="../IOViewer.ui" line="367"/>
@@ -975,37 +1205,37 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="54"/>
         <source>Enable background 0</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på bakgrunn 0</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="55"/>
         <source>Enable background 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på bakgrunn 1</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="56"/>
         <source>Enable background 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på bakgrunn 2</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="57"/>
         <source>Enable background 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på bakgrunn 3</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="58"/>
         <source>Enable OBJ</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på OBJ</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="59"/>
         <source>Enable Window 0</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på vindu 1</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="60"/>
         <source>Enable Window 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på vindu 1</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="61"/>
@@ -1015,17 +1245,17 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="69"/>
         <source>Currently in VBlank</source>
-        <translation type="unfinished"></translation>
+        <translation>For øyeblikket i VBlank</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="70"/>
         <source>Currently in HBlank</source>
-        <translation type="unfinished"></translation>
+        <translation>For øyeblikket i HBlank</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="71"/>
         <source>Currently in VCounter</source>
-        <translation type="unfinished"></translation>
+        <translation>For øyeblikket i VCounter</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="72"/>
@@ -1074,7 +1304,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="103"/>
         <location filename="../IOViewer.cpp" line="113"/>
         <source>Enable mosaic</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på flislegging</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="86"/>
@@ -1082,7 +1312,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="104"/>
         <location filename="../IOViewer.cpp" line="114"/>
         <source>Enable 256-color</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på 256-fargemodus</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="87"/>
@@ -1372,7 +1602,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="294"/>
         <source>Blend mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Blendmodus</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="295"/>
@@ -1505,7 +1735,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1135"/>
         <location filename="../IOViewer.cpp" line="1184"/>
         <source>Initial volume</source>
-        <translation type="unfinished"></translation>
+        <translation>Volum ved begynnelse</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="342"/>
@@ -1564,28 +1794,28 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="376"/>
         <location filename="../IOViewer.cpp" line="1158"/>
         <source>0%</source>
-        <translation type="unfinished">0%</translation>
+        <translation>0 %</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="377"/>
         <location filename="../IOViewer.cpp" line="434"/>
         <location filename="../IOViewer.cpp" line="1159"/>
         <source>100%</source>
-        <translation type="unfinished">100%</translation>
+        <translation>100%</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="378"/>
         <location filename="../IOViewer.cpp" line="433"/>
         <location filename="../IOViewer.cpp" line="1160"/>
         <source>50%</source>
-        <translation type="unfinished">50%</translation>
+        <translation>50%</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="379"/>
         <location filename="../IOViewer.cpp" line="432"/>
         <location filename="../IOViewer.cpp" line="1161"/>
         <source>25%</source>
-        <translation type="unfinished">25%</translation>
+        <translation>25%</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="380"/>
@@ -1593,7 +1823,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="382"/>
         <location filename="../IOViewer.cpp" line="383"/>
         <source>75%</source>
-        <translation type="unfinished">75%</translation>
+        <translation>75%</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="405"/>
@@ -1611,13 +1841,13 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="407"/>
         <location filename="../IOViewer.cpp" line="1190"/>
         <source>15</source>
-        <translation type="unfinished">15</translation>
+        <translation>15</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="408"/>
         <location filename="../IOViewer.cpp" line="1191"/>
         <source>7</source>
-        <translation type="unfinished">7</translation>
+        <translation>7</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="410"/>
@@ -1639,49 +1869,49 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="420"/>
         <location filename="../IOViewer.cpp" line="1209"/>
         <source>Enable channel 1 right</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 1 høyre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="421"/>
         <location filename="../IOViewer.cpp" line="1210"/>
         <source>Enable channel 2 right</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 2 høyre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="422"/>
         <location filename="../IOViewer.cpp" line="1211"/>
         <source>Enable channel 3 right</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 3 høyre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="423"/>
         <location filename="../IOViewer.cpp" line="1212"/>
         <source>Enable channel 4 right</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 4 høyre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="424"/>
         <location filename="../IOViewer.cpp" line="1213"/>
         <source>Enable channel 1 left</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 1 venstre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="425"/>
         <location filename="../IOViewer.cpp" line="1214"/>
         <source>Enable channel 2 left</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 2 venstre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="426"/>
         <location filename="../IOViewer.cpp" line="1215"/>
         <source>Enable channel 3 left</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 3 venstre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="427"/>
         <location filename="../IOViewer.cpp" line="1216"/>
         <source>Enable channel 4 left</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på kanal 4 venstre</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="431"/>
@@ -1717,7 +1947,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="442"/>
         <location filename="../IOViewer.cpp" line="449"/>
         <source>0</source>
-        <translation type="unfinished">0</translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="443"/>
@@ -1730,7 +1960,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1002"/>
         <location filename="../IOViewer.cpp" line="1012"/>
         <source>1</source>
-        <translation type="unfinished">1</translation>
+        <translation>1</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="445"/>
@@ -1900,22 +2130,22 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1034"/>
         <source>Right/A</source>
-        <translation type="unfinished"></translation>
+        <translation>Høyre/A</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1035"/>
         <source>Left/B</source>
-        <translation type="unfinished"></translation>
+        <translation>Venstre/B</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1036"/>
         <source>Up/Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Opp/Select</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1037"/>
         <source>Down/Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Ned/Start</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1038"/>
@@ -1925,7 +2155,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1039"/>
         <source>Active face buttons</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på hovedknappene</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1047"/>
@@ -1945,12 +2175,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1067"/>
         <source>Divider</source>
-        <translation type="unfinished"></translation>
+        <translation>Skillelinje</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1069"/>
         <source>1/16</source>
-        <translation type="unfinished">1/16</translation>
+        <translation>1/16</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1092"/>
@@ -1974,7 +2204,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1095"/>
         <location filename="../IOViewer.cpp" line="1556"/>
         <source>Joypad</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroller</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1116"/>
@@ -2034,13 +2264,13 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1330"/>
         <location filename="../IOViewer.cpp" line="1339"/>
         <source>0x9800 – 0x9BFF</source>
-        <translation type="unfinished"></translation>
+        <translation>0x9800 – 0x9BFF</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1331"/>
         <location filename="../IOViewer.cpp" line="1340"/>
         <source>0x9C00 – 0x9FFF</source>
-        <translation type="unfinished"></translation>
+        <translation>0x9C00 – 0x9FFF</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1333"/>
@@ -2050,12 +2280,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1334"/>
         <source>0x8800 – 0x87FF</source>
-        <translation type="unfinished"></translation>
+        <translation>0x8800 – 0x87FF</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1335"/>
         <source>0x8000 – 0x8FFF</source>
-        <translation type="unfinished"></translation>
+        <translation>0x8000 – 0x8FFF</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1337"/>
@@ -2080,12 +2310,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1347"/>
         <source>0: HBlank</source>
-        <translation type="unfinished"></translation>
+        <translation>0: HBlank</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1348"/>
         <source>1: VBlank</source>
-        <translation type="unfinished"></translation>
+        <translation>1: VBlank</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1349"/>
@@ -2242,7 +2472,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1498"/>
         <location filename="../IOViewer.cpp" line="1510"/>
         <source>Red</source>
-        <translation type="unfinished">Rød</translation>
+        <translation>Rød</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1499"/>
@@ -2280,7 +2510,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1530"/>
         <source>WRAM bank</source>
-        <translation type="unfinished"></translation>
+        <translation>WRAM-bank</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="577"/>
@@ -2332,7 +2562,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="719"/>
         <location filename="../IOViewer.cpp" line="725"/>
         <source>Fixed</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastsatt</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="585"/>
@@ -2381,7 +2611,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="732"/>
         <location filename="../IOViewer.cpp" line="1442"/>
         <source>Immediate</source>
-        <translation type="unfinished"></translation>
+        <translation>Umiddelbart</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="597"/>
@@ -2417,7 +2647,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="832"/>
         <location filename="../IOViewer.cpp" line="892"/>
         <source>IRQ</source>
-        <translation type="unfinished"></translation>
+        <translation>IRQ</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="602"/>
@@ -2444,7 +2674,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="726"/>
         <source>Video Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Videoopptak</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="728"/>
@@ -2478,7 +2708,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="827"/>
         <location filename="../IOViewer.cpp" line="1070"/>
         <source>1/64</source>
-        <translation type="unfinished">1/64</translation>
+        <translation>1/64</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="781"/>
@@ -2487,7 +2717,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="828"/>
         <location filename="../IOViewer.cpp" line="1071"/>
         <source>1/256</source>
-        <translation type="unfinished">1/256</translation>
+        <translation>1/256</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="782"/>
@@ -2496,14 +2726,14 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="829"/>
         <location filename="../IOViewer.cpp" line="1068"/>
         <source>1/1024</source>
-        <translation type="unfinished">1/1024</translation>
+        <translation>1/1024</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="799"/>
         <location filename="../IOViewer.cpp" line="815"/>
         <location filename="../IOViewer.cpp" line="831"/>
         <source>Cascade</source>
-        <translation type="unfinished"></translation>
+        <translation>Cascade</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="869"/>
@@ -2567,22 +2797,22 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="897"/>
         <source>SC</source>
-        <translation type="unfinished"></translation>
+        <translation>SC</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="898"/>
         <source>SD</source>
-        <translation type="unfinished"></translation>
+        <translation>SD</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="899"/>
         <source>SI</source>
-        <translation type="unfinished"></translation>
+        <translation>SI</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="900"/>
         <source>SO</source>
-        <translation type="unfinished"></translation>
+        <translation>SO</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="946"/>
@@ -2618,43 +2848,43 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="951"/>
         <location filename="../IOViewer.cpp" line="968"/>
         <source>SIO</source>
-        <translation type="unfinished"></translation>
+        <translation>SIO</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="952"/>
         <location filename="../IOViewer.cpp" line="969"/>
         <source>DMA 0</source>
-        <translation type="unfinished"></translation>
+        <translation>DMA 0</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="953"/>
         <location filename="../IOViewer.cpp" line="970"/>
         <source>DMA 1</source>
-        <translation type="unfinished"></translation>
+        <translation>DMA 1</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="954"/>
         <location filename="../IOViewer.cpp" line="971"/>
         <source>DMA 2</source>
-        <translation type="unfinished"></translation>
+        <translation>DMA 2</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="955"/>
         <location filename="../IOViewer.cpp" line="972"/>
         <source>DMA 3</source>
-        <translation type="unfinished"></translation>
+        <translation>DMA 3</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="956"/>
         <location filename="../IOViewer.cpp" line="973"/>
         <source>Keypad</source>
-        <translation type="unfinished"></translation>
+        <translation>Talltastatur</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="957"/>
         <location filename="../IOViewer.cpp" line="974"/>
         <source>Gamepak</source>
-        <translation type="unfinished"></translation>
+        <translation>Spillkassett</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="978"/>
@@ -2668,7 +2898,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1001"/>
         <location filename="../IOViewer.cpp" line="1005"/>
         <source>4</source>
-        <translation type="unfinished">4</translation>
+        <translation>4</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="980"/>
@@ -2676,7 +2906,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="996"/>
         <location filename="../IOViewer.cpp" line="1006"/>
         <source>3</source>
-        <translation type="unfinished">3</translation>
+        <translation>3</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="981"/>
@@ -2685,7 +2915,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="997"/>
         <location filename="../IOViewer.cpp" line="1007"/>
         <source>2</source>
-        <translation type="unfinished">2</translation>
+        <translation>2</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="982"/>
@@ -2694,7 +2924,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../IOViewer.cpp" line="1008"/>
         <location filename="../IOViewer.cpp" line="1011"/>
         <source>8</source>
-        <translation type="unfinished">8</translation>
+        <translation>8</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="984"/>
@@ -2729,7 +2959,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1014"/>
         <source>PHI terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>PHI-terminal</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1015"/>
@@ -2740,17 +2970,17 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../IOViewer.cpp" line="1016"/>
         <source>4.19MHz</source>
-        <translation type="unfinished"></translation>
+        <translation>4,19MHz</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1017"/>
         <source>8.38MHz</source>
-        <translation type="unfinished"></translation>
+        <translation>8,38MHz</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1018"/>
         <source>16.78MHz</source>
-        <translation type="unfinished"></translation>
+        <translation>16,78MHz</translation>
     </message>
     <message>
         <location filename="../IOViewer.cpp" line="1020"/>
@@ -2766,53 +2996,10 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::KeyEditor</name>
     <message>
-        <location filename="../KeyEditor.cpp" line="34"/>
-        <location filename="../KeyEditor.cpp" line="240"/>
+        <location filename="../KeyEditor.cpp" line="45"/>
+        <location filename="../KeyEditor.cpp" line="206"/>
         <source>---</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../KeyEditor.cpp" line="53"/>
-        <source>Super (L)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../KeyEditor.cpp" line="56"/>
-        <source>Super (R)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../KeyEditor.cpp" line="59"/>
-        <source>Menu</source>
-        <translation>Meny</translation>
-    </message>
-</context>
-<context>
-    <name>QGBA::LibraryTree</name>
-    <message>
-        <location filename="../library/LibraryTree.cpp" line="51"/>
-        <source>Name</source>
-        <translation>Navn</translation>
-    </message>
-    <message>
-        <location filename="../library/LibraryTree.cpp" line="52"/>
-        <source>Location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../library/LibraryTree.cpp" line="53"/>
-        <source>Platform</source>
-        <translation>Plattform</translation>
-    </message>
-    <message>
-        <location filename="../library/LibraryTree.cpp" line="54"/>
-        <source>Size</source>
-        <translation>Størrelse</translation>
-    </message>
-    <message>
-        <location filename="../library/LibraryTree.cpp" line="55"/>
-        <source>CRC32</source>
-        <translation type="unfinished"></translation>
+        <translation>---</translation>
     </message>
 </context>
 <context>
@@ -2834,7 +3021,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../LoadSaveState.ui" line="217"/>
         <location filename="../LoadSaveState.ui" line="239"/>
         <source>No Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen lagrefil</translation>
     </message>
     <message>
         <location filename="../LoadSaveState.ui" line="50"/>
@@ -2889,12 +3076,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LoadSaveState.cpp" line="75"/>
         <source>Load State</source>
-        <translation type="unfinished"></translation>
+        <translation>Last inn tilstand</translation>
     </message>
     <message>
         <location filename="../LoadSaveState.cpp" line="75"/>
         <source>Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagre tilstand</translation>
     </message>
     <message>
         <location filename="../LoadSaveState.cpp" line="184"/>
@@ -2907,7 +3094,7 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Skadet</translation>
     </message>
     <message>
-        <location filename="../LoadSaveState.cpp" line="222"/>
+        <location filename="../LoadSaveState.cpp" line="228"/>
         <source>Slot %1</source>
         <translation>Plass %1</translation>
     </message>
@@ -2948,58 +3135,58 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LogConfigModel.cpp" line="102"/>
         <source>Stub</source>
-        <translation type="unfinished"></translation>
+        <translation>Stump</translation>
     </message>
     <message>
         <location filename="../LogConfigModel.cpp" line="104"/>
         <source>Game Error</source>
-        <translation type="unfinished">Spillfeil</translation>
+        <translation>Spillfeil</translation>
     </message>
 </context>
 <context>
     <name>QGBA::LogController</name>
     <message>
-        <location filename="../LogController.cpp" line="72"/>
+        <location filename="../LogController.cpp" line="100"/>
         <source>[%1] %2: %3</source>
-        <translation type="unfinished"></translation>
+        <translation>[%1] %2: %3</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="83"/>
+        <location filename="../LogController.cpp" line="111"/>
         <source>An error occurred</source>
         <translation>En feil inntraff</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="155"/>
+        <location filename="../LogController.cpp" line="183"/>
         <source>DEBUG</source>
         <translation>AVLUSING</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="157"/>
+        <location filename="../LogController.cpp" line="185"/>
         <source>STUB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="159"/>
+        <location filename="../LogController.cpp" line="187"/>
         <source>INFO</source>
         <translation>INFO</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="161"/>
+        <location filename="../LogController.cpp" line="189"/>
         <source>WARN</source>
-        <translation type="unfinished"></translation>
+        <translation>ADVARSEL</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="163"/>
+        <location filename="../LogController.cpp" line="191"/>
         <source>ERROR</source>
         <translation>FEIL</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="165"/>
+        <location filename="../LogController.cpp" line="193"/>
         <source>FATAL</source>
         <translation>KRITISK</translation>
     </message>
     <message>
-        <location filename="../LogController.cpp" line="167"/>
+        <location filename="../LogController.cpp" line="195"/>
         <source>GAME ERROR</source>
         <translation>SPILLFEIL</translation>
     </message>
@@ -3014,7 +3201,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LogView.ui" line="22"/>
         <source>Enabled Levels</source>
-        <translation type="unfinished"></translation>
+        <translation>Påskrudde nivåer</translation>
     </message>
     <message>
         <location filename="../LogView.ui" line="28"/>
@@ -3024,7 +3211,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LogView.ui" line="38"/>
         <source>Stub</source>
-        <translation type="unfinished"></translation>
+        <translation>Stump</translation>
     </message>
     <message>
         <location filename="../LogView.ui" line="48"/>
@@ -3044,7 +3231,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LogView.ui" line="78"/>
         <source>Fatal</source>
-        <translation type="unfinished">Kritisk</translation>
+        <translation>Kritisk</translation>
     </message>
     <message>
         <location filename="../LogView.ui" line="95"/>
@@ -3064,7 +3251,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../LogView.ui" line="137"/>
         <source>Max Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Maks antall linjer</translation>
     </message>
 </context>
 <context>
@@ -3082,7 +3269,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MapView.ui" line="124"/>
         <source>Export</source>
-        <translation type="unfinished">Eksporter</translation>
+        <translation>Eksporter</translation>
     </message>
     <message>
         <location filename="../MapView.ui" line="139"/>
@@ -3120,7 +3307,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MapView.cpp" line="53"/>
         <source>Xform</source>
-        <translation type="unfinished"></translation>
+        <translation>Xform</translation>
     </message>
     <message>
         <location filename="../MapView.cpp" line="108"/>
@@ -3130,43 +3317,269 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MapView.cpp" line="109"/>
         <source>Mirror</source>
-        <translation type="unfinished"></translation>
+        <translation>Speilvend</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="143"/>
+        <location filename="../MapView.cpp" line="146"/>
         <source>None</source>
-        <translation type="unfinished">Ingen</translation>
+        <translation>Ingen</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="145"/>
+        <location filename="../MapView.cpp" line="148"/>
         <source>Both</source>
         <translation>Begge</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="147"/>
+        <location filename="../MapView.cpp" line="150"/>
         <source>Horizontal</source>
-        <translation type="unfinished"></translation>
+        <translation>Horisontal</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="149"/>
+        <location filename="../MapView.cpp" line="152"/>
         <source>Vertical</source>
-        <translation type="unfinished"></translation>
+        <translation>Vertikal</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="175"/>
-        <location filename="../MapView.cpp" line="176"/>
-        <location filename="../MapView.cpp" line="224"/>
+        <location filename="../MapView.cpp" line="183"/>
+        <location filename="../MapView.cpp" line="184"/>
+        <location filename="../MapView.cpp" line="239"/>
         <source>N/A</source>
         <translation>I/T</translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="267"/>
+        <location filename="../MapView.cpp" line="282"/>
         <source>Export map</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../MapView.cpp" line="268"/>
+        <location filename="../MapView.cpp" line="283"/>
         <source>Portable Network Graphics (*.png)</source>
+        <translation>Portable Network Graphics (*.png)</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::MemoryAccessLogController</name>
+    <message>
+        <location filename="../MemoryAccessLogController.cpp" line="117"/>
+        <location filename="../MemoryAccessLogController.cpp" line="126"/>
+        <source>Failed to open memory log file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::MemoryAccessLogModel</name>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="67"/>
+        <source>Data read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="69"/>
+        <source>Data written</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="71"/>
+        <source>Code executed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="73"/>
+        <source>Code aborted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="75"/>
+        <source>8-bit access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="77"/>
+        <source>16-bit access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="79"/>
+        <source>32-bit access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="81"/>
+        <source>64-bit access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="95"/>
+        <source>Accessed by instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="97"/>
+        <source>Accessed by DMA</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="99"/>
+        <source>Accessed by BIOS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="101"/>
+        <source>Compressed data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="103"/>
+        <source>Accessed by memory copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="105"/>
+        <source>(Unknown extra bit 5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="107"/>
+        <source>(Unknown extra bit 6)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="109"/>
+        <source>(Unknown extra bit 7)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="111"/>
+        <source>Invalid instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="113"/>
+        <source>Invalid read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="115"/>
+        <source>Invalid write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="117"/>
+        <source>Invalid executable address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="119"/>
+        <source>(Private bit 0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="121"/>
+        <source>(Private bit 1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="125"/>
+        <source>ARM code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="127"/>
+        <source>Instruction opcode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="129"/>
+        <source>(Private bit 2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="134"/>
+        <source>Thumb code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="136"/>
+        <source>Instruction operand</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="138"/>
+        <source>(Private bit 3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogModel.cpp" line="146"/>
+        <source>(Unknown)</source>
+        <translation type="unfinished">(Ukjent)</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::MemoryAccessLogView</name>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="14"/>
+        <source>Memory access logging</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="23"/>
+        <source>Log file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="32"/>
+        <source>Browse</source>
+        <translation type="unfinished">Bla</translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="39"/>
+        <source>Log additional information (uses 3× space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="46"/>
+        <source>Load existing file if present</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="56"/>
+        <source>Load</source>
+        <translation type="unfinished">Last inn</translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="66"/>
+        <source>Unload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="76"/>
+        <source>Regions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="87"/>
+        <source>Export ROM snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="94"/>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.ui" line="104"/>
+        <source>Stop</source>
+        <translation type="unfinished">Stopp</translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.cpp" line="96"/>
+        <location filename="../MemoryAccessLogView.cpp" line="111"/>
+        <source>Select access log file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryAccessLogView.cpp" line="96"/>
+        <source>Memory access logs (*.mal)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3200,70 +3613,65 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MemoryDump.cpp" line="30"/>
         <source>Failed to open output file: %1</source>
-        <translation type="unfinished">Klarte ikke å åpne utdatafil: %1</translation>
+        <translation>Klarte ikke å åpne utdatafil: %1</translation>
     </message>
 </context>
 <context>
     <name>QGBA::MemoryModel</name>
     <message>
-        <location filename="../MemoryModel.cpp" line="44"/>
+        <location filename="../MemoryModel.cpp" line="45"/>
         <source>Copy selection</source>
         <translation>Kopier utvalg</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="49"/>
+        <location filename="../MemoryModel.cpp" line="50"/>
         <source>Save selection</source>
         <translation>Lagre utvalg</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="54"/>
+        <location filename="../MemoryModel.cpp" line="55"/>
         <source>Paste</source>
-        <translation type="unfinished">Lim inn</translation>
+        <translation>Lim inn</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="59"/>
+        <location filename="../MemoryModel.cpp" line="60"/>
         <source>Load</source>
-        <translation type="unfinished">Last inn</translation>
+        <translation>Last inn</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="113"/>
+        <location filename="../MemoryModel.cpp" line="118"/>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="158"/>
+        <location filename="../MemoryModel.cpp" line="168"/>
         <source>Load TBL</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Last inn TBL</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="212"/>
+        <location filename="../MemoryModel.cpp" line="222"/>
         <source>Save selected memory</source>
         <translation>Lagre valgt minne</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="218"/>
+        <location filename="../MemoryModel.cpp" line="228"/>
         <source>Failed to open output file: %1</source>
-        <translation type="unfinished">Klarte ikke å åpne utdatafil: %1</translation>
+        <translation>Klarte ikke å åpne utdatafil: %1</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="226"/>
+        <location filename="../MemoryModel.cpp" line="236"/>
         <source>Load memory</source>
         <translation>Last inn minne</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="232"/>
+        <location filename="../MemoryModel.cpp" line="242"/>
         <source>Failed to open input file: %1</source>
         <translation>Klarte ikke å åpne inndatafil: %1</translation>
     </message>
     <message>
-        <location filename="../MemoryModel.cpp" line="347"/>
-        <source>TBL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../MemoryModel.cpp" line="347"/>
+        <location filename="../MemoryModel.cpp" line="357"/>
         <source>ISO-8859-1</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO-8859-1</translation>
     </message>
 </context>
 <context>
@@ -3297,7 +3705,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MemorySearch.ui" line="88"/>
         <source>Numeric</source>
-        <translation type="unfinished"></translation>
+        <translation>Numerisk</translation>
     </message>
     <message>
         <location filename="../MemorySearch.ui" line="101"/>
@@ -3313,7 +3721,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../MemorySearch.ui" line="125"/>
         <location filename="../MemorySearch.ui" line="185"/>
         <source>Guess</source>
-        <translation type="unfinished"></translation>
+        <translation>Gjett</translation>
     </message>
     <message>
         <location filename="../MemorySearch.ui" line="138"/>
@@ -3333,17 +3741,17 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MemorySearch.ui" line="178"/>
         <source>Number type</source>
-        <translation type="unfinished"></translation>
+        <translation>Nummertype</translation>
     </message>
     <message>
         <location filename="../MemorySearch.ui" line="195"/>
         <source>Decimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Desimal</translation>
     </message>
     <message>
         <location filename="../MemorySearch.ui" line="202"/>
         <source>Hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Heksadesimal</translation>
     </message>
     <message>
         <location filename="../MemorySearch.ui" line="216"/>
@@ -3416,22 +3824,22 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Gjenoppfrisk</translation>
     </message>
     <message>
-        <location filename="../MemorySearch.cpp" line="221"/>
+        <location filename="../MemorySearch.cpp" line="224"/>
         <source> (%0/%1×)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../MemorySearch.cpp" line="223"/>
-        <source> (⅟%0×)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%0/%1×)</translation>
     </message>
     <message>
         <location filename="../MemorySearch.cpp" line="226"/>
-        <source> (%0×)</source>
-        <translation type="unfinished"></translation>
+        <source> (⅟%0×)</source>
+        <translation> (⅟%0×)</translation>
     </message>
     <message>
-        <location filename="../MemorySearch.cpp" line="230"/>
+        <location filename="../MemorySearch.cpp" line="229"/>
+        <source> (%0×)</source>
+        <translation> (%0×)</translation>
+    </message>
+    <message>
+        <location filename="../MemorySearch.cpp" line="233"/>
         <source>%1 byte%2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3444,74 +3852,84 @@ Nedlastningsstørrelse: %3</translation>
         <translation>Minne</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="38"/>
-        <source>Inspect Address:</source>
-        <translation>Inspiser adresse:</translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="88"/>
-        <source>Set Alignment:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="108"/>
-        <source>&amp;1 Byte</source>
-        <translation>%1 byte</translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="131"/>
-        <source>&amp;2 Bytes</source>
-        <translation>%2 byte</translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="151"/>
-        <source>&amp;4 Bytes</source>
-        <translation>%4 byte</translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="187"/>
-        <source>Unsigned Integer:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="208"/>
-        <source>Signed Integer:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../MemoryView.ui" line="229"/>
+        <location filename="../MemoryView.ui" line="192"/>
         <source>String:</source>
         <translation>Streng:</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="243"/>
+        <location filename="../MemoryView.ui" line="205"/>
         <source>Load TBL</source>
-        <translation type="unfinished"></translation>
+        <translation>Last inn TBL</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="256"/>
+        <location filename="../MemoryView.ui" line="233"/>
         <source>Copy Selection</source>
         <translation>Kopier utvalg</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="263"/>
+        <location filename="../MemoryView.ui" line="247"/>
         <source>Paste</source>
         <translation>Lim inn</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="283"/>
+        <location filename="../MemoryView.ui" line="240"/>
         <source>Save Selection</source>
         <translation>Lagre utvalg</translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="290"/>
+        <location filename="../MemoryView.ui" line="37"/>
+        <source>Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="106"/>
+        <source>Alignment:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="120"/>
+        <source>1 Byte</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="125"/>
+        <source>2 Bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="130"/>
+        <source>4 Bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="152"/>
+        <source>Signed:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="172"/>
+        <source>Unsigned:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="254"/>
         <source>Save Range</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../MemoryView.ui" line="297"/>
+        <location filename="../MemoryView.ui" line="267"/>
         <source>Load</source>
-        <translation type="unfinished">Last inn</translation>
+        <translation>Last inn</translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="282"/>
+        <source>Selected address accesses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MemoryView.ui" line="304"/>
+        <source>Logging configuration</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3519,6 +3937,34 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../MessagePainter.cpp" line="81"/>
         <source>Frame %1</source>
+        <translation>Bilde %1</translation>
+    </message>
+</context>
+<context>
+    <name>QGBA::MultiplayerController</name>
+    <message>
+        <location filename="../MultiplayerController.cpp" line="367"/>
+        <source>Trying to detach a multiplayer player that&apos;s not attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MultiplayerController.cpp" line="407"/>
+        <source>Clearing invalid save ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MultiplayerController.cpp" line="416"/>
+        <source>Clearing invalid preferred ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MultiplayerController.cpp" line="437"/>
+        <source>Trying to get player ID for a multiplayer player that&apos;s not attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../MultiplayerController.cpp" line="451"/>
+        <source>Trying to get save ID for a multiplayer player that&apos;s not attached</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3567,17 +4013,17 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ObjView.ui" line="389"/>
         <source>Export</source>
-        <translation type="unfinished">Eksporter</translation>
+        <translation>Eksporter</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="402"/>
         <source>Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Attributter</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="410"/>
         <source>Transform</source>
-        <translation type="unfinished"></translation>
+        <translation>Transformer</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="430"/>
@@ -3611,13 +4057,13 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../ObjView.ui" line="545"/>
         <source>H</source>
         <extracomment>Short for horizontal</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>H</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="558"/>
         <source>V</source>
         <extracomment>Short for vertical</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>V</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="572"/>
@@ -3638,7 +4084,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ObjView.ui" line="643"/>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrudd på</translation>
     </message>
     <message>
         <location filename="../ObjView.ui" line="677"/>
@@ -3654,7 +4100,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../ObjView.cpp" line="160"/>
         <location filename="../ObjView.cpp" line="249"/>
         <source>0x%0</source>
-        <translation type="unfinished"></translation>
+        <translation>0x%0</translation>
     </message>
     <message>
         <location filename="../ObjView.cpp" line="182"/>
@@ -3666,7 +4112,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../ObjView.cpp" line="259"/>
         <location filename="../ObjView.cpp" line="260"/>
         <source>---</source>
-        <translation type="unfinished"></translation>
+        <translation>---</translation>
     </message>
     <message>
         <location filename="../ObjView.cpp" line="193"/>
@@ -3676,12 +4122,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ObjView.cpp" line="196"/>
         <source>OBJWIN</source>
-        <translation type="unfinished"></translation>
+        <translation>OBJWIN</translation>
     </message>
     <message>
         <location filename="../ObjView.cpp" line="199"/>
         <source>Invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig</translation>
     </message>
     <message>
         <location filename="../ObjView.cpp" line="256"/>
@@ -3697,7 +4143,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ObjView.cpp" line="288"/>
         <source>Portable Network Graphics (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Portable Network Graphics (*.png)</translation>
     </message>
 </context>
 <context>
@@ -3705,7 +4151,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="20"/>
         <source>Game Overrides</source>
-        <translation type="unfinished"></translation>
+        <translation>Overstyringer for spill</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="30"/>
@@ -3718,7 +4164,7 @@ Nedlastningsstørrelse: %3</translation>
         <location filename="../OverrideView.ui" line="241"/>
         <location filename="../OverrideView.ui" line="257"/>
         <source>Autodetect</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-oppdag</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="55"/>
@@ -3733,7 +4179,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="75"/>
         <source>Tilt</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilt</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="85"/>
@@ -3773,7 +4219,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="146"/>
         <source>EEPROM 8kB</source>
-        <translation type="unfinished"></translation>
+        <translation>EEPROM 8kB</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="151"/>
@@ -3793,7 +4239,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="190"/>
         <source>Game Boy Player features</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy Player-funksjoner</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="197"/>
@@ -3803,12 +4249,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="227"/>
         <source>Game Boy</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="233"/>
         <source>Game Boy model</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy-modell</translation>
     </message>
     <message>
         <location filename="../OverrideView.ui" line="249"/>
@@ -3833,7 +4279,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../OverrideView.ui" line="529"/>
         <source>Palette preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Forhåndsvalgt fargepalett</translation>
     </message>
     <message>
         <location filename="../OverrideView.cpp" line="54"/>
@@ -3856,7 +4302,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../PaletteView.ui" line="14"/>
         <source>Palette</source>
-        <translation type="unfinished">Palett</translation>
+        <translation>Palett</translation>
     </message>
     <message>
         <location filename="../PaletteView.ui" line="44"/>
@@ -3911,38 +4357,38 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../PaletteView.ui" line="360"/>
         <source>Export OBJ</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporter OBJ</translation>
+    </message>
+    <message>
+        <location filename="../PaletteView.cpp" line="118"/>
+        <source>#%0</source>
+        <translation>#%0</translation>
+    </message>
+    <message>
+        <location filename="../PaletteView.cpp" line="119"/>
+        <source>0x%0</source>
+        <translation>0x%0</translation>
     </message>
     <message>
         <location filename="../PaletteView.cpp" line="120"/>
-        <source>#%0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../PaletteView.cpp" line="121"/>
-        <source>0x%0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../PaletteView.cpp" line="122"/>
         <location filename="../PaletteView.cpp" line="123"/>
-        <location filename="../PaletteView.cpp" line="124"/>
-        <location filename="../PaletteView.cpp" line="125"/>
         <source>0x%0 (%1)</source>
-        <translation type="unfinished">0x%0 (%1)</translation>
+        <translation>0x%0 (%1)</translation>
     </message>
     <message>
-        <location filename="../PaletteView.cpp" line="137"/>
+        <location filename="../PaletteView.cpp" line="135"/>
         <source>Export palette</source>
         <translation>Eksporter palett</translation>
     </message>
     <message>
-        <location filename="../PaletteView.cpp" line="138"/>
+        <location filename="../PaletteView.cpp" line="136"/>
         <source>Windows PAL (*.pal);;Adobe Color Table (*.act)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../PaletteView.cpp" line="144"/>
+        <location filename="../PaletteView.cpp" line="142"/>
         <source>Failed to open output palette file: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3957,7 +4403,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../PlacementControl.ui" line="26"/>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle</translation>
     </message>
     <message>
         <location filename="../PlacementControl.ui" line="65"/>
@@ -3967,12 +4413,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../PlacementControl.ui" line="72"/>
         <source>X</source>
-        <translation type="unfinished"></translation>
+        <translation>X</translation>
     </message>
     <message>
         <location filename="../PlacementControl.ui" line="79"/>
         <source>Y</source>
-        <translation type="unfinished"></translation>
+        <translation>Y</translation>
     </message>
 </context>
 <context>
@@ -4010,69 +4456,106 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../PrinterView.cpp" line="59"/>
         <source>Portable Network Graphics (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Portable Network Graphics (*.png)</translation>
     </message>
 </context>
 <context>
     <name>QGBA::ROMInfo</name>
     <message>
-        <location filename="../ROMInfo.cpp" line="38"/>
-        <location filename="../ROMInfo.cpp" line="53"/>
-        <location filename="../ROMInfo.cpp" line="62"/>
-        <location filename="../ROMInfo.cpp" line="63"/>
+        <location filename="../ROMInfo.cpp" line="47"/>
+        <location filename="../ROMInfo.cpp" line="61"/>
+        <location filename="../ROMInfo.cpp" line="69"/>
+        <location filename="../ROMInfo.cpp" line="77"/>
+        <location filename="../ROMInfo.cpp" line="88"/>
+        <location filename="../ROMInfo.cpp" line="101"/>
         <source>(unknown)</source>
         <translation>(ukjent)</translation>
     </message>
     <message>
-        <location filename="../ROMInfo.cpp" line="43"/>
+        <location filename="../ROMInfo.cpp" line="56"/>
         <source> bytes</source>
         <translation> byte</translation>
     </message>
     <message>
-        <location filename="../ROMInfo.cpp" line="56"/>
+        <location filename="../ROMInfo.cpp" line="91"/>
         <source>(no database present)</source>
         <translation>(ingen database forefinnes)</translation>
     </message>
     <message>
         <location filename="../ROMInfo.ui" line="14"/>
         <source>ROM Info</source>
+        <translation>ROM-info</translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="23"/>
+        <source>File information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ROMInfo.ui" line="26"/>
+        <location filename="../ROMInfo.ui" line="29"/>
         <source>Game name:</source>
+        <translation>Spillets navn:</translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="83"/>
+        <source>MD5</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ROMInfo.ui" line="46"/>
+        <location filename="../ROMInfo.ui" line="100"/>
+        <source>SHA-1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="134"/>
+        <source>ROM header</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="140"/>
         <source>Internal name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Internt navn:</translation>
     </message>
     <message>
-        <location filename="../ROMInfo.ui" line="63"/>
+        <location filename="../ROMInfo.ui" line="157"/>
         <source>Game ID:</source>
+        <translation>Spill-ID:</translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="174"/>
+        <source>Maker Code:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ROMInfo.ui" line="80"/>
+        <location filename="../ROMInfo.ui" line="191"/>
+        <source>Revision:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="49"/>
         <source>File size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filstørrelse:</translation>
     </message>
     <message>
-        <location filename="../ROMInfo.ui" line="97"/>
+        <location filename="../ROMInfo.ui" line="66"/>
         <source>CRC32:</source>
+        <translation>CRC32:</translation>
+    </message>
+    <message>
+        <location filename="../ROMInfo.ui" line="117"/>
+        <source>Save file:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QGBA::ReportView</name>
     <message>
-        <location filename="../ReportView.cpp" line="351"/>
+        <location filename="../ReportView.cpp" line="360"/>
         <source>Bug report archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ReportView.cpp" line="351"/>
+        <location filename="../ReportView.cpp" line="360"/>
         <source>ZIP archive (*.zip)</source>
         <translation>ZIP-arkiv (*.zip)</translation>
     </message>
@@ -4089,12 +4572,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ReportView.ui" line="85"/>
         <source>Generate report</source>
-        <translation type="unfinished"></translation>
+        <translation>Generer rapport</translation>
     </message>
     <message>
         <location filename="../ReportView.ui" line="99"/>
         <source>Save</source>
-        <translation type="unfinished">Lagre</translation>
+        <translation>Lagre</translation>
     </message>
     <message>
         <location filename="../ReportView.ui" line="113"/>
@@ -4104,7 +4587,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ReportView.ui" line="134"/>
         <source>Include save file</source>
-        <translation type="unfinished"></translation>
+        <translation>Inkluder lagrefilen</translation>
     </message>
     <message>
         <location filename="../ReportView.ui" line="150"/>
@@ -4115,62 +4598,62 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::SaveConverter</name>
     <message>
-        <location filename="../SaveConverter.cpp" line="39"/>
+        <location filename="../SaveConverter.cpp" line="38"/>
         <source>Save games and save states (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrefiler og lagringstilstander</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="40"/>
+        <location filename="../SaveConverter.cpp" line="39"/>
         <source>Select save game or save state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="52"/>
+        <location filename="../SaveConverter.cpp" line="51"/>
         <source>Save games (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrefiler (%1)</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="53"/>
+        <location filename="../SaveConverter.cpp" line="52"/>
         <source>Select save game</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg lagrefil</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="74"/>
+        <location filename="../SaveConverter.cpp" line="73"/>
         <source>Conversion failed</source>
         <translation>Konvertering mislyktes</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="74"/>
+        <location filename="../SaveConverter.cpp" line="73"/>
         <source>Failed to convert the save game. This is probably a bug.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="90"/>
+        <location filename="../SaveConverter.cpp" line="89"/>
         <source>No file selected</source>
         <translation>Ingen fil valgt</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="97"/>
+        <location filename="../SaveConverter.cpp" line="96"/>
         <source>Could not open file</source>
         <translation>Kunne ikke åpne fil</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="112"/>
+        <location filename="../SaveConverter.cpp" line="111"/>
         <source>No valid formats found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="120"/>
+        <location filename="../SaveConverter.cpp" line="119"/>
         <source>Please select a valid input file</source>
         <translation>Velg en gyldig inndatafil</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="131"/>
+        <location filename="../SaveConverter.cpp" line="130"/>
         <source>No valid conversions found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="638"/>
+        <location filename="../SaveConverter.cpp" line="659"/>
         <source>Cannot convert save games between platforms</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4182,114 +4665,132 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SaveConverter.ui" line="20"/>
         <source>Input file</source>
-        <translation type="unfinished"></translation>
+        <translation>Inndatafil</translation>
     </message>
     <message>
         <location filename="../SaveConverter.ui" line="29"/>
         <location filename="../SaveConverter.ui" line="55"/>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>Bla</translation>
     </message>
     <message>
         <location filename="../SaveConverter.ui" line="46"/>
         <source>Output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Utdatafil</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="450"/>
+        <location filename="../SaveConverter.cpp" line="454"/>
         <source>%1 %2 save game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="454"/>
+        <location filename="../SaveConverter.cpp" line="458"/>
         <source>little endian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="457"/>
+        <location filename="../SaveConverter.cpp" line="461"/>
         <source>big endian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="468"/>
+        <location filename="../SaveConverter.cpp" line="472"/>
         <source>SRAM</source>
-        <translation type="unfinished">SRAM</translation>
+        <translation>SRAM</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="472"/>
+        <location filename="../SaveConverter.cpp" line="476"/>
         <source>%1 flash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="476"/>
+        <location filename="../SaveConverter.cpp" line="480"/>
         <source>%1 EEPROM</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 EEPROM</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="488"/>
-        <source>%1 SRAM + RTC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../SaveConverter.cpp" line="490"/>
-        <source>%1 SRAM</source>
+        <location filename="../SaveConverter.cpp" line="486"/>
+        <source> + RTC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../SaveConverter.cpp" line="495"/>
-        <source>packed MBC2</source>
+        <source>%1 SRAM + RTC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../SaveConverter.cpp" line="497"/>
-        <source>unpacked MBC2</source>
-        <translation type="unfinished"></translation>
+        <source>%1 SRAM</source>
+        <translation>%1 SRAM</translation>
     </message>
     <message>
         <location filename="../SaveConverter.cpp" line="502"/>
-        <source>MBC6 flash</source>
+        <source>packed MBC2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../SaveConverter.cpp" line="504"/>
+        <source>unpacked MBC2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../SaveConverter.cpp" line="509"/>
+        <source>MBC6 flash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../SaveConverter.cpp" line="511"/>
         <source>MBC6 combined SRAM + flash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="506"/>
+        <location filename="../SaveConverter.cpp" line="513"/>
         <source>MBC6 SRAM</source>
-        <translation type="unfinished"></translation>
+        <translation>MBC6-SRAM</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="510"/>
+        <location filename="../SaveConverter.cpp" line="517"/>
         <source>TAMA5</source>
-        <translation type="unfinished">TAMA5</translation>
+        <translation>TAMA5</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="522"/>
+        <location filename="../SaveConverter.cpp" line="529"/>
         <source>%1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="526"/>
+        <location filename="../SaveConverter.cpp" line="533"/>
         <source>%1 save state with embedded %2 save game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="529"/>
+        <location filename="../SaveConverter.cpp" line="536"/>
         <source>%1 SharkPort %2 save game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SaveConverter.cpp" line="532"/>
+        <location filename="../SaveConverter.cpp" line="539"/>
         <source>%1 GameShark Advance SP %2 save game</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
+    <name>QGBA::ScriptingController</name>
+    <message>
+        <location filename="../scripting/ScriptingController.cpp" line="277"/>
+        <source>Lua scripts (*.lua)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/ScriptingController.cpp" line="279"/>
+        <source>All files (*.*)</source>
+        <translation type="unfinished">Alle filer (*.*)</translation>
+    </message>
+</context>
+<context>
     <name>QGBA::ScriptingTextBuffer</name>
     <message>
-        <location filename="../scripting/ScriptingTextBuffer.cpp" line="42"/>
+        <location filename="../scripting/ScriptingTextBuffer.cpp" line="44"/>
         <source>Untitled buffer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4304,12 +4805,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../scripting/ScriptingView.ui" line="45"/>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Kjør</translation>
     </message>
     <message>
         <location filename="../scripting/ScriptingView.ui" line="92"/>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Fil</translation>
     </message>
     <message>
         <location filename="../scripting/ScriptingView.ui" line="96"/>
@@ -4317,33 +4818,33 @@ Nedlastningsstørrelse: %3</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../scripting/ScriptingView.ui" line="109"/>
+        <location filename="../scripting/ScriptingView.ui" line="111"/>
         <source>Load script...</source>
+        <translation>Last inn skript...</translation>
+    </message>
+    <message>
+        <location filename="../scripting/ScriptingView.ui" line="116"/>
+        <source>&amp;Load most recent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../scripting/ScriptingView.ui" line="114"/>
+        <location filename="../scripting/ScriptingView.ui" line="121"/>
         <source>&amp;Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Omstart</translation>
     </message>
     <message>
-        <location filename="../scripting/ScriptingView.ui" line="119"/>
+        <location filename="../scripting/ScriptingView.ui" line="126"/>
         <source>0</source>
-        <translation type="unfinished">0</translation>
+        <translation>0</translation>
     </message>
     <message>
-        <location filename="../scripting/ScriptingView.cpp" line="60"/>
+        <location filename="../scripting/ScriptingView.ui" line="131"/>
+        <source>Edit autorun scripts...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../scripting/ScriptingView.cpp" line="62"/>
         <source>Select script to load</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../scripting/ScriptingView.cpp" line="85"/>
-        <source>Lua scripts (*.lua)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../scripting/ScriptingView.cpp" line="87"/>
-        <source>All files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4352,178 +4853,197 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SensorView.ui" line="20"/>
         <source>Sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensorer</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="31"/>
         <source>Realtime clock</source>
-        <translation type="unfinished">Sanntidsklokke</translation>
+        <translation>Sanntidsklokke</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="50"/>
         <source>Fixed time</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastsatt tid</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="37"/>
         <source>System time</source>
-        <translation type="unfinished"></translation>
+        <translation>Systemtid</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="96"/>
         <source>Start time at</source>
-        <translation type="unfinished"></translation>
+        <translation>Start tiden på</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="60"/>
         <source>Now</source>
-        <translation type="unfinished"></translation>
+        <translation>Nå</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="67"/>
         <source>Offset time</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidsavvik</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="80"/>
         <source> sec</source>
-        <translation type="unfinished"></translation>
+        <translation> sek</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="126"/>
         <source>MM/dd/yy hh:mm:ss AP</source>
-        <translation type="unfinished"></translation>
+        <translation>dd/mm/YYYY hh:mm:ss AP</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="136"/>
         <source>Light sensor</source>
-        <translation type="unfinished">Lyssensor</translation>
+        <translation>Lyssensor</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="142"/>
         <source>Brightness</source>
-        <translation type="unfinished"></translation>
+        <translation>Lysstyrke</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="179"/>
         <source>Tilt sensor</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiltsensor</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="187"/>
         <location filename="../SensorView.ui" line="276"/>
         <source>Set Y</source>
-        <translation type="unfinished"></translation>
+        <translation>Sett Y</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="197"/>
         <location filename="../SensorView.ui" line="286"/>
         <source>Set X</source>
-        <translation type="unfinished"></translation>
+        <translation>Sett X</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="268"/>
         <source>Gyroscope</source>
-        <translation type="unfinished">Gyroskop</translation>
+        <translation>Gyroskop</translation>
     </message>
     <message>
         <location filename="../SensorView.ui" line="296"/>
         <source>Sensitivity</source>
-        <translation type="unfinished"></translation>
+        <translation>Følsomhet</translation>
     </message>
 </context>
 <context>
     <name>QGBA::SettingsView</name>
     <message>
-        <location filename="../SettingsView.cpp" line="147"/>
-        <location filename="../SettingsView.cpp" line="222"/>
+        <location filename="../SettingsView.cpp" line="157"/>
+        <location filename="../SettingsView.cpp" line="232"/>
         <source>Qt Multimedia</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="154"/>
+        <location filename="../SettingsView.cpp" line="164"/>
         <source>SDL</source>
         <translation>SDL</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="162"/>
+        <location filename="../SettingsView.cpp" line="172"/>
         <source>Software (Qt)</source>
         <translation>Programvare (Qt)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1240"/>
-        <location filename="../SettingsView.cpp" line="168"/>
+        <location filename="../SettingsView.ui" line="1315"/>
+        <location filename="../SettingsView.cpp" line="178"/>
         <source>OpenGL</source>
         <translation>OpenGL</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="175"/>
+        <location filename="../SettingsView.cpp" line="185"/>
         <source>OpenGL (force version 1.x)</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenGL (tving versjon 1.x)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="208"/>
+        <location filename="../SettingsView.cpp" line="218"/>
         <source>None</source>
-        <translation type="unfinished">Ingen</translation>
+        <translation>Ingen</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="215"/>
+        <location filename="../SettingsView.cpp" line="225"/>
         <source>None (Still Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen (stillbilde)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="319"/>
+        <location filename="../SettingsView.cpp" line="334"/>
         <source>Keyboard</source>
         <translation>Tastatur</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="327"/>
+        <location filename="../SettingsView.cpp" line="346"/>
         <source>Controllers</source>
         <translation>Kontrollere</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="382"/>
+        <location filename="../SettingsView.cpp" line="411"/>
         <source>Shortcuts</source>
         <translation>Snarveier</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="394"/>
-        <location filename="../SettingsView.cpp" line="404"/>
+        <location filename="../SettingsView.cpp" line="414"/>
+        <source>Shaders are not supported when the display driver is not OpenGL.
+
+If it is set to OpenGL and you still see this, your graphics card or drivers may be too old.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.cpp" line="418"/>
+        <location filename="../SettingsView.cpp" line="432"/>
+        <location filename="../SettingsView.cpp" line="445"/>
+        <location filename="../SettingsView.cpp" line="447"/>
         <source>Shaders</source>
         <translation>Skyggeleggere</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="426"/>
+        <location filename="../SettingsView.cpp" line="468"/>
         <source>Select BIOS</source>
         <translation>Velg BIOS</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="433"/>
+        <location filename="../SettingsView.cpp" line="475"/>
         <source>Select directory</source>
         <translation>Velg mappe</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="827"/>
+        <location filename="../SettingsView.cpp" line="483"/>
+        <source>Select image</source>
+        <translation>Velg bilde</translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.cpp" line="483"/>
+        <source>Image file (*.png *.jpg *.jpeg)</source>
+        <translation>Bildefil (*.png *.jpg *.jpeg)</translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.cpp" line="877"/>
         <source>(%1×%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>(%1×%2)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="845"/>
+        <location filename="../SettingsView.cpp" line="895"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Aldri</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="850"/>
+        <location filename="../SettingsView.cpp" line="900"/>
         <source>Just now</source>
-        <translation type="unfinished"></translation>
+        <translation>Akkurat nå</translation>
     </message>
     <message>
-        <location filename="../SettingsView.cpp" line="854"/>
+        <location filename="../SettingsView.cpp" line="904"/>
         <source>Less than an hour ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Mindre enn én time siden</translation>
     </message>
     <message numerus="yes">
-        <location filename="../SettingsView.cpp" line="859"/>
+        <location filename="../SettingsView.cpp" line="909"/>
         <source>%n hour(s) ago</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -4531,7 +5051,7 @@ Nedlastningsstørrelse: %3</translation>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../SettingsView.cpp" line="863"/>
+        <location filename="../SettingsView.cpp" line="913"/>
         <source>%n day(s) ago</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -4541,12 +5061,12 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="20"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Innstillinger</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="45"/>
         <source>Audio/Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd/Video</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="50"/>
@@ -4556,137 +5076,137 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="55"/>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Grensesnitt</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="60"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Oppdater</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="65"/>
         <source>Emulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulering</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="70"/>
         <source>Enhancements</source>
-        <translation type="unfinished"></translation>
+        <translation>Forbedringer</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="75"/>
         <source>BIOS</source>
-        <translation type="unfinished"></translation>
+        <translation>BIOS</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="80"/>
         <source>Paths</source>
-        <translation type="unfinished"></translation>
+        <translation>Filbaner</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="85"/>
         <source>Logging</source>
-        <translation type="unfinished"></translation>
+        <translation>Loggføring</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="90"/>
         <source>Game Boy</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="111"/>
         <source>Audio driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyddriver:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="128"/>
         <source>Audio buffer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lydbuffer:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="140"/>
         <location filename="../SettingsView.ui" line="162"/>
         <source>1536</source>
-        <translation type="unfinished">1536</translation>
+        <translation>1536</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="147"/>
         <source>512</source>
-        <translation type="unfinished">512</translation>
+        <translation>512</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="152"/>
         <source>768</source>
-        <translation type="unfinished">768</translation>
+        <translation>768</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="157"/>
         <source>1024</source>
-        <translation type="unfinished">1024</translation>
+        <translation>1024</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="167"/>
         <source>2048</source>
-        <translation type="unfinished">2048</translation>
+        <translation>2048</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="172"/>
         <source>3072</source>
-        <translation type="unfinished">3072</translation>
+        <translation>3072</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="177"/>
         <source>4096</source>
-        <translation type="unfinished">4096</translation>
+        <translation>4096</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="185"/>
         <source>samples</source>
-        <translation type="unfinished"></translation>
+        <translation>datapunkter</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="194"/>
         <source>Sample rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>Datapunktfrekvens:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="206"/>
         <location filename="../SettingsView.ui" line="223"/>
         <source>44100</source>
-        <translation type="unfinished">44100</translation>
+        <translation>44100</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="213"/>
         <source>22050</source>
-        <translation type="unfinished">22050</translation>
+        <translation>22050</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="218"/>
         <source>32000</source>
-        <translation type="unfinished">32000</translation>
+        <translation>32000</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="228"/>
         <source>48000</source>
-        <translation type="unfinished">48000</translation>
+        <translation>48000</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="236"/>
         <source>Hz</source>
-        <translation type="unfinished"></translation>
+        <translation>Hz</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="245"/>
         <source>Volume:</source>
-        <translation type="unfinished"></translation>
+        <translation>Volum:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="276"/>
         <location filename="../SettingsView.ui" line="316"/>
-        <location filename="../SettingsView.ui" line="804"/>
-        <location filename="../SettingsView.ui" line="829"/>
+        <location filename="../SettingsView.ui" line="811"/>
+        <location filename="../SettingsView.ui" line="836"/>
         <source>Mute</source>
-        <translation type="unfinished"></translation>
+        <translation>Demp lyd</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="285"/>
@@ -4696,17 +5216,17 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="325"/>
         <source>Audio in multiplayer:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd i flerspiller:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="332"/>
         <source>All windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle vinduer</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="345"/>
         <source>Player 1 window only</source>
-        <translation type="unfinished"></translation>
+        <translation>Kun spiller 1 sitt vindu</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="355"/>
@@ -4716,7 +5236,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="388"/>
         <source>Display driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjermdriver:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="405"/>
@@ -4726,45 +5246,45 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="414"/>
         <source>Skip every</source>
-        <translation type="unfinished"></translation>
+        <translation>Hopp over hver</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="424"/>
-        <location filename="../SettingsView.ui" line="1157"/>
+        <location filename="../SettingsView.ui" line="1199"/>
         <source>frames</source>
-        <translation type="unfinished"></translation>
+        <translation>bilder</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="475"/>
         <source>FPS target:</source>
-        <translation type="unfinished"></translation>
+        <translation>Siktemål for bildefrekvens:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="500"/>
         <source>frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>bilder per sekund</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="516"/>
         <source>Sync:</source>
-        <translation type="unfinished"></translation>
+        <translation>Synkroniser:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="382"/>
         <location filename="../SettingsView.ui" line="525"/>
         <source>Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Video</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="105"/>
         <location filename="../SettingsView.ui" line="532"/>
         <source>Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="433"/>
         <source>Lock aspect ratio</source>
-        <translation type="unfinished"></translation>
+        <translation>Lås visningsforhold</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="440"/>
@@ -4774,28 +5294,28 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../SettingsView.ui" line="454"/>
         <source>Bilinear filtering</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilineær filtrering</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="750"/>
+        <location filename="../SettingsView.ui" line="757"/>
         <source>Show filename instead of ROM name in library view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="797"/>
-        <location filename="../SettingsView.ui" line="822"/>
+        <location filename="../SettingsView.ui" line="804"/>
+        <location filename="../SettingsView.ui" line="829"/>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="788"/>
+        <location filename="../SettingsView.ui" line="795"/>
         <source>When inactive:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="548"/>
         <source>On loading a game:</source>
-        <translation type="unfinished"></translation>
+        <translation>Når det lastes inn et spill:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="555"/>
@@ -4808,94 +5328,94 @@ Nedlastningsstørrelse: %3</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="592"/>
+        <location filename="../SettingsView.ui" line="599"/>
         <source>Save entered cheats</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="813"/>
+        <location filename="../SettingsView.ui" line="820"/>
         <source>When minimized:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="917"/>
+        <location filename="../SettingsView.ui" line="959"/>
         <source>Current channel:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nåværende kanal:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="931"/>
+        <location filename="../SettingsView.ui" line="973"/>
         <source>Current version:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nåværende versjon:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="955"/>
+        <location filename="../SettingsView.ui" line="997"/>
         <source>Update channel:</source>
-        <translation type="unfinished"></translation>
+        <translation>Oppdateringskanal:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="965"/>
+        <location filename="../SettingsView.ui" line="1007"/>
         <source>Available version:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilgjengelig versjon:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="972"/>
+        <location filename="../SettingsView.ui" line="1014"/>
         <source>(Unknown)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Ukjent)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="982"/>
+        <location filename="../SettingsView.ui" line="1024"/>
         <source>Last checked:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sist sjekket:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1003"/>
+        <location filename="../SettingsView.ui" line="1045"/>
         <source>Automatically check on start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1010"/>
+        <location filename="../SettingsView.ui" line="1052"/>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>Sjekk nå</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2097"/>
+        <location filename="../SettingsView.ui" line="2174"/>
         <source>Default color palette only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2107"/>
+        <location filename="../SettingsView.ui" line="2167"/>
         <source>SGB color palette if available</source>
-        <translation type="unfinished"></translation>
+        <translation>SGB-fargepalett hvis tilgjengelig</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2117"/>
+        <location filename="../SettingsView.ui" line="2181"/>
         <source>GBC color palette if available</source>
-        <translation type="unfinished"></translation>
+        <translation>GBC-fargepalett hvis tilgjengelig</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2127"/>
+        <location filename="../SettingsView.ui" line="2188"/>
         <source>SGB (preferred) or GBC color palette if available</source>
-        <translation type="unfinished"></translation>
+        <translation>SGB (foretrukket) eller GBC-fargepalett hvis tilgjengelig</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2140"/>
+        <location filename="../SettingsView.ui" line="2200"/>
         <source>Game Boy Camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy Camera</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2146"/>
+        <location filename="../SettingsView.ui" line="2206"/>
         <source>Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Driver:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2163"/>
+        <location filename="../SettingsView.ui" line="2223"/>
         <source>Source:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kilde:</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="509"/>
         <source>Native (59.7275)</source>
-        <translation type="unfinished"></translation>
+        <translation>Systemstandard (59.7275)</translation>
     </message>
     <message>
         <location filename="../SettingsView.ui" line="447"/>
@@ -4903,418 +5423,445 @@ Nedlastningsstørrelse: %3</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="702"/>
+        <location filename="../SettingsView.ui" line="709"/>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Språk</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="719"/>
+        <location filename="../SettingsView.ui" line="726"/>
         <source>Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliotek:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="727"/>
+        <location filename="../SettingsView.ui" line="734"/>
         <source>List view</source>
-        <translation type="unfinished"></translation>
+        <translation>Listevisning</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="732"/>
+        <location filename="../SettingsView.ui" line="739"/>
         <source>Tree view</source>
-        <translation type="unfinished"></translation>
+        <translation>Tre-visning</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="740"/>
+        <location filename="../SettingsView.ui" line="747"/>
         <source>Show when no game open</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis når ingen spill er åpne</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="757"/>
+        <location filename="../SettingsView.ui" line="764"/>
         <source>Clear cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Tøm mellomlageret</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="771"/>
+        <location filename="../SettingsView.ui" line="778"/>
         <source>Allow opposing input directions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="778"/>
+        <location filename="../SettingsView.ui" line="785"/>
         <source>Suspend screensaver</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="845"/>
+        <location filename="../SettingsView.ui" line="852"/>
         <source>Dynamically update window title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="865"/>
+        <location filename="../SettingsView.ui" line="872"/>
         <source>Show filename instead of ROM name in title bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="882"/>
+        <location filename="../SettingsView.ui" line="889"/>
         <source>Show OSD messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="691"/>
+        <location filename="../SettingsView.ui" line="698"/>
         <source>Enable Discord Rich Presence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="582"/>
+        <location filename="../SettingsView.ui" line="575"/>
+        <source>Edit autorun scripts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.ui" line="589"/>
         <source>Periodically autosave state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="855"/>
+        <location filename="../SettingsView.ui" line="862"/>
         <source>Show FPS in title bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis bildefrekvensen i tittellinjen</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="897"/>
+        <location filename="../SettingsView.ui" line="904"/>
         <source>Show frame count in OSD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="904"/>
+        <location filename="../SettingsView.ui" line="911"/>
         <source>Show emulation info on reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1024"/>
+        <location filename="../SettingsView.ui" line="948"/>
+        <source>Custom border:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.ui" line="1066"/>
         <source>Fast forward speed:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1055"/>
-        <location filename="../SettingsView.ui" line="1098"/>
+        <location filename="../SettingsView.ui" line="1097"/>
+        <location filename="../SettingsView.ui" line="1140"/>
         <source>Unbounded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1067"/>
+        <location filename="../SettingsView.ui" line="1109"/>
         <source>Fast forward (held) speed:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1110"/>
+        <location filename="../SettingsView.ui" line="1152"/>
         <source>Autofire interval:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1134"/>
+        <location filename="../SettingsView.ui" line="1176"/>
         <source>Enable rewind</source>
-        <translation type="unfinished"></translation>
+        <translation>Skru på tilbakespoling</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1141"/>
+        <location filename="../SettingsView.ui" line="1183"/>
         <source>Rewind history:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestillingshistorikk:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1173"/>
+        <location filename="../SettingsView.ui" line="1208"/>
+        <source>Rewind speed:</source>
+        <translation>Tilbakespolingsfart:</translation>
+    </message>
+    <message>
+        <location filename="../SettingsView.ui" line="1245"/>
         <source>Idle loops:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1181"/>
+        <location filename="../SettingsView.ui" line="1253"/>
         <source>Run all</source>
-        <translation type="unfinished"></translation>
+        <translation>Kjør alle</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1186"/>
+        <location filename="../SettingsView.ui" line="1258"/>
         <source>Remove known</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjern kjente</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1191"/>
+        <location filename="../SettingsView.ui" line="1263"/>
         <source>Detect and remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1199"/>
+        <location filename="../SettingsView.ui" line="1271"/>
         <source>Preload entire ROM into memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="609"/>
+        <location filename="../SettingsView.ui" line="616"/>
         <source>Save state extra data:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="626"/>
-        <location filename="../SettingsView.ui" line="670"/>
+        <location filename="../SettingsView.ui" line="633"/>
+        <location filename="../SettingsView.ui" line="677"/>
         <source>Save game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="653"/>
+        <location filename="../SettingsView.ui" line="660"/>
         <source>Load state extra data:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1747"/>
+        <location filename="../SettingsView.ui" line="1815"/>
         <source>Models</source>
-        <translation type="unfinished"></translation>
+        <translation>Modeller</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1753"/>
+        <location filename="../SettingsView.ui" line="1821"/>
         <source>GB only:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kun GB:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1763"/>
+        <location filename="../SettingsView.ui" line="1831"/>
         <source>SGB compatible:</source>
-        <translation type="unfinished"></translation>
+        <translation>SGB-kompatibel:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1773"/>
+        <location filename="../SettingsView.ui" line="1841"/>
         <source>GBC only:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kun GBC:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1783"/>
+        <location filename="../SettingsView.ui" line="1851"/>
         <source>GBC compatible:</source>
-        <translation type="unfinished"></translation>
+        <translation>GBC-kompatibel:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1793"/>
+        <location filename="../SettingsView.ui" line="1861"/>
         <source>SGB and GBC compatible:</source>
-        <translation type="unfinished"></translation>
+        <translation>SGB- og GBC-kompatible:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1813"/>
+        <location filename="../SettingsView.ui" line="1881"/>
         <source>Game Boy palette</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy-fargepalett</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1819"/>
+        <location filename="../SettingsView.ui" line="1887"/>
         <source>Preset:</source>
-        <translation type="unfinished"></translation>
+        <translation>Forhåndsinnstilling:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="616"/>
-        <location filename="../SettingsView.ui" line="660"/>
+        <location filename="../SettingsView.ui" line="623"/>
+        <location filename="../SettingsView.ui" line="667"/>
         <source>Screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjermbilde</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="636"/>
-        <location filename="../SettingsView.ui" line="677"/>
+        <location filename="../SettingsView.ui" line="643"/>
+        <location filename="../SettingsView.ui" line="684"/>
         <source>Cheat codes</source>
-        <translation type="unfinished"></translation>
+        <translation>Juksekoder</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1206"/>
+        <location filename="../SettingsView.ui" line="1281"/>
         <source>Enable Game Boy Player features by default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1213"/>
+        <location filename="../SettingsView.ui" line="1288"/>
         <source>Enable VBA bug compatibility in ROM hacks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1227"/>
+        <location filename="../SettingsView.ui" line="1302"/>
         <source>Video renderer:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1235"/>
+        <location filename="../SettingsView.ui" line="1310"/>
         <source>Software</source>
-        <translation type="unfinished"></translation>
+        <translation>Programvare</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1255"/>
+        <location filename="../SettingsView.ui" line="1323"/>
         <source>OpenGL enhancements</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1261"/>
+        <location filename="../SettingsView.ui" line="1329"/>
         <source>High-resolution scale:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1299"/>
+        <location filename="../SettingsView.ui" line="1367"/>
         <source>(240×160)</source>
-        <translation type="unfinished"></translation>
+        <translation>(240×160)</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1248"/>
-        <source>XQ GBA audio (experimental)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../SettingsView.ui" line="1328"/>
+        <location filename="../SettingsView.ui" line="1396"/>
         <source>GB BIOS file:</source>
-        <translation type="unfinished"></translation>
+        <translation>GB BIOS-fil:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1347"/>
-        <location filename="../SettingsView.ui" line="1375"/>
-        <location filename="../SettingsView.ui" line="1403"/>
-        <location filename="../SettingsView.ui" line="1431"/>
-        <location filename="../SettingsView.ui" line="1489"/>
-        <location filename="../SettingsView.ui" line="1537"/>
-        <location filename="../SettingsView.ui" line="1585"/>
-        <location filename="../SettingsView.ui" line="1633"/>
-        <location filename="../SettingsView.ui" line="1681"/>
+        <location filename="../SettingsView.ui" line="932"/>
+        <location filename="../SettingsView.ui" line="1415"/>
+        <location filename="../SettingsView.ui" line="1443"/>
+        <location filename="../SettingsView.ui" line="1471"/>
+        <location filename="../SettingsView.ui" line="1499"/>
+        <location filename="../SettingsView.ui" line="1557"/>
+        <location filename="../SettingsView.ui" line="1605"/>
+        <location filename="../SettingsView.ui" line="1653"/>
+        <location filename="../SettingsView.ui" line="1701"/>
+        <location filename="../SettingsView.ui" line="1749"/>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>Bla</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1440"/>
+        <location filename="../SettingsView.ui" line="1508"/>
         <source>Use BIOS file if found</source>
-        <translation type="unfinished"></translation>
+        <translation>Bruk BIOS-filen hvis den blir funnet</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1450"/>
+        <location filename="../SettingsView.ui" line="1518"/>
         <source>Skip BIOS intro</source>
-        <translation type="unfinished"></translation>
+        <translation>Hopp over BIOS-introen</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1412"/>
+        <location filename="../SettingsView.ui" line="1480"/>
         <source>GBA BIOS file:</source>
-        <translation type="unfinished"></translation>
+        <translation>GBA-BIOS-fil:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1384"/>
+        <location filename="../SettingsView.ui" line="1452"/>
         <source>GBC BIOS file:</source>
-        <translation type="unfinished"></translation>
+        <translation>GBC-BIOS-fil:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1356"/>
+        <location filename="../SettingsView.ui" line="1424"/>
         <source>SGB BIOS file:</source>
-        <translation type="unfinished"></translation>
+        <translation>SGB-BIOS-fil:</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1464"/>
+        <location filename="../SettingsView.ui" line="1532"/>
         <source>Save games</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrefiler</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1498"/>
-        <location filename="../SettingsView.ui" line="1546"/>
-        <location filename="../SettingsView.ui" line="1594"/>
-        <location filename="../SettingsView.ui" line="1642"/>
-        <location filename="../SettingsView.ui" line="1690"/>
+        <location filename="../SettingsView.ui" line="1566"/>
+        <location filename="../SettingsView.ui" line="1614"/>
+        <location filename="../SettingsView.ui" line="1662"/>
+        <location filename="../SettingsView.ui" line="1710"/>
+        <location filename="../SettingsView.ui" line="1758"/>
         <source>Same directory as the ROM</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1512"/>
+        <location filename="../SettingsView.ui" line="1580"/>
         <source>Save states</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1560"/>
+        <location filename="../SettingsView.ui" line="1628"/>
         <source>Screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjermklipp</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1608"/>
+        <location filename="../SettingsView.ui" line="1676"/>
         <source>Patches</source>
-        <translation type="unfinished"></translation>
+        <translation>Patcher</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1656"/>
+        <location filename="../SettingsView.ui" line="1724"/>
         <source>Cheats</source>
-        <translation type="unfinished">Juks</translation>
+        <translation>Juks</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1713"/>
+        <location filename="../SettingsView.ui" line="1781"/>
         <source>Log to file</source>
-        <translation type="unfinished"></translation>
+        <translation>Loggfør til en fil</translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1720"/>
+        <location filename="../SettingsView.ui" line="1788"/>
         <source>Log to console</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1734"/>
+        <location filename="../SettingsView.ui" line="1802"/>
         <source>Select Log File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1829"/>
+        <location filename="../SettingsView.ui" line="1897"/>
         <source>Default BG colors:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1916"/>
+        <location filename="../SettingsView.ui" line="1984"/>
         <source>Default sprite colors 1:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="2003"/>
+        <location filename="../SettingsView.ui" line="2071"/>
         <source>Default sprite colors 2:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../SettingsView.ui" line="1803"/>
+        <location filename="../SettingsView.ui" line="1871"/>
         <source>Super Game Boy borders</source>
-        <translation type="unfinished"></translation>
+        <translation>Super Game Boy-kanter</translation>
     </message>
 </context>
 <context>
     <name>QGBA::ShaderSelector</name>
     <message>
-        <location filename="../ShaderSelector.cpp" line="53"/>
+        <location filename="../ShaderSelector.cpp" line="76"/>
         <source>No shader active</source>
         <translation>Ingen aktive skyggeleggere</translation>
     </message>
     <message>
-        <location filename="../ShaderSelector.cpp" line="66"/>
+        <location filename="../ShaderSelector.cpp" line="90"/>
+        <location filename="../ShaderSelector.cpp" line="93"/>
         <source>Load shader</source>
         <translation>Last inn skyggelegger</translation>
     </message>
     <message>
-        <location filename="../ShaderSelector.cpp" line="103"/>
+        <location filename="../ShaderSelector.cpp" line="92"/>
+        <source>mGBA Shaders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ShaderSelector.cpp" line="123"/>
+        <source>Error loading shader</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ShaderSelector.cpp" line="123"/>
+        <source>The shader &quot;%1&quot; could not be loaded successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ShaderSelector.cpp" line="145"/>
         <source>No shader loaded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ShaderSelector.cpp" line="111"/>
+        <location filename="../ShaderSelector.cpp" line="153"/>
         <source>by %1</source>
         <translation>av %1</translation>
     </message>
     <message>
-        <location filename="../ShaderSelector.cpp" line="122"/>
+        <location filename="../ShaderSelector.cpp" line="164"/>
         <source>Preprocessing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ShaderSelector.cpp" line="129"/>
+        <location filename="../ShaderSelector.cpp" line="171"/>
         <source>Pass %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="14"/>
         <source>Shaders</source>
-        <translation type="unfinished">Skyggeleggere</translation>
+        <translation>Skygger</translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="28"/>
         <source>Active Shader:</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiv skyggelegger:</translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="35"/>
         <source>Name</source>
-        <translation type="unfinished">Navn</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="45"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaper</translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="62"/>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <location filename="../ShaderSelector.ui" line="88"/>
@@ -5330,19 +5877,19 @@ Nedlastningsstørrelse: %3</translation>
 <context>
     <name>QGBA::ShortcutModel</name>
     <message>
-        <location filename="../ShortcutModel.cpp" line="66"/>
+        <location filename="../ShortcutModel.cpp" line="67"/>
         <source>Action</source>
         <translation>Handling</translation>
     </message>
     <message>
-        <location filename="../ShortcutModel.cpp" line="68"/>
+        <location filename="../ShortcutModel.cpp" line="69"/>
         <source>Keyboard</source>
         <translation>Tastatur</translation>
     </message>
     <message>
-        <location filename="../ShortcutModel.cpp" line="70"/>
+        <location filename="../ShortcutModel.cpp" line="71"/>
         <source>Gamepad</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroller</translation>
     </message>
 </context>
 <context>
@@ -5355,41 +5902,41 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../ShortcutView.ui" line="32"/>
         <source>Keyboard</source>
-        <translation type="unfinished">Tastatur</translation>
+        <translation>Tastatur</translation>
     </message>
     <message>
         <location filename="../ShortcutView.ui" line="42"/>
         <source>Gamepad</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroller</translation>
     </message>
     <message>
         <location filename="../ShortcutView.ui" line="49"/>
         <source>Clear</source>
-        <translation type="unfinished">Tøm</translation>
+        <translation>Tøm</translation>
     </message>
 </context>
 <context>
     <name>QGBA::TileView</name>
     <message>
-        <location filename="../TileView.cpp" line="225"/>
+        <location filename="../TileView.cpp" line="226"/>
         <source>Export tiles</source>
         <translation>Eksporter flis</translation>
     </message>
     <message>
-        <location filename="../TileView.cpp" line="226"/>
-        <location filename="../TileView.cpp" line="238"/>
+        <location filename="../TileView.cpp" line="227"/>
+        <location filename="../TileView.cpp" line="239"/>
         <source>Portable Network Graphics (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Portable Network Graphics (*.png)</translation>
     </message>
     <message>
-        <location filename="../TileView.cpp" line="237"/>
+        <location filename="../TileView.cpp" line="238"/>
         <source>Export tile</source>
         <translation>Eksporter flis</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="14"/>
         <source>Tiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Fliser</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="170"/>
@@ -5399,22 +5946,22 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../TileView.ui" line="184"/>
         <source>Export All</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksporter alle</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="40"/>
         <source>256 colors</source>
-        <translation type="unfinished"></translation>
+        <translation>256 farger</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="33"/>
         <source>Palette</source>
-        <translation type="unfinished">Palett</translation>
+        <translation>Palett</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="73"/>
         <source>Magnification</source>
-        <translation type="unfinished">Forstørrelse</translation>
+        <translation>Forstørrelse</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="96"/>
@@ -5424,7 +5971,7 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../TileView.ui" line="103"/>
         <source>Fit to window</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilpass til vinduet</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="119"/>
@@ -5444,35 +5991,35 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../TileView.ui" line="145"/>
         <source>Both</source>
-        <translation type="unfinished">Begge</translation>
+        <translation>Begge</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="163"/>
         <source>Copy Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier valgte</translation>
     </message>
     <message>
         <location filename="../TileView.ui" line="177"/>
         <source>Copy All</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier alle</translation>
     </message>
 </context>
 <context>
     <name>QGBA::VideoView</name>
     <message>
-        <location filename="../VideoView.cpp" line="202"/>
+        <location filename="../VideoView.cpp" line="226"/>
         <source>Failed to open output video file: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VideoView.cpp" line="223"/>
+        <location filename="../VideoView.cpp" line="247"/>
         <source>Native (%0x%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VideoView.cpp" line="238"/>
+        <location filename="../VideoView.cpp" line="262"/>
         <source>Select output file</source>
-        <translation type="unfinished">Velg utdatafil</translation>
+        <translation>Velg utdatafil</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="20"/>
@@ -5482,44 +6029,42 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../VideoView.ui" line="40"/>
         <source>Start</source>
-        <translation type="unfinished">Start</translation>
+        <translation>Begynn</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="56"/>
         <source>Stop</source>
-        <translation type="unfinished">Stopp</translation>
+        <translation>Stopp</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="69"/>
         <source>Select File</source>
-        <translation type="unfinished">Velg fil</translation>
+        <translation>Velg fil</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="101"/>
         <source>Presets</source>
-        <translation type="unfinished"></translation>
+        <translation>Forhåndsinnstillinger</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="109"/>
         <source>High &amp;Quality</source>
-        <translation type="unfinished"></translation>
+        <translation>Høy &amp;kvalitet</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="119"/>
         <source>&amp;YouTube</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;YouTube</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="129"/>
-        <location filename="../VideoView.ui" line="255"/>
         <source>WebM</source>
-        <translation type="unfinished"></translation>
+        <translation>WebM</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="139"/>
-        <location filename="../VideoView.ui" line="265"/>
         <source>MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="146"/>
@@ -5529,22 +6074,22 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../VideoView.ui" line="167"/>
         <source>4K</source>
-        <translation type="unfinished">4K</translation>
+        <translation>4K</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="174"/>
         <source>&amp;1080p</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;1080p</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="184"/>
         <source>&amp;720p</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;720p</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="194"/>
         <source>&amp;480p</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;480p</translation>
     </message>
     <message>
         <location filename="../VideoView.ui" line="207"/>
@@ -5554,969 +6099,888 @@ Nedlastningsstørrelse: %3</translation>
     <message>
         <location filename="../VideoView.ui" line="240"/>
         <source>Format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="250"/>
-        <source>MKV</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="260"/>
-        <source>AVI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="277"/>
-        <source>H.264</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="282"/>
-        <source>H.264 (NVENC)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="287"/>
-        <source>HEVC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="292"/>
-        <source>HEVC (NVENC)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="297"/>
-        <source>VP8</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="302"/>
-        <source>VP9</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="307"/>
-        <source>FFV1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="312"/>
-        <location filename="../VideoView.ui" line="359"/>
-        <source>None</source>
-        <translation type="unfinished">Ingen</translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="324"/>
-        <source>FLAC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="329"/>
-        <source>WavPack</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="334"/>
-        <source>Opus</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="339"/>
-        <source>Vorbis</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="344"/>
-        <source>MP3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="349"/>
-        <source>AAC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="354"/>
-        <source>Uncompressed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../VideoView.ui" line="370"/>
+        <location filename="../VideoView.ui" line="375"/>
         <source> Bitrate (kbps)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="415"/>
+        <location filename="../VideoView.ui" line="420"/>
         <source>ABR</source>
-        <translation type="unfinished"></translation>
+        <translation>ABR</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="460"/>
+        <location filename="../VideoView.ui" line="465"/>
         <source>VBR</source>
-        <translation type="unfinished"></translation>
+        <translation>VBR</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="473"/>
+        <location filename="../VideoView.ui" line="478"/>
         <source>CRF</source>
-        <translation type="unfinished"></translation>
+        <translation>CRF</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="489"/>
+        <location filename="../VideoView.ui" line="494"/>
         <source>Dimensions</source>
-        <translation type="unfinished">Dimensjoner</translation>
+        <translation>Dimensjoner</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="555"/>
+        <location filename="../VideoView.ui" line="560"/>
         <source>Lock aspect ratio</source>
-        <translation type="unfinished"></translation>
+        <translation>Lås visningsforhold</translation>
     </message>
     <message>
-        <location filename="../VideoView.ui" line="570"/>
+        <location filename="../VideoView.ui" line="575"/>
         <source>Show advanced</source>
-        <translation type="unfinished">Vis avanserte innstillinger</translation>
+        <translation>Vis avansert</translation>
     </message>
 </context>
 <context>
     <name>QGBA::Window</name>
     <message>
-        <location filename="../Window.cpp" line="328"/>
-        <source>Game Boy Advance ROMs (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../Window.cpp" line="345"/>
-        <source>Game Boy ROMs (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../Window.cpp" line="349"/>
-        <source>All ROMs (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../Window.cpp" line="350"/>
-        <source>%1 Video Logs (*.mvl)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../Window.cpp" line="365"/>
+        <location filename="../Window.cpp" line="347"/>
         <source>Archives (%1)</source>
         <translation>Arkiv (%1)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="370"/>
-        <location filename="../Window.cpp" line="386"/>
-        <location filename="../Window.cpp" line="413"/>
+        <location filename="../Window.cpp" line="352"/>
+        <location filename="../Window.cpp" line="368"/>
+        <location filename="../Window.cpp" line="395"/>
         <source>Select ROM</source>
         <translation>Velg ROM</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="404"/>
+        <location filename="../Window.cpp" line="386"/>
         <source>Select folder</source>
         <translation>Velg mappe</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="540"/>
-        <location filename="../Window.cpp" line="547"/>
+        <location filename="../Window.cpp" line="523"/>
+        <location filename="../Window.cpp" line="530"/>
         <source>Select save</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg lagrefil</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="459"/>
+        <location filename="../Window.cpp" line="442"/>
         <source>Select patch</source>
         <translation>Velg feilfiks</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="459"/>
+        <location filename="../Window.cpp" line="442"/>
         <source>Patches (*.ips *.ups *.bps)</source>
         <translation>Feilfikser (*.ips *.ups *.bps)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="470"/>
+        <location filename="../Window.cpp" line="453"/>
         <source>Select e-Reader dotcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg e-Reader-punktkode</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="470"/>
+        <location filename="../Window.cpp" line="453"/>
         <source>e-Reader card (*.raw *.bin *.bmp)</source>
-        <translation type="unfinished"></translation>
+        <translation>e-Reader-kort (*.raw *.bin *.bmp)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="533"/>
+        <location filename="../Window.cpp" line="516"/>
         <source>Select image</source>
         <translation>Velg bilde</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="533"/>
+        <location filename="../Window.cpp" line="516"/>
         <source>Image file (*.png *.gif *.jpg *.jpeg);;All files (*)</source>
         <translation>Bildefil (*.png *.gif *.jpg *.jpeg);;All filer (*)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="547"/>
+        <location filename="../Window.cpp" line="530"/>
         <source>GameShark saves (*.sps *.xps)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="588"/>
+        <location filename="../Window.cpp" line="569"/>
         <source>Select video log</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="588"/>
+        <location filename="../Window.cpp" line="569"/>
         <source>Video logs (*.mvl)</source>
-        <translation type="unfinished"></translation>
+        <translation>Videologgføringer (*.mvl)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1016"/>
+        <location filename="../Window.cpp" line="1012"/>
         <source>Crash</source>
-        <translation type="unfinished">Krasj</translation>
+        <translation>Krasj</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1017"/>
+        <location filename="../Window.cpp" line="1013"/>
         <source>The game has crashed with the following error:
 
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1024"/>
+        <location filename="../Window.cpp" line="1020"/>
         <source>Couldn&apos;t Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Klarte ikke å starte opp</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1025"/>
+        <location filename="../Window.cpp" line="1021"/>
         <source>Could not start game.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klarte ikke å starte opp spillet.</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1039"/>
+        <location filename="../Window.cpp" line="1035"/>
         <source>Unimplemented BIOS call</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1040"/>
+        <location filename="../Window.cpp" line="1036"/>
         <source>This game uses a BIOS call that is not implemented. Please use the official BIOS for best experience.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1053"/>
+        <location filename="../Window.cpp" line="1058"/>
         <source>Failed to create an appropriate display device, falling back to software display. Games may run slowly, especially with larger windows.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1134"/>
+        <location filename="../Window.cpp" line="1156"/>
         <source>Really make portable?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1135"/>
+        <location filename="../Window.cpp" line="1157"/>
         <source>This will make the emulator load its configuration from the same directory as the executable. Do you want to continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1147"/>
+        <location filename="../Window.cpp" line="1169"/>
         <source>Restart needed</source>
-        <translation type="unfinished"></translation>
+        <translation>Gjennomfør omstart</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1148"/>
+        <location filename="../Window.cpp" line="1170"/>
         <source>Some changes will not take effect until the emulator is restarted.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1199"/>
+        <location filename="../Window.cpp" line="1221"/>
         <source> -  Player %1 of %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1210"/>
+        <location filename="../Window.cpp" line="1232"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1212"/>
+        <location filename="../Window.cpp" line="1234"/>
         <source>%1 - %2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1214"/>
+        <location filename="../Window.cpp" line="1236"/>
         <source>%1 - %2 (%3 fps) - %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1278"/>
+        <location filename="../Window.cpp" line="1300"/>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fil</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1280"/>
+        <location filename="../Window.cpp" line="1302"/>
         <source>Load &amp;ROM...</source>
-        <translation type="unfinished"></translation>
+        <translation>Last inn &amp;ROM...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1283"/>
+        <location filename="../Window.cpp" line="1305"/>
         <source>Load ROM in archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1284"/>
+        <location filename="../Window.cpp" line="1306"/>
         <source>Add folder to library...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="421"/>
+        <location filename="../Window.cpp" line="403"/>
         <source>Save games (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrefiler (%1)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="422"/>
+        <location filename="../Window.cpp" line="404"/>
         <source>Select save game</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg lagrefil</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="430"/>
+        <location filename="../Window.cpp" line="412"/>
         <source>mGBA save state files (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="432"/>
-        <location filename="../Window.cpp" line="437"/>
+        <location filename="../Window.cpp" line="414"/>
+        <location filename="../Window.cpp" line="419"/>
         <source>Select save state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="478"/>
+        <location filename="../Window.cpp" line="461"/>
         <source>Select e-Reader card images</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg e-Reader-kortavbildninger</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="478"/>
+        <location filename="../Window.cpp" line="461"/>
         <source>Image file (*.png *.jpg *.jpeg)</source>
-        <translation type="unfinished"></translation>
+        <translation>Bildefil (*.png *.jpg *.jpeg)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="479"/>
+        <location filename="../Window.cpp" line="462"/>
         <source>Conversion finished</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="520"/>
+        <location filename="../Window.cpp" line="503"/>
         <source>%1 of %2 e-Reader cards converted successfully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1288"/>
+        <location filename="../Window.cpp" line="1310"/>
         <source>Load alternate save game...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1291"/>
+        <location filename="../Window.cpp" line="1313"/>
         <source>Load temporary save game...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1324"/>
+        <location filename="../Window.cpp" line="1346"/>
         <source>Load &amp;patch...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1327"/>
+        <location filename="../Window.cpp" line="1349"/>
         <source>Boot BIOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Oppstarts-BIOS</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1421"/>
+        <location filename="../Window.cpp" line="1443"/>
         <source>Replace ROM...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bytt ROM....</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1331"/>
+        <location filename="../Window.cpp" line="1353"/>
         <source>Scan e-Reader dotcodes...</source>
-        <translation type="unfinished"></translation>
+        <translation>Skann e-Reader-punktkoder...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1709"/>
+        <location filename="../Window.cpp" line="1787"/>
         <source>Convert e-Reader card image to raw...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1335"/>
+        <location filename="../Window.cpp" line="1357"/>
         <source>ROM &amp;info...</source>
-        <translation type="unfinished"></translation>
+        <translation>ROM-&amp;info ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1337"/>
+        <location filename="../Window.cpp" line="1359"/>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nylig</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1667"/>
+        <location filename="../Window.cpp" line="1752"/>
         <source>Make portable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1340"/>
+        <location filename="../Window.cpp" line="1362"/>
         <source>&amp;Load state</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Last inn tilstand</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1345"/>
+        <location filename="../Window.cpp" line="1367"/>
         <source>Load state file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1350"/>
+        <location filename="../Window.cpp" line="1372"/>
         <source>&amp;Save state</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lagre en tilstand</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1355"/>
+        <location filename="../Window.cpp" line="1377"/>
         <source>Save state file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1360"/>
+        <location filename="../Window.cpp" line="1382"/>
         <source>Quick load</source>
-        <translation type="unfinished"></translation>
+        <translation>Hurtiginnlasting</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1361"/>
+        <location filename="../Window.cpp" line="1383"/>
         <source>Quick save</source>
-        <translation type="unfinished"></translation>
+        <translation>Hurtiglagring</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1363"/>
+        <location filename="../Window.cpp" line="1385"/>
         <source>Load recent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1368"/>
+        <location filename="../Window.cpp" line="1390"/>
         <source>Save recent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1376"/>
+        <location filename="../Window.cpp" line="1398"/>
         <source>Undo load state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1379"/>
+        <location filename="../Window.cpp" line="1401"/>
         <source>Undo save state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1386"/>
-        <location filename="../Window.cpp" line="1391"/>
+        <location filename="../Window.cpp" line="1408"/>
+        <location filename="../Window.cpp" line="1413"/>
         <source>State &amp;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1498"/>
+        <location filename="../Window.cpp" line="1539"/>
         <source>Load camera image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1297"/>
+        <location filename="../Window.cpp" line="1319"/>
         <source>Convert save game...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="540"/>
+        <location filename="../Window.cpp" line="523"/>
         <source>GameShark saves (*.gsv *.sps *.xps)</source>
-        <translation type="unfinished"></translation>
+        <translation>GameShark-lagrefiler (*.gsv *.sps *.xps)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1159"/>
+        <location filename="../Window.cpp" line="1181"/>
         <source>Reset needed</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestilling kreves</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1160"/>
+        <location filename="../Window.cpp" line="1182"/>
         <source>Some changes will not take effect until the game is reset.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1287"/>
+        <location filename="../Window.cpp" line="1309"/>
         <source>Save games</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagrefiler</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1300"/>
+        <location filename="../Window.cpp" line="1322"/>
         <source>Import GameShark Save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1303"/>
+        <location filename="../Window.cpp" line="1325"/>
         <source>Export GameShark Save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1310"/>
+        <location filename="../Window.cpp" line="1332"/>
         <source>Automatically determine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1314"/>
+        <location filename="../Window.cpp" line="1336"/>
         <source>Use player %0 save game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1398"/>
+        <location filename="../Window.cpp" line="1420"/>
         <source>New multiplayer window</source>
-        <translation type="unfinished"></translation>
+        <translation>Nytt flerspillervindu</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1401"/>
+        <location filename="../Window.cpp" line="1423"/>
         <source>Connect to Dolphin...</source>
-        <translation type="unfinished"></translation>
+        <translation>Koble til Dolphin...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1407"/>
+        <location filename="../Window.cpp" line="1429"/>
         <source>Report bug...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporter inn feil...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1413"/>
+        <location filename="../Window.cpp" line="1435"/>
         <source>About...</source>
-        <translation type="unfinished"></translation>
+        <translation>Om …</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1414"/>
+        <location filename="../Window.cpp" line="1436"/>
         <source>E&amp;xit</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;vslutt</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1416"/>
+        <location filename="../Window.cpp" line="1438"/>
         <source>&amp;Emulation</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Emulering</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1417"/>
+        <location filename="../Window.cpp" line="1439"/>
         <source>&amp;Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Omstart</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1418"/>
+        <location filename="../Window.cpp" line="1440"/>
         <source>Sh&amp;utdown</source>
-        <translation type="unfinished"></translation>
+        <translation>Skr&amp;u av</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1422"/>
+        <location filename="../Window.cpp" line="1444"/>
         <source>Yank game pak</source>
-        <translation type="unfinished"></translation>
+        <translation>Dra ut spillkassetten</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1425"/>
+        <location filename="../Window.cpp" line="1447"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1434"/>
+        <location filename="../Window.cpp" line="1456"/>
         <source>&amp;Next frame</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1438"/>
+        <location filename="../Window.cpp" line="1460"/>
         <source>Fast forward (held)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1444"/>
+        <location filename="../Window.cpp" line="1466"/>
         <source>&amp;Fast forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1448"/>
+        <location filename="../Window.cpp" line="1470"/>
         <source>Fast forward speed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1453"/>
+        <location filename="../Window.cpp" line="1475"/>
         <source>Unbounded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1457"/>
+        <location filename="../Window.cpp" line="1479"/>
         <source>%0x</source>
-        <translation type="unfinished">%0x</translation>
+        <translation>%0x</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1461"/>
+        <location filename="../Window.cpp" line="1483"/>
+        <source>Increase fast forward speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../Window.cpp" line="1490"/>
+        <source>Decrease fast forward speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../Window.cpp" line="1497"/>
         <source>Rewind (held)</source>
-        <translation type="unfinished"></translation>
+        <translation>Spol tilbake (holdt)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1468"/>
+        <location filename="../Window.cpp" line="1509"/>
         <source>Re&amp;wind</source>
-        <translation type="unfinished"></translation>
+        <translation>Spol ti&amp;lbake</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1473"/>
+        <location filename="../Window.cpp" line="1514"/>
         <source>Step backwards</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1480"/>
+        <location filename="../Window.cpp" line="1521"/>
         <source>Solar sensor</source>
-        <translation type="unfinished"></translation>
+        <translation>Solsensor</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1481"/>
+        <location filename="../Window.cpp" line="1522"/>
         <source>Increase solar level</source>
-        <translation type="unfinished"></translation>
+        <translation>Øke solnivået</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1482"/>
+        <location filename="../Window.cpp" line="1523"/>
         <source>Decrease solar level</source>
-        <translation type="unfinished"></translation>
+        <translation>Reduser solnivået</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1483"/>
+        <location filename="../Window.cpp" line="1524"/>
         <source>Brightest solar level</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyseste solnivå</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1486"/>
+        <location filename="../Window.cpp" line="1527"/>
         <source>Darkest solar level</source>
-        <translation type="unfinished"></translation>
+        <translation>Mørkeste solnivå</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1492"/>
+        <location filename="../Window.cpp" line="1533"/>
         <source>Brightness %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lysstyrke %1</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1500"/>
+        <location filename="../Window.cpp" line="1541"/>
         <source>Game Boy Printer...</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Boy Printer...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1509"/>
+        <location filename="../Window.cpp" line="1550"/>
         <source>BattleChip Gate...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1513"/>
+        <location filename="../Window.cpp" line="1554"/>
         <source>Audio/&amp;Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd/&amp;Video</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1514"/>
+        <location filename="../Window.cpp" line="1555"/>
         <source>Frame size</source>
-        <translation type="unfinished"></translation>
+        <translation>Rammestørrelse</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1516"/>
+        <location filename="../Window.cpp" line="1557"/>
         <source>%1×</source>
-        <translation type="unfinished">%1×</translation>
+        <translation>%1×</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1541"/>
+        <location filename="../Window.cpp" line="1598"/>
         <source>Toggle fullscreen</source>
+        <translation>Skru på/av fullskjerm</translation>
+    </message>
+    <message>
+        <location filename="../Window.cpp" line="1601"/>
+        <source>&amp;Lock frame size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1544"/>
+        <location filename="../Window.cpp" line="1614"/>
         <source>Lock aspect ratio</source>
-        <translation type="unfinished"></translation>
+        <translation>Lås visningsforhold</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1556"/>
+        <location filename="../Window.cpp" line="1626"/>
         <source>Force integer scaling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1568"/>
+        <location filename="../Window.cpp" line="1638"/>
         <source>Interframe blending</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1577"/>
+        <location filename="../Window.cpp" line="1647"/>
         <source>Bilinear filtering</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilineær filtrering</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1585"/>
+        <location filename="../Window.cpp" line="1655"/>
         <source>Frame&amp;skip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1598"/>
+        <location filename="../Window.cpp" line="1668"/>
         <source>Mute</source>
-        <translation type="unfinished"></translation>
+        <translation>Demp lyd</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1604"/>
+        <location filename="../Window.cpp" line="1675"/>
         <source>FPS target</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1612"/>
+        <location filename="../Window.cpp" line="1683"/>
         <source>Native (59.7275)</source>
-        <translation type="unfinished"></translation>
+        <translation>Systemstandard (59.7275)</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1627"/>
+        <location filename="../Window.cpp" line="1698"/>
         <source>Take &amp;screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta &amp;skjermbilde</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1629"/>
+        <location filename="../Window.cpp" line="1700"/>
         <source>F12</source>
-        <translation type="unfinished"></translation>
+        <translation>F12</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1633"/>
+        <location filename="../Window.cpp" line="1704"/>
         <source>Record A/V...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1634"/>
+        <location filename="../Window.cpp" line="1705"/>
         <source>Record GIF/WebP/APNG...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1638"/>
+        <location filename="../Window.cpp" line="1709"/>
         <source>Video layers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1639"/>
+        <location filename="../Window.cpp" line="1710"/>
         <source>Audio channels</source>
-        <translation type="unfinished"></translation>
+        <translation>Lydkanaler</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1641"/>
+        <location filename="../Window.cpp" line="1712"/>
         <source>Adjust layer placement...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1643"/>
+        <location filename="../Window.cpp" line="1714"/>
         <source>&amp;Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk&amp;tøy</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1644"/>
+        <location filename="../Window.cpp" line="1715"/>
         <source>View &amp;logs...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1646"/>
+        <location filename="../Window.cpp" line="1717"/>
         <source>Game &amp;overrides...</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilloverstyringer ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1658"/>
+        <location filename="../Window.cpp" line="1730"/>
         <source>Game Pak sensors...</source>
-        <translation type="unfinished"></translation>
+        <translation>Game Pak-sensorer ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1660"/>
+        <location filename="../Window.cpp" line="1743"/>
         <source>&amp;Cheats...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1666"/>
-        <source>Settings...</source>
+        <location filename="../Window.cpp" line="1748"/>
+        <source>Create forwarder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1671"/>
+        <location filename="../Window.cpp" line="1751"/>
+        <source>Settings...</source>
+        <translation>Innstillinger…</translation>
+    </message>
+    <message>
+        <location filename="../Window.cpp" line="1756"/>
         <source>Open debugger console...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1673"/>
+        <location filename="../Window.cpp" line="1758"/>
         <source>Start &amp;GDB server...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1662"/>
+        <location filename="../Window.cpp" line="1745"/>
         <source>Scripting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1681"/>
+        <location filename="../Window.cpp" line="1766"/>
         <source>Game state views</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1682"/>
+        <location filename="../Window.cpp" line="1767"/>
         <source>View &amp;palette...</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis &amp;palett ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1683"/>
+        <location filename="../Window.cpp" line="1768"/>
         <source>View &amp;sprites...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1684"/>
+        <location filename="../Window.cpp" line="1769"/>
         <source>View &amp;tiles...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1685"/>
+        <location filename="../Window.cpp" line="1770"/>
         <source>View &amp;map...</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis &amp;kart …</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1687"/>
+        <location filename="../Window.cpp" line="1771"/>
         <source>&amp;Frame inspector...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1703"/>
+        <location filename="../Window.cpp" line="1772"/>
         <source>View memory...</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis minne ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1704"/>
+        <location filename="../Window.cpp" line="1773"/>
         <source>Search memory...</source>
-        <translation type="unfinished"></translation>
+        <translation>Søk i minne ...</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1705"/>
+        <location filename="../Window.cpp" line="1774"/>
         <source>View &amp;I/O registers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1713"/>
+        <location filename="../Window.cpp" line="1777"/>
+        <source>Log memory &amp;accesses...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../Window.cpp" line="1791"/>
         <source>Record debug video log...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1714"/>
+        <location filename="../Window.cpp" line="1792"/>
         <source>Stop debug video log</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1718"/>
+        <location filename="../Window.cpp" line="1796"/>
         <source>Exit fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Gå ut av fullskjerm</translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1720"/>
+        <location filename="../Window.cpp" line="1798"/>
         <source>GameShark Button (held)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1726"/>
+        <location filename="../Window.cpp" line="1804"/>
         <source>Autofire</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1727"/>
+        <location filename="../Window.cpp" line="1805"/>
         <source>Autofire A</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1732"/>
+        <location filename="../Window.cpp" line="1810"/>
         <source>Autofire B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1737"/>
+        <location filename="../Window.cpp" line="1815"/>
         <source>Autofire L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1742"/>
+        <location filename="../Window.cpp" line="1820"/>
         <source>Autofire R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1747"/>
+        <location filename="../Window.cpp" line="1825"/>
         <source>Autofire Start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1752"/>
+        <location filename="../Window.cpp" line="1830"/>
         <source>Autofire Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1757"/>
+        <location filename="../Window.cpp" line="1835"/>
         <source>Autofire Up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1762"/>
+        <location filename="../Window.cpp" line="1840"/>
         <source>Autofire Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1767"/>
+        <location filename="../Window.cpp" line="1845"/>
         <source>Autofire Down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1772"/>
+        <location filename="../Window.cpp" line="1850"/>
         <source>Autofire Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../Window.cpp" line="1948"/>
+        <location filename="../Window.cpp" line="2055"/>
         <source>Clear</source>
-        <translation type="unfinished">Tøm</translation>
+        <translation>Tøm</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../utils.cpp" line="14"/>
+        <location filename="../utils.cpp" line="26"/>
         <source>%1 byte</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 byte</translation>
     </message>
     <message>
-        <location filename="../utils.cpp" line="17"/>
+        <location filename="../utils.cpp" line="29"/>
         <source>%1 kiB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 kiB</translation>
     </message>
     <message>
-        <location filename="../utils.cpp" line="21"/>
+        <location filename="../utils.cpp" line="33"/>
         <source>%1 MiB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 MiB</translation>
     </message>
     <message>
-        <location filename="../utils.cpp" line="30"/>
-        <source>GBA</source>
-        <translation type="unfinished"></translation>
+        <location filename="../utils.cpp" line="183"/>
+        <source>Super (L)</source>
+        <translation>Super (L)</translation>
     </message>
     <message>
-        <location filename="../utils.cpp" line="34"/>
-        <source>GB</source>
-        <translation type="unfinished"></translation>
+        <location filename="../utils.cpp" line="185"/>
+        <source>Super (R)</source>
+        <translation>Super (R)</translation>
     </message>
     <message>
-        <location filename="../utils.cpp" line="37"/>
-        <source>?</source>
-        <translation type="unfinished"></translation>
+        <location filename="../utils.cpp" line="187"/>
+        <source>Menu</source>
+        <translation>Meny</translation>
     </message>
 </context>
 <context>
     <name>QShortcut</name>
     <message>
-        <location filename="../KeyEditor.cpp" line="40"/>
+        <location filename="../utils.cpp" line="174"/>
         <source>Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Shift</translation>
     </message>
     <message>
-        <location filename="../KeyEditor.cpp" line="43"/>
+        <location filename="../utils.cpp" line="176"/>
         <source>Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroll</translation>
     </message>
     <message>
-        <location filename="../KeyEditor.cpp" line="46"/>
+        <location filename="../utils.cpp" line="178"/>
         <source>Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt</translation>
     </message>
     <message>
-        <location filename="../KeyEditor.cpp" line="49"/>
+        <location filename="../utils.cpp" line="180"/>
         <source>Meta</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta</translation>
     </message>
 </context>
 </TS>

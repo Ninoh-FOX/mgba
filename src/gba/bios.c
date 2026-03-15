@@ -35,161 +35,129 @@ static int _mulWait(int32_t r) {
 	}
 }
 
-static void _SoftReset(struct GBA* gba) {
-	struct ARMCore* cpu = gba->cpu;
-	ARMSetPrivilegeMode(cpu, MODE_IRQ);
-	cpu->spsr.packed = 0;
-	cpu->gprs[ARM_LR] = 0;
-	cpu->gprs[ARM_SP] = GBA_SP_BASE_IRQ;
-	ARMSetPrivilegeMode(cpu, MODE_SUPERVISOR);
-	cpu->spsr.packed = 0;
-	cpu->gprs[ARM_LR] = 0;
-	cpu->gprs[ARM_SP] = GBA_SP_BASE_SUPERVISOR;
-	ARMSetPrivilegeMode(cpu, MODE_SYSTEM);
-	cpu->gprs[ARM_LR] = 0;
-	cpu->gprs[ARM_SP] = GBA_SP_BASE_SYSTEM;
-	int8_t flag = ((int8_t*) gba->memory.iwram)[0x7FFA];
-	memset(((int8_t*) gba->memory.iwram) + SIZE_WORKING_IRAM - 0x200, 0, 0x200);
-	if (flag) {
-		cpu->gprs[ARM_PC] = BASE_WORKING_RAM;
-	} else {
-		cpu->gprs[ARM_PC] = BASE_CART0;
-	}
-	_ARMSetMode(cpu, MODE_ARM);
-	ARMWritePC(cpu);
-}
-
 static void _RegisterRamReset(struct GBA* gba) {
 	uint32_t registers = gba->cpu->gprs[0];
 	struct ARMCore* cpu = gba->cpu;
-	cpu->memory.store16(cpu, BASE_IO | REG_DISPCNT, 0x0080, 0);
+	cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DISPCNT, 0x0080, 0);
 	if (registers & 0x01) {
-		memset(gba->memory.wram, 0, SIZE_WORKING_RAM);
+		memset(gba->memory.wram, 0, GBA_SIZE_EWRAM);
 	}
 	if (registers & 0x02) {
-		memset(gba->memory.iwram, 0, SIZE_WORKING_IRAM - 0x200);
+		memset(gba->memory.iwram, 0, GBA_SIZE_IWRAM - 0x200);
 	}
 	if (registers & 0x04) {
-		memset(gba->video.palette, 0, SIZE_PALETTE_RAM);
+		memset(gba->video.palette, 0, GBA_SIZE_PALETTE_RAM);
 	}
 	if (registers & 0x08) {
-		memset(gba->video.vram, 0, SIZE_VRAM);
+		memset(gba->video.vram, 0, GBA_SIZE_VRAM);
 	}
 	if (registers & 0x10) {
-		memset(gba->video.oam.raw, 0, SIZE_OAM);
+		memset(gba->video.oam.raw, 0, GBA_SIZE_OAM);
 	}
 	if (registers & 0x20) {
-		cpu->memory.store16(cpu, BASE_IO | REG_SIOCNT, 0x0000, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_RCNT, RCNT_INITIAL, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SIOMLT_SEND, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_JOYCNT, 0, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_JOY_RECV_LO, 0, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_JOY_TRANS_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SIOCNT, 0x0000, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_RCNT, RCNT_INITIAL, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SIOMLT_SEND, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_JOYCNT, 0, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_JOY_RECV_LO, 0, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_JOY_TRANS_LO, 0, 0);
 	}
 	if (registers & 0x40) {
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND1CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND1CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND1CNT_X, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND2CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND2CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND3CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND3CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND3CNT_X, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND4CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUND4CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUNDCNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUNDCNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUNDCNT_X, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_SOUNDBIAS, 0x200, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND1CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND1CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND1CNT_X, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND2CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND2CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND3CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND3CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND3CNT_X, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND4CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUND4CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUNDCNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUNDCNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUNDCNT_X, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_SOUNDBIAS, 0x200, 0);
 		memset(gba->audio.psg.ch3.wavedata32, 0, sizeof(gba->audio.psg.ch3.wavedata32));
 	}
 	if (registers & 0x80) {
-		cpu->memory.store16(cpu, BASE_IO | REG_DISPSTAT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_VCOUNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG0CNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG1CNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2CNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3CNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG0HOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG0VOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG1HOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG1VOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2HOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2VOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3HOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3VOFS, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2PA, 0x100, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2PB, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2PC, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG2PD, 0x100, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_BG2X_LO, 0, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_BG2Y_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3PA, 0x100, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3PB, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3PC, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BG3PD, 0x100, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_BG3X_LO, 0, 0);
-		cpu->memory.store32(cpu, BASE_IO | REG_BG3Y_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WIN0H, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WIN1H, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WIN0V, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WIN1V, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WININ, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WINOUT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_MOSAIC, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BLDCNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BLDALPHA, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_BLDY, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0SAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0SAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0DAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0DAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA0CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1SAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1SAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1DAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1DAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA1CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2SAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2SAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2DAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2DAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA2CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3SAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3SAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3DAD_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3DAD_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_DMA3CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM0CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM0CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM1CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM1CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM2CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM2CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM3CNT_LO, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_TM3CNT_HI, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_IE, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_IF, 0xFFFF, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_WAITCNT, 0, 0);
-		cpu->memory.store16(cpu, BASE_IO | REG_IME, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DISPSTAT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_VCOUNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG0CNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG1CNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2CNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3CNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG0HOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG0VOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG1HOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG1VOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2HOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2VOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3HOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3VOFS, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2PA, 0x100, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2PB, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2PC, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG2PD, 0x100, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_BG2X_LO, 0, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_BG2Y_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3PA, 0x100, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3PB, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3PC, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BG3PD, 0x100, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_BG3X_LO, 0, 0);
+		cpu->memory.store32(cpu, GBA_BASE_IO | GBA_REG_BG3Y_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WIN0H, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WIN1H, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WIN0V, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WIN1V, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WININ, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WINOUT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_MOSAIC, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BLDCNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BLDALPHA, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_BLDY, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0SAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0SAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0DAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0DAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA0CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1SAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1SAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1DAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1DAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA1CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2SAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2SAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2DAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2DAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA2CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3SAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3SAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3DAD_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3DAD_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_DMA3CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM0CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM0CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM1CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM1CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM2CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM2CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM3CNT_LO, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_TM3CNT_HI, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_IE, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_IF, 0xFFFF, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_WAITCNT, 0, 0);
+		cpu->memory.store16(cpu, GBA_BASE_IO | GBA_REG_IME, 0, 0);
 	}
 	if (registers & 0x9C) {
 		gba->video.renderer->reset(gba->video.renderer);
-		gba->video.renderer->writeVideoRegister(gba->video.renderer, REG_DISPCNT, gba->memory.io[REG_DISPCNT >> 1]);
+		gba->video.renderer->writeVideoRegister(gba->video.renderer, GBA_REG_DISPCNT, gba->memory.io[GBA_REG(DISPCNT)]);
 		int i;
-		for (i = REG_BG0CNT; i < REG_SOUND1CNT_LO; i += 2) {
-			gba->video.renderer->writeVideoRegister(gba->video.renderer, i, gba->memory.io[i >> 1]);
-		}
-	}
-	if (registers & 0x9C) {
-		gba->video.renderer->reset(gba->video.renderer);
-		gba->video.renderer->writeVideoRegister(gba->video.renderer, REG_DISPCNT, gba->memory.io[REG_DISPCNT >> 1]);
-		int i;
-		for (i = REG_BG0CNT; i < REG_SOUND1CNT_LO; i += 2) {
+		for (i = GBA_REG_BG0CNT; i < GBA_REG_SOUND1CNT_LO; i += 2) {
 			gba->video.renderer->writeVideoRegister(gba->video.renderer, i, gba->memory.io[i >> 1]);
 		}
 	}
@@ -206,6 +174,8 @@ static void _BgAffineSet(struct GBA* gba) {
 	int destination = cpu->gprs[1];
 	float a, b, c, d;
 	float rx, ry;
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_SYSTEM;
 	while (i--) {
 		// [ sx   0  0 ]   [ cos(theta)  -sin(theta)  0 ]   [ 1  0  cx - ox ]   [ A B rx ]
 		// [  0  sy  0 ] * [ sin(theta)   cos(theta)  0 ] * [ 0  1  cy - oy ] = [ C D ry ]
@@ -237,6 +207,7 @@ static void _BgAffineSet(struct GBA* gba) {
 		cpu->memory.store32(cpu, destination + 12, ry * 256, 0);
 		destination += 16;
 	}
+	cpu->memory.accessSource = oldAccess;
 }
 
 static void _ObjAffineSet(struct GBA* gba) {
@@ -248,6 +219,8 @@ static void _ObjAffineSet(struct GBA* gba) {
 	int destination = cpu->gprs[1];
 	int diff = cpu->gprs[3];
 	float a, b, c, d;
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_SYSTEM;
 	while (i--) {
 		// [ sx   0 ]   [ cos(theta)  -sin(theta) ]   [ A B ]
 		// [  0  sy ] * [ sin(theta)   cos(theta) ] = [ C D ]
@@ -269,14 +242,18 @@ static void _ObjAffineSet(struct GBA* gba) {
 		cpu->memory.store16(cpu, destination + diff * 3, d * 256, 0);
 		destination += diff * 4;
 	}
+	cpu->memory.accessSource = oldAccess;
 }
 
 static void _MidiKey2Freq(struct GBA* gba) {
 	struct ARMCore* cpu = gba->cpu;
 
 	int oldRegion = gba->memory.activeRegion;
-	gba->memory.activeRegion = REGION_BIOS;
+	gba->memory.activeRegion = GBA_REGION_BIOS;
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_SYSTEM;
 	uint32_t key = cpu->memory.load32(cpu, cpu->gprs[0] + 4, 0);
+	cpu->memory.accessSource = oldAccess;
 	gba->memory.activeRegion = oldRegion;
 
 	cpu->gprs[0] = key / exp2f((180.f - cpu->gprs[1] - cpu->gprs[2] / 256.f) / 12.f);
@@ -453,7 +430,7 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 	bool useStall = false;
 	switch (immediate) {
 	case GBA_SWI_SOFT_RESET:
-		_SoftReset(gba);
+		ARMRaiseSWI(cpu);
 		break;
 	case GBA_SWI_REGISTER_RAM_RESET:
 		_RegisterRamReset(gba);
@@ -494,7 +471,7 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		break;
 	case GBA_SWI_CPU_SET:
 	case GBA_SWI_CPU_FAST_SET:
-		if (cpu->gprs[0] >> BASE_OFFSET < REGION_WORKING_RAM) {
+		if (cpu->gprs[0] >> BASE_OFFSET < GBA_REGION_EWRAM) {
 			mLOG(GBA_BIOS, GAME_ERROR, "Cannot CpuSet from BIOS");
 			break;
 		}
@@ -509,7 +486,7 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 	case GBA_SWI_GET_BIOS_CHECKSUM:
 		cpu->gprs[0] = GBA_BIOS_CHECKSUM;
 		cpu->gprs[1] = 1;
-		cpu->gprs[3] = SIZE_BIOS;
+		cpu->gprs[3] = GBA_SIZE_BIOS;
 		break;
 	case GBA_SWI_BG_AFFINE_SET:
 		_BgAffineSet(gba);
@@ -518,7 +495,7 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		_ObjAffineSet(gba);
 		break;
 	case GBA_SWI_BIT_UNPACK:
-		if (cpu->gprs[0] < BASE_WORKING_RAM) {
+		if (cpu->gprs[0] < GBA_BASE_EWRAM) {
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad BitUnPack source");
 			break;
 		}
@@ -526,9 +503,9 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		default:
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad BitUnPack destination");
 		// Fall through
-		case REGION_WORKING_RAM:
-		case REGION_WORKING_IRAM:
-		case REGION_VRAM:
+		case GBA_REGION_EWRAM:
+		case GBA_REGION_IWRAM:
+		case GBA_REGION_VRAM:
 			_unBitPack(gba);
 			break;
 		}
@@ -543,9 +520,9 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		default:
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad LZ77 destination");
 		// Fall through
-		case REGION_WORKING_RAM:
-		case REGION_WORKING_IRAM:
-		case REGION_VRAM:
+		case GBA_REGION_EWRAM:
+		case GBA_REGION_IWRAM:
+		case GBA_REGION_VRAM:
 			useStall = true;
 			_unLz77(gba, immediate == GBA_SWI_LZ77_UNCOMP_WRAM ? 1 : 2);
 			break;
@@ -560,9 +537,9 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		default:
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad Huffman destination");
 		// Fall through
-		case REGION_WORKING_RAM:
-		case REGION_WORKING_IRAM:
-		case REGION_VRAM:
+		case GBA_REGION_EWRAM:
+		case GBA_REGION_IWRAM:
+		case GBA_REGION_VRAM:
 			_unHuffman(gba);
 			break;
 		}
@@ -577,9 +554,9 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		default:
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad RL destination");
 		// Fall through
-		case REGION_WORKING_RAM:
-		case REGION_WORKING_IRAM:
-		case REGION_VRAM:
+		case GBA_REGION_EWRAM:
+		case GBA_REGION_IWRAM:
+		case GBA_REGION_VRAM:
 			_unRl(gba, immediate == GBA_SWI_RL_UNCOMP_WRAM ? 1 : 2);
 			break;
 		}
@@ -595,9 +572,9 @@ void GBASwi16(struct ARMCore* cpu, int immediate) {
 		default:
 			mLOG(GBA_BIOS, GAME_ERROR, "Bad UnFilter destination");
 		// Fall through
-		case REGION_WORKING_RAM:
-		case REGION_WORKING_IRAM:
-		case REGION_VRAM:
+		case GBA_REGION_EWRAM:
+		case GBA_REGION_IWRAM:
+		case GBA_REGION_VRAM:
 			_unFilter(gba, immediate == GBA_SWI_DIFF_16BIT_UNFILTER ? 2 : 1, immediate == GBA_SWI_DIFF_8BIT_UNFILTER_WRAM ? 1 : 2);
 			break;
 		}
@@ -656,6 +633,8 @@ static void _unLz77(struct GBA* gba, int width) {
 	uint32_t source = cpu->gprs[0];
 	uint32_t dest = cpu->gprs[1];
 	int cycles = 20;
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_DECOMPRESS;
 	int remaining = (cpu->memory.load32(cpu, source, &cycles) & 0xFFFFFF00) >> 8;
 	// We assume the signature byte (0x10) is correct
 	int blockheader = 0; // Some compilers warn if this isn't set, even though it's trivially provably always set
@@ -730,6 +709,7 @@ static void _unLz77(struct GBA* gba, int width) {
 			blocksRemaining = 8;
 		}
 	}
+	cpu->memory.accessSource = oldAccess;
 	cpu->gprs[0] = source;
 	cpu->gprs[1] = dest;
 	cpu->gprs[3] = 0;
@@ -745,6 +725,8 @@ static void _unHuffman(struct GBA* gba) {
 	struct ARMCore* cpu = gba->cpu;
 	uint32_t source = cpu->gprs[0] & 0xFFFFFFFC;
 	uint32_t dest = cpu->gprs[1];
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_DECOMPRESS;
 	uint32_t header = cpu->memory.load32(cpu, source, 0);
 	int remaining = header >> 8;
 	unsigned bits = header & 0xF;
@@ -754,6 +736,7 @@ static void _unHuffman(struct GBA* gba) {
 	}
 	if (32 % bits || bits == 1) {
 		mLOG(GBA_BIOS, STUB, "Unimplemented unaligned Huffman");
+		cpu->memory.accessSource = oldAccess;
 		return;
 	}
 	// We assume the signature byte (0x20) is correct
@@ -805,6 +788,7 @@ static void _unHuffman(struct GBA* gba) {
 			}
 		}
 	}
+	cpu->memory.accessSource = oldAccess;
 	cpu->gprs[0] = source;
 	cpu->gprs[1] = dest;
 }
@@ -812,6 +796,8 @@ static void _unHuffman(struct GBA* gba) {
 static void _unRl(struct GBA* gba, int width) {
 	struct ARMCore* cpu = gba->cpu;
 	uint32_t source = cpu->gprs[0];
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_DECOMPRESS;
 	int remaining = (cpu->memory.load32(cpu, source & 0xFFFFFFFC, 0) & 0xFFFFFF00) >> 8;
 	int padding = (4 - remaining) & 0x3;
 	// We assume the signature byte (0x30) is correct
@@ -878,6 +864,7 @@ static void _unRl(struct GBA* gba, int width) {
 			++dest;
 		}
 	}
+	cpu->memory.accessSource = oldAccess;
 	cpu->gprs[0] = source;
 	cpu->gprs[1] = dest;
 }
@@ -886,6 +873,8 @@ static void _unFilter(struct GBA* gba, int inwidth, int outwidth) {
 	struct ARMCore* cpu = gba->cpu;
 	uint32_t source = cpu->gprs[0] & 0xFFFFFFFC;
 	uint32_t dest = cpu->gprs[1];
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_DECOMPRESS;
 	uint32_t header = cpu->memory.load32(cpu, source, 0);
 	int remaining = header >> 8;
 	// We assume the signature nybble (0x8) is correct
@@ -920,6 +909,7 @@ static void _unFilter(struct GBA* gba, int inwidth, int outwidth) {
 		old = new;
 		source += inwidth;
 	}
+	cpu->memory.accessSource = oldAccess;
 	cpu->gprs[0] = source;
 	cpu->gprs[1] = dest;
 }
@@ -929,6 +919,8 @@ static void _unBitPack(struct GBA* gba) {
 	uint32_t source = cpu->gprs[0];
 	uint32_t dest = cpu->gprs[1];
 	uint32_t info = cpu->gprs[2];
+	enum mMemoryAccessSource oldAccess = cpu->memory.accessSource;
+	cpu->memory.accessSource = mACCESS_DECOMPRESS;
 	unsigned sourceLen = cpu->memory.load16(cpu, info, 0);
 	unsigned sourceWidth = cpu->memory.load8(cpu, info + 2, 0);
 	unsigned destWidth = cpu->memory.load8(cpu, info + 3, 0);
@@ -940,6 +932,7 @@ static void _unBitPack(struct GBA* gba) {
 		break;
 	default:
 		mLOG(GBA_BIOS, GAME_ERROR, "Bad BitUnPack source width: %u", sourceWidth);
+		cpu->memory.accessSource = oldAccess;
 		return;
 	}
 	switch (destWidth) {
@@ -952,6 +945,7 @@ static void _unBitPack(struct GBA* gba) {
 		break;
 	default:
 		mLOG(GBA_BIOS, GAME_ERROR, "Bad BitUnPack destination width: %u", destWidth);
+		cpu->memory.accessSource = oldAccess;
 		return;
 	}
 	uint32_t bias = cpu->memory.load32(cpu, info + 4, 0);
@@ -981,6 +975,7 @@ static void _unBitPack(struct GBA* gba) {
 			dest += 4;
 		}
 	}
+	cpu->memory.accessSource = oldAccess;
 	cpu->gprs[0] = source;
 	cpu->gprs[1] = dest;
 }

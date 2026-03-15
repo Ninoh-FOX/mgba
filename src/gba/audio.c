@@ -6,7 +6,6 @@
 #include <mgba/internal/gba/audio.h>
 
 #include <mgba/internal/arm/macros.h>
-#include <mgba/core/blip_buf.h>
 #include <mgba/core/sync.h>
 #include <mgba/internal/gba/dma.h>
 #include <mgba/internal/gba/gba.h>
@@ -16,17 +15,12 @@
 
 #define MP2K_LOCK_MAX 8
 
-#ifdef __3DS__
-#define blip_add_delta blip_add_delta_fast
-#endif
-
 mLOG_DEFINE_CATEGORY(GBA_AUDIO, "GBA Audio", "gba.audio");
 
 const unsigned GBA_AUDIO_SAMPLES = 2048;
 const int GBA_AUDIO_VOLUME_MAX = 0x100;
 
 static const int SAMPLE_INTERVAL = GBA_ARM7TDMI_FREQUENCY / 0x4000;
-static const int CLOCKS_PER_FRAME = 0x800;
 
 static int _applyBias(struct GBAAudio* audio, int sample);
 static void _sample(struct mTiming* timing, void* user, uint32_t cyclesLate);
@@ -37,24 +31,19 @@ void GBAAudioInit(struct GBAAudio* audio, size_t samples) {
 	audio->sampleEvent.callback = _sample;
 	audio->sampleEvent.priority = 0x18;
 	audio->psg.p = NULL;
-	uint8_t* nr52 = (uint8_t*) &audio->p->memory.io[REG_SOUNDCNT_X >> 1];
+	uint8_t* nr52 = (uint8_t*) &audio->p->memory.io[GBA_REG(SOUNDCNT_X)];
 #ifdef __BIG_ENDIAN__
 	++nr52;
 #endif
-	GBAudioInit(&audio->psg, 0, nr52, GB_AUDIO_GBA);
+	GBAudioInit(&audio->psg, samples, nr52, GB_AUDIO_GBA);
 	audio->psg.timing = &audio->p->timing;
-	audio->psg.clockRate = GBA_ARM7TDMI_FREQUENCY;
 	audio->psg.frameEvent.context = audio;
 	audio->samples = samples;
-	// Guess too large; we hang producing extra samples if we guess too low
-	blip_set_rates(audio->psg.left, GBA_ARM7TDMI_FREQUENCY, 96000);
-	blip_set_rates(audio->psg.right, GBA_ARM7TDMI_FREQUENCY, 96000);
 
-	audio->externalMixing = false;
 	audio->forceDisableChA = false;
 	audio->forceDisableChB = false;
 	audio->masterVolume = GBA_AUDIO_VOLUME_MAX;
-	audio->mixer = NULL;
+	audio->sampleInterval = GBA_ARM7TDMI_FREQUENCY / 0x8000;
 }
 
 void GBAAudioReset(struct GBAAudio* audio) {
@@ -93,12 +82,13 @@ void GBAAudioReset(struct GBAAudio* audio) {
 	audio->chBLeft = false;
 	audio->chBTimer = false;
 	audio->enable = false;
-	audio->sampleInterval = GBA_ARM7TDMI_FREQUENCY / 0x8000;
+	if (audio->sampleInterval != GBA_ARM7TDMI_FREQUENCY / 0x8000) {
+		audio->sampleInterval = GBA_ARM7TDMI_FREQUENCY / 0x8000;
+		if (audio->p->stream && audio->p->stream->audioRateChanged) {
+			audio->p->stream->audioRateChanged(audio->p->stream, GBA_ARM7TDMI_FREQUENCY / audio->sampleInterval);
+		}
+	}
 	audio->psg.sampleInterval = audio->sampleInterval;
-
-	blip_clear(audio->psg.left);
-	blip_clear(audio->psg.right);
-	audio->clock = 0;
 }
 
 void GBAAudioDeinit(struct GBAAudio* audio) {
@@ -108,9 +98,7 @@ void GBAAudioDeinit(struct GBAAudio* audio) {
 void GBAAudioResizeBuffer(struct GBAAudio* audio, size_t samples) {
 	mCoreSyncLockAudio(audio->p->sync);
 	audio->samples = samples;
-	blip_clear(audio->psg.left);
-	blip_clear(audio->psg.right);
-	audio->clock = 0;
+	audio->psg.samples = samples;
 	mCoreSyncConsumeAudio(audio->p->sync);
 }
 
@@ -118,29 +106,15 @@ void GBAAudioScheduleFifoDma(struct GBAAudio* audio, int number, struct GBADMA* 
 	info->reg = GBADMARegisterSetDestControl(info->reg, GBA_DMA_FIXED);
 	info->reg = GBADMARegisterSetWidth(info->reg, 1);
 	switch (info->dest) {
-	case BASE_IO | REG_FIFO_A_LO:
+	case GBA_BASE_IO | GBA_REG_FIFO_A_LO:
 		audio->chA.dmaSource = number;
 		break;
-	case BASE_IO | REG_FIFO_B_LO:
+	case GBA_BASE_IO | GBA_REG_FIFO_B_LO:
 		audio->chB.dmaSource = number;
 		break;
 	default:
 		mLOG(GBA_AUDIO, GAME_ERROR, "Invalid FIFO destination: 0x%08X", info->dest);
 		return;
-	}
-	uint32_t source = info->source;
-	uint32_t magic[2] = {
-		audio->p->cpu->memory.load32(audio->p->cpu, source - 0x350, NULL),
-		audio->p->cpu->memory.load32(audio->p->cpu, source - 0x980, NULL)
-	};
-	if (audio->mixer) {
-		if (magic[0] - MP2K_MAGIC <= MP2K_LOCK_MAX) {
-			audio->mixer->engage(audio->mixer, source - 0x350);
-		} else if (magic[1] - MP2K_MAGIC <= MP2K_LOCK_MAX) {
-			audio->mixer->engage(audio->mixer, source - 0x980);
-		} else {
-			audio->externalMixing = false;
-		}
 	}
 }
 
@@ -231,16 +205,39 @@ void GBAAudioWriteSOUNDCNT_HI(struct GBAAudio* audio, uint16_t value) {
 }
 
 void GBAAudioWriteSOUNDCNT_X(struct GBAAudio* audio, uint16_t value) {
+	GBAAudioSample(audio, mTimingCurrentTime(&audio->p->timing));
 	audio->enable = GBAudioEnableGetEnable(value);
 	GBAudioWriteNR52(&audio->psg, value);
+	if (!audio->enable) {
+		int i;
+		for (i = GBA_REG_SOUND1CNT_LO; i < GBA_REG_SOUNDCNT_HI; i += 2) {
+			audio->p->memory.io[i >> 1] = 0;
+		}
+		audio->psg.ch3.size = 0;
+		audio->psg.ch3.bank = 0;
+		audio->psg.ch3.volume = 0;
+		audio->volume = 0;
+		audio->volumeChA = 0;
+		audio->volumeChB = 0;
+		audio->p->memory.io[GBA_REG(SOUNDCNT_HI)] &= 0xFF00;
+	}
 }
 
 void GBAAudioWriteSOUNDBIAS(struct GBAAudio* audio, uint16_t value) {
+	int32_t timestamp = mTimingCurrentTime(&audio->p->timing);
+	GBAAudioSample(audio, timestamp);
 	audio->soundbias = value;
 	int32_t oldSampleInterval = audio->sampleInterval;
 	audio->sampleInterval = 0x200 >> GBARegisterSOUNDBIASGetResolution(value);
-	if (oldSampleInterval != audio->sampleInterval && audio->p->stream && audio->p->stream->audioRateChanged) {
-		audio->p->stream->audioRateChanged(audio->p->stream, GBA_ARM7TDMI_FREQUENCY / audio->sampleInterval);
+	if (oldSampleInterval != audio->sampleInterval) {
+		timestamp -= audio->lastSample;
+		audio->sampleIndex = timestamp >> (9 - GBARegisterSOUNDBIASGetResolution(value));
+		if (audio->sampleIndex >= GBA_MAX_SAMPLES) {
+			audio->sampleIndex = 0;
+		}
+		if (audio->p->stream && audio->p->stream->audioRateChanged) {
+			audio->p->stream->audioRateChanged(audio->p->stream, GBA_ARM7TDMI_FREQUENCY / audio->sampleInterval);
+		}
 	}
 }
 
@@ -273,10 +270,10 @@ uint32_t GBAAudioReadWaveRAM(struct GBAAudio* audio, int address) {
 uint32_t GBAAudioWriteFIFO(struct GBAAudio* audio, int address, uint32_t value) {
 	struct GBAAudioFIFO* channel;
 	switch (address) {
-	case REG_FIFO_A_LO:
+	case GBA_REG_FIFO_A_LO:
 		channel = &audio->chA;
 		break;
-	case REG_FIFO_B_LO:
+	case GBA_REG_FIFO_B_LO:
 		channel = &audio->chB;
 		break;
 	default:
@@ -312,6 +309,7 @@ void GBAAudioSampleFIFO(struct GBAAudio* audio, int fifoId, int32_t cycles) {
 		if (GBADMARegisterGetTiming(dma->reg) == GBA_DMA_TIMING_CUSTOM) {
 			dma->when = mTimingCurrentTime(&audio->p->timing) - cycles;
 			dma->nextCount = 4;
+			GBADMARecalculateCycles(audio->p);
 			GBADMASchedule(audio->p, channel->dmaSource, dma);
 		}
 	}
@@ -327,6 +325,9 @@ void GBAAudioSampleFIFO(struct GBAAudio* audio, int fifoId, int32_t cycles) {
 	int bits = 2 << GBARegisterSOUNDBIASGetResolution(audio->soundbias);
 	until += 1 << (9 - GBARegisterSOUNDBIASGetResolution(audio->soundbias));
 	until >>= 9 - GBARegisterSOUNDBIASGetResolution(audio->soundbias);
+	if (UNLIKELY(bits < until)) {
+		until = bits;
+	}
 	int i;
 	for (i = bits - until; i < bits; ++i) {
 		channel->samples[i] = channel->internalSample;
@@ -362,28 +363,23 @@ void GBAAudioSample(struct GBAAudio* audio, int32_t timestamp) {
 		sampleLeft >>= psgShift;
 		sampleRight >>= psgShift;
 
-		if (audio->mixer) {
-			audio->mixer->step(audio->mixer);
-		}
-		if (!audio->externalMixing) {
-			if (!audio->forceDisableChA) {
-				if (audio->chALeft) {
-					sampleLeft += (audio->chA.samples[sample] << 2) >> !audio->volumeChA;
-				}
-
-				if (audio->chARight) {
-					sampleRight += (audio->chA.samples[sample] << 2) >> !audio->volumeChA;
-				}
+		if (!audio->forceDisableChA) {
+			if (audio->chALeft) {
+				sampleLeft += (audio->chA.samples[sample] << 2) >> !audio->volumeChA;
 			}
 
-			if (!audio->forceDisableChB) {
-				if (audio->chBLeft) {
-					sampleLeft += (audio->chB.samples[sample] << 2) >> !audio->volumeChB;
-				}
+			if (audio->chARight) {
+				sampleRight += (audio->chA.samples[sample] << 2) >> !audio->volumeChA;
+			}
+		}
 
-				if (audio->chBRight) {
-					sampleRight += (audio->chB.samples[sample] << 2) >> !audio->volumeChB;
-				}
+		if (!audio->forceDisableChB) {
+			if (audio->chBLeft) {
+				sampleLeft += (audio->chB.samples[sample] << 2) >> !audio->volumeChB;
+			}
+
+			if (audio->chBRight) {
+				sampleRight += (audio->chB.samples[sample] << 2) >> !audio->volumeChB;
 			}
 		}
 
@@ -409,37 +405,25 @@ static void _sample(struct mTiming* timing, void* user, uint32_t cyclesLate) {
 	memset(audio->chB.samples, audio->chB.samples[samples - 1], sizeof(audio->chB.samples));
 
 	mCoreSyncLockAudio(audio->p->sync);
-	unsigned produced;
-	int i;
-	for (i = 0; i < samples; ++i) {
-		int16_t sampleLeft = audio->currentSamples[i].left;
-		int16_t sampleRight = audio->currentSamples[i].right;
-		if ((size_t) blip_samples_avail(audio->psg.left) < audio->samples) {
-			blip_add_delta(audio->psg.left, audio->clock, sampleLeft - audio->lastLeft);
-			blip_add_delta(audio->psg.right, audio->clock, sampleRight - audio->lastRight);
-			audio->lastLeft = sampleLeft;
-			audio->lastRight = sampleRight;
-			audio->clock += audio->sampleInterval;
-			if (audio->clock >= CLOCKS_PER_FRAME) {
-				blip_end_frame(audio->psg.left, CLOCKS_PER_FRAME);
-				blip_end_frame(audio->psg.right, CLOCKS_PER_FRAME);
-				audio->clock -= CLOCKS_PER_FRAME;
+	mAudioBufferWrite(&audio->psg.buffer, (int16_t*) audio->currentSamples, samples);
+	if (audio->p->stream) {
+		if (audio->p->stream->postAudioFrame) {
+			int i;
+			for (i = 0; i < samples; ++i) {
+				audio->p->stream->postAudioFrame(audio->p->stream, audio->currentSamples[i].left,audio->currentSamples[i].right);
 			}
 		}
-
-		if (audio->p->stream && audio->p->stream->postAudioFrame) {
-			audio->p->stream->postAudioFrame(audio->p->stream, sampleLeft, sampleRight);
+		if (audio->p->stream->postAudioBuffer) {
+			unsigned produced = mAudioBufferAvailable(&audio->psg.buffer);
+			bool wait = produced >= audio->samples;
+			if (wait) {
+				audio->p->stream->postAudioBuffer(audio->p->stream, &audio->psg.buffer);
+			}
 		}
 	}
-	produced = blip_samples_avail(audio->psg.left);
-	bool wait = produced >= audio->samples;
-	if (!mCoreSyncProduceAudio(audio->p->sync, audio->psg.left, audio->samples)) {
+	if (!mCoreSyncProduceAudio(audio->p->sync, &audio->psg.buffer)) {
 		// Interrupted
 		audio->p->earlyExit = true;
-	}
-
-	if (wait && audio->p->stream && audio->p->stream->postAudioBuffer) {
-		audio->p->stream->postAudioBuffer(audio->p->stream, audio->psg.left, audio->psg.right);
 	}
 
 	mTimingSchedule(timing, &audio->sampleEvent, SAMPLE_INTERVAL - cyclesLate);
@@ -498,6 +482,10 @@ void GBAAudioSerialize(const struct GBAAudio* audio, struct GBASerializedState* 
 
 	GBASerializedAudioFlags2 flags2 = 0;
 	flags2 = GBASerializedAudioFlags2SetSampleIndex(flags2, audio->sampleIndex);
+	// This flag was introduced in 0.11 and will only ever be 0, 1 or 2, so we
+	// add 1 and use a non-zero value to mark its presence in the state file
+	flags2 = GBASerializedAudioFlags2SetChASource(flags2, audio->chA.dmaSource + 1);
+	flags2 = GBASerializedAudioFlags2SetChBSource(flags2, audio->chB.dmaSource + 1);
 	STORE_32(flags2, 0, &state->audio.gbaFlags2);
 
 	STORE_32(audio->sampleEvent.when - mTimingCurrentTime(&audio->p->timing), 0, &state->audio.nextSample);
@@ -505,6 +493,16 @@ void GBAAudioSerialize(const struct GBAAudio* audio, struct GBASerializedState* 
 
 void GBAAudioDeserialize(struct GBAAudio* audio, const struct GBASerializedState* state) {
 	GBAudioPSGDeserialize(&audio->psg, &state->audio.psg, &state->audio.flags);
+
+	uint16_t reg;
+	LOAD_16(reg, GBA_REG_SOUND1CNT_X, state->io);
+	GBAIOWrite(audio->p, GBA_REG_SOUND1CNT_X, reg & 0x7FFF);
+	LOAD_16(reg, GBA_REG_SOUND2CNT_HI, state->io);
+	GBAIOWrite(audio->p, GBA_REG_SOUND2CNT_HI, reg & 0x7FFF);
+	LOAD_16(reg, GBA_REG_SOUND3CNT_X, state->io);
+	GBAIOWrite(audio->p, GBA_REG_SOUND3CNT_X, reg & 0x7FFF);
+	LOAD_16(reg, GBA_REG_SOUND4CNT_HI, state->io);
+	GBAIOWrite(audio->p, GBA_REG_SOUND4CNT_HI, reg & 0x7FFF);
 
 	LOAD_32(audio->chA.internalSample, 0, &state->audio.internalA);
 	LOAD_32(audio->chB.internalSample, 0, &state->audio.internalB);
@@ -539,6 +537,14 @@ void GBAAudioDeserialize(struct GBAAudio* audio, const struct GBASerializedState
 	GBASerializedAudioFlags2 flags2;
 	LOAD_32(flags2, 0, &state->audio.gbaFlags2);
 	audio->sampleIndex = GBASerializedAudioFlags2GetSampleIndex(flags2);
+	// This flag was introduced in 0.11 and will only ever be 0, 1 or 2, so we
+	// add 1 and use a non-zero value to mark its presence in the state file
+	if (GBASerializedAudioFlags2GetChASource(flags2) > 0) {
+		audio->chA.dmaSource = GBASerializedAudioFlags2GetChASource(flags2) - 1;
+	}
+	if (GBASerializedAudioFlags2GetChBSource(flags2) > 0) {
+		audio->chB.dmaSource = GBASerializedAudioFlags2GetChBSource(flags2) - 1;
+	}
 
 	uint32_t when;
 	LOAD_32(when, 0, &state->audio.nextSample);
@@ -546,8 +552,4 @@ void GBAAudioDeserialize(struct GBAAudio* audio, const struct GBASerializedState
 		audio->lastSample = when - SAMPLE_INTERVAL;
 	}
 	mTimingSchedule(&audio->p->timing, &audio->sampleEvent, when);
-}
-
-float GBAAudioCalculateRatio(float inputSampleRate, float desiredFPS, float desiredSampleRate) {
-	return desiredSampleRate * GBA_ARM7TDMI_FREQUENCY / (VIDEO_TOTAL_LENGTH * desiredFPS * inputSampleRate);
 }

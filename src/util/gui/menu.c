@@ -17,31 +17,36 @@
 DEFINE_VECTOR(GUIMenuItemList, struct GUIMenuItem);
 DEFINE_VECTOR(GUIMenuSavedList, struct GUIMenuSavedState);
 
+mLOG_DEFINE_CATEGORY(GUI_MENU, "GUI Menu", "gui.menu");
+
 void _itemNext(struct GUIMenuItem* item, bool wrap) {
-	if (item->state < item->nStates - 1) {
+	if (wrap || item->state < item->nStates - 1) {
 		unsigned oldState = item->state;
 		do {
 			++item->state;
+			if (item->state >= item->nStates) {
+				item->state -= item->nStates;
+			}
 		} while (!item->validStates[item->state] && item->state < item->nStates - 1);
 		if (!item->validStates[item->state]) {
 			item->state = oldState;
 		}
-	} else if (wrap) {
-		item->state = 0;
 	}
 }
 
 void _itemPrev(struct GUIMenuItem* item, bool wrap) {
-	if (item->state > 0) {
+	if (wrap || item->state > 0) {
 		unsigned oldState = item->state;
 		do {
-			--item->state;
+			if (item->state > 0) {
+				--item->state;
+			} else {
+				item->state = item->nStates - 1;
+			}
 		} while (!item->validStates[item->state] && item->state > 0);
 		if (!item->validStates[item->state]) {
 			item->state = oldState;
 		}
-	} else if (wrap) {
-		item->state = item->nStates - 1;
 	}
 }
 
@@ -114,12 +119,6 @@ static enum GUIMenuExitReason GUIMenuPollInput(struct GUIParams* params, struct 
 	state->cursor = GUIPollCursor(params, &state->cx, &state->cy);
 
 	// Check for new direction presses
-	if (newInput & (1 << GUI_INPUT_UP) && menu->index > 0) {
-		--menu->index;
-	}
-	if (newInput & (1 << GUI_INPUT_DOWN) && menu->index < GUIMenuItemListSize(&menu->items) - 1) {
-		++menu->index;
-	}
 	if (newInput & (1 << GUI_INPUT_LEFT)) {
 		struct GUIMenuItem* item = GUIMenuItemListGetPointer(&menu->items, menu->index);
 		if (item->validStates && !item->readonly) {
@@ -138,6 +137,20 @@ static enum GUIMenuExitReason GUIMenuPollInput(struct GUIParams* params, struct 
 			menu->index += pageSize;
 		} else {
 			menu->index = GUIMenuItemListSize(&menu->items) - 1;
+		}
+	}
+	if (newInput & (1 << GUI_INPUT_UP)) {
+		if (menu->index > 0) {
+			--menu->index;
+		} else {
+			menu->index = GUIMenuItemListSize(&menu->items) - 1;
+		}
+	}
+	if (newInput & (1 << GUI_INPUT_DOWN)) {
+		if (menu->index < GUIMenuItemListSize(&menu->items) - 1) {
+			++menu->index;
+		} else {
+			menu->index = 0;
 		}
 	}
 

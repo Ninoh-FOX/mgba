@@ -22,6 +22,9 @@ enum {
 	GB_VIDEO_VBLANK_PIXELS = 10,
 	GB_VIDEO_VERTICAL_TOTAL_PIXELS = 154,
 
+	SGB_VIDEO_HORIZONTAL_PIXELS = 256,
+	SGB_VIDEO_VERTICAL_PIXELS = 224,
+
 	// TODO: Figure out exact lengths
 	GB_VIDEO_MODE_2_LENGTH = 80,
 	GB_VIDEO_MODE_3_LENGTH_BASE = 172,
@@ -106,7 +109,7 @@ struct GBVideoRenderer {
 	bool highlightBG;
 	bool highlightOBJ[GB_VIDEO_MAX_OBJ];
 	bool highlightWIN;
-	color_t highlightColor;
+	mColor highlightColor;
 	uint8_t highlightAmount;
 };
 

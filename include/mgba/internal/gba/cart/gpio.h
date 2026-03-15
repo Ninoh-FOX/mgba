@@ -18,19 +18,6 @@ mLOG_DECLARE_CATEGORY(GBA_HW);
 
 #define IS_GPIO_REGISTER(reg) ((reg) == GPIO_REG_DATA || (reg) == GPIO_REG_DIRECTION || (reg) == GPIO_REG_CONTROL)
 
-enum GBAHardwareDevice {
-	HW_NO_OVERRIDE = 0x8000,
-	HW_NONE = 0,
-	HW_RTC = 1,
-	HW_RUMBLE = 2,
-	HW_LIGHT_SENSOR = 4,
-	HW_GYRO = 8,
-	HW_TILT = 16,
-	HW_GB_PLAYER = 32,
-	HW_GB_PLAYER_DETECTION = 64,
-	HW_EREADER = 128
-};
-
 enum GPIORegister {
 	GPIO_REG_DATA = 0xC4,
 	GPIO_REG_DIRECTION = 0xC6,
@@ -62,10 +49,11 @@ DECL_BIT(RTCCommandData, Reading, 7);
 
 struct GBARTC {
 	int32_t bytesRemaining;
-	int32_t transferStep;
 	int32_t bitsRead;
 	int32_t bits;
 	int32_t commandActive;
+	bool sckEdge;
+	bool sioOutput;
 	RTCCommandData command;
 	RTCControl control;
 	uint8_t time[7];
@@ -81,8 +69,9 @@ struct GBACartridgeHardware {
 	enum GPIODirection readWrite;
 	uint16_t* gpioBase;
 
-	uint16_t pinState;
-	uint16_t direction;
+	uint8_t writeLatch;
+	uint8_t pinState;
+	uint8_t direction;
 
 	struct GBARTC rtc;
 
@@ -99,6 +88,7 @@ struct GBACartridgeHardware {
 };
 
 void GBAHardwareInit(struct GBACartridgeHardware* gpio, uint16_t* gpioBase);
+void GBAHardwareReset(struct GBACartridgeHardware* gpio);
 void GBAHardwareClear(struct GBACartridgeHardware* gpio);
 
 void GBAHardwareInitRTC(struct GBACartridgeHardware* gpio);

@@ -138,7 +138,7 @@ void ObjView::updateTilesGBA(bool force) {
 	for (unsigned y = 0; y < newInfo.height; ++y) {
 		for (unsigned x = 0; x < newInfo.width; ++x, ++i, ++tile, ++tileBase) {
 			if (tile < maxTiles) {
-				const color_t* data = mTileCacheGetTileIfDirty(tileCache, &m_tileStatus[16 * tileBase], tile, newInfo.paletteId);
+				const mColor* data = mTileCacheGetTileIfDirty(tileCache, &m_tileStatus[16 * tileBase], tile, newInfo.paletteId);
 				if (data) {
 					m_ui.tiles->setTile(i, data);
 				} else if (force) {
@@ -157,7 +157,7 @@ void ObjView::updateTilesGBA(bool force) {
 	m_ui.w->setText(QString::number(newInfo.width * 8));
 	m_ui.h->setText(QString::number(newInfo.height * 8));
 
-	m_ui.address->setText(tr("0x%0").arg(BASE_OAM + m_objId * sizeof(*obj), 8, 16, QChar('0')));
+	m_ui.address->setText(tr("0x%0").arg(GBA_BASE_OAM + m_objId * sizeof(*obj), 8, 16, QChar('0')));
 	m_ui.priority->setText(QString::number(newInfo.priority));
 	m_ui.flippedH->setChecked(newInfo.hflip);
 	m_ui.flippedV->setChecked(newInfo.vflip);
@@ -233,7 +233,7 @@ void ObjView::updateTilesGB(bool force) {
 	m_ui.tile->setPalette(newInfo.paletteId);
 	for (unsigned y = 0; y < newInfo.height; ++y, ++i) {
 		unsigned t = tile + i;
-		const color_t* data = mTileCacheGetTileIfDirty(tileCache, &m_tileStatus[8 * t], t, newInfo.paletteId);
+		const mColor* data = mTileCacheGetTileIfDirty(tileCache, &m_tileStatus[8 * t], t, newInfo.paletteId);
 		if (data) {
 			m_ui.tiles->setTile(i, data);
 		} else if (force) {

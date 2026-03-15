@@ -12,8 +12,8 @@ if(BUILD_SDL)
 		link_directories(${SDL2_LIBDIR})
 	endif()
 	list(APPEND PLATFORM_LIBRARY ${SDL_LIBRARY})
-	list(APPEND PLATFORM_SRC ${PLATFORM_SRC} ${CMAKE_SOURCE_DIR}/src/platform/sdl/sdl-events.c ${CMAKE_SOURCE_DIR}/src/platform/sdl/sdl-audio.c)
-	include_directories(${SDL_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src/platform/sdl)
+	list(APPEND PLATFORM_SRC ${PLATFORM_SRC} ${PROJECT_SOURCE_DIR}/src/platform/sdl/sdl-events.c ${PROJECT_SOURCE_DIR}/src/platform/sdl/sdl-audio.c)
+	include_directories(${SDL_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/src/platform/sdl)
 endif()
 
 if(POLICY CMP0071)
@@ -25,8 +25,24 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(QT_LIBRARIES)
 
-find_package(Qt5 COMPONENTS Core Widgets Network Multimedia)
-set(QT Qt5)
+option(FORCE_QT_VERSION "Force the used Qt version" OFF)
+
+if(FORCE_QT_VERSION EQUAL 5 OR FORCE_QT_VERSION EQUAL 6)
+	set(QT_VERSIONS ${FORCE_QT_VERSION})
+else()
+	set(QT_VERSIONS 6 5)
+endif()
+foreach(V ${QT_VERSIONS})
+	set(QT Qt${V})
+	set(QT_V ${V})
+	find_package(${QT} COMPONENTS Core Widgets Network OPTIONAL_COMPONENTS Multimedia)
+	if(QT_V GREATER_EQUAL 6)
+		find_package(${QT} COMPONENTS OpenGL OpenGLWidgets)
+	endif()
+	if(${${QT}Widgets_FOUND})
+		break()
+	endif()
+endforeach()
 
 if(NOT BUILD_GL AND NOT BUILD_GLES2 AND NOT BUILD_GLES3)
 	message(WARNING "OpenGL is recommended to build the Qt port")
@@ -43,28 +59,32 @@ if(APPLE)
 		list(APPEND QT_DEFINES USE_SHARE_WIDGET)
 	endif()
 
-	if(Qt6Widgets_VERSION)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.14")
+	# Allows building with Qt that was built with std::filesystem support, which requires macOS 15
+	if(Qt6Widgets_VERSION AND MACOSX_SDK VERSION_GREATER_EQUAL 10.15)
+		set(MIN_VER 10.15)
+	elseif(Qt6Widgets_VERSION)
+		set(MIN_VER 10.14)
 	elseif(Qt5Widgets_VERSION MATCHES "^5.15")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.13")
+		set(MIN_VER 10.13)
 	elseif(Qt5Widgets_VERSION MATCHES "^5.1[234]")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.12")
+		set(MIN_VER 10.12)
 	elseif(Qt5Widgets_VERSION MATCHES "^5.11")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.11")
+		set(MIN_VER 10.11)
 	elseif(Qt5Widgets_VERSION MATCHES "^5.(9|10)")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.10")
+		set(MIN_VER 10.10)
 	elseif(Qt5Widgets_VERSION MATCHES "^5.8")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9")
+		set(MIN_VER 10.9)
 	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.8")
+		set(MIN_VER 10.8)
 	endif()
+	set(CMAKE_OSX_DEPLOYMENT_TARGET ${MIN_VER})
 	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 	endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -Werror=narrowing")
 endif()
 
 get_target_property(QT_TYPE ${QT}::Core TYPE)
@@ -103,10 +123,15 @@ set(SOURCE_FILES
 	GBAApp.cpp
 	GBAKeyEditor.cpp
 	GIFView.cpp
-	GamepadAxisEvent.cpp
-	GamepadButtonEvent.cpp
-	GamepadHatEvent.cpp
 	IOViewer.cpp
+	input/Gamepad.cpp
+	input/GamepadAxisEvent.cpp
+	input/GamepadButtonEvent.cpp
+	input/GamepadHatEvent.cpp
+	input/InputDriver.cpp
+	input/InputSource.cpp
+	input/InputMapper.cpp
+	input/KeySource.cpp
 	InputController.cpp
 	InputProfile.cpp
 	KeyEditor.cpp
@@ -164,6 +189,7 @@ set(UI_FILES
 	LoadSaveState.ui
 	LogView.ui
 	MapView.ui
+	MemoryAccessLogView.ui
 	MemoryDump.ui
 	MemorySearch.ui
 	MemoryView.ui
@@ -194,10 +220,16 @@ set(GB_SRC
 	GBOverride.cpp
 	PrinterView.cpp)
 
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libqt5widgets5")
+set(TEST_QT_spanset_SRC
+	test/spanset.cpp
+	utils.cpp
+	VFileDevice.cpp)
+
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libqt${QT_V}widgets${QT_V}")
 
 set(AUDIO_SRC)
 if(BUILD_SDL)
+	list(APPEND SOURCE_FILES input/SDLInputDriver.cpp)
 	list(APPEND AUDIO_SRC AudioProcessorSDL.cpp)
 endif()
 
@@ -212,16 +244,15 @@ endif()
 if(${QT}Multimedia_FOUND)
 	list(APPEND AUDIO_SRC
 		AudioProcessorQt.cpp
-		AudioDevice.cpp)
-	list(APPEND SOURCE_FILES
+		AudioDevice.cpp
 		VideoDumper.cpp)
 	if (WIN32 AND QT_STATIC)
-		list(APPEND QT_LIBRARIES ${QT}::QWindowsAudioPlugin ${QT}::DSServicePlugin ${QT}::QWindowsVistaStylePlugin
+		list(APPEND QT_LIBRARIES ${QT}::QWindowsAudioPlugin ${QT}::DSServicePlugin ${QT}::QWindowsVistaStylePlugin ${QT}::QJpegPlugin
                                  strmiids mfuuid mfplat mf ksguid dxva2 evr d3d9)
 	endif()
 	list(APPEND QT_LIBRARIES ${QT}::Multimedia)
 	list(APPEND QT_DEFINES BUILD_QT_MULTIMEDIA)
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libqt5multimedia5")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS},libqt${QT_V}multimedia${QT_V}")
 endif()
 
 if(NOT AUDIO_SRC)
@@ -230,14 +261,17 @@ if(NOT AUDIO_SRC)
 	return()
 endif()
 
-if(USE_DEBUGGERS)
+if(ENABLE_DEBUGGERS)
 	list(APPEND SOURCE_FILES
 		DebuggerController.cpp
 		DebuggerConsole.cpp
-		DebuggerConsoleController.cpp)
+		DebuggerConsoleController.cpp
+		MemoryAccessLogController.cpp
+		MemoryAccessLogModel.cpp
+		MemoryAccessLogView.cpp)
 endif()
 
-if(USE_GDB_STUB)
+if(ENABLE_GDB_STUB)
 	list(APPEND SOURCE_FILES GDBController.cpp GDBWindow.cpp)
 endif()
 
@@ -245,8 +279,15 @@ if(USE_SQLITE3)
 	list(APPEND SOURCE_FILES
 		ArchiveInspector.cpp
 		library/LibraryController.cpp
-		library/LibraryGrid.cpp
-		library/LibraryTree.cpp)
+		library/LibraryEntry.cpp
+		library/LibraryModel.cpp)
+
+	set(TEST_QT_library_SRC
+		library/LibraryEntry.cpp
+		library/LibraryModel.cpp
+		test/library.cpp
+		utils.cpp
+		VFileDevice.cpp)
 endif()
 
 if(USE_DISCORD_RPC)
@@ -256,13 +297,20 @@ endif()
 
 if(ENABLE_SCRIPTING)
 	list(APPEND SOURCE_FILES
+		scripting/AutorunScriptModel.cpp
+		scripting/AutorunScriptView.cpp
 		scripting/ScriptingController.cpp
 		scripting/ScriptingTextBuffer.cpp
 		scripting/ScriptingTextBufferModel.cpp
 		scripting/ScriptingView.cpp)
 
 	list(APPEND UI_FILES
+		scripting/AutorunScriptView.ui
 		scripting/ScriptingView.ui)
+
+	set(TEST_QT_autoscript_SRC
+		test/autoscript.cpp
+		scripting/AutorunScriptModel.cpp)
 endif()
 
 if(TARGET Qt6::Core)
@@ -293,7 +341,7 @@ if(APPLE)
 	set(MACOSX_BUNDLE_BUNDLE_VERSION ${LIB_VERSION_STRING})
 	set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
 	set(MACOSX_BUNDLE_GUI_IDENTIFIER com.endrift.${BINARY_NAME}-qt)
-	set_source_files_properties(${CMAKE_SOURCE_DIR}/res/mgba.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+	set_source_files_properties(${PROJECT_SOURCE_DIR}/res/mgba.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	if(DISTBUILD)
 		set(APPDIR ".")
 	else()
@@ -301,13 +349,13 @@ if(APPLE)
 	endif()
 endif()
 if(WIN32)
-	configure_file(${CMAKE_SOURCE_DIR}/res/mgba.rc.in ${CMAKE_BINARY_DIR}/res/mgba.rc)
+	configure_file(${PROJECT_SOURCE_DIR}/res/mgba.rc.in ${CMAKE_BINARY_DIR}/res/mgba.rc)
 	list(APPEND RESOURCES ${CMAKE_BINARY_DIR}/res/mgba.rc)
-	set_source_files_properties(${CMAKE_BINARY_DIR}/res/mgba.rc PROPERTIES OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/res/mgba.ico)
+	set_source_files_properties(${CMAKE_BINARY_DIR}/res/mgba.rc PROPERTIES OBJECT_DEPENDS ${PROJECT_SOURCE_DIR}/res/mgba.ico)
 endif()
 if(NOT DEFINED DATADIR)
 	if(APPLE)
-		set(DATADIR ${APPDIR}/${PROJECT_NAME}.app/Contents/Resources)
+		set(DATADIR ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources)
 	elseif(WIN32 AND NOT WIN32_UNIX_PATHS)
 		set(DATADIR ".")
 	else()
@@ -315,12 +363,23 @@ if(NOT DEFINED DATADIR)
 	endif()
 endif()
 if(BUILD_GL OR BUILD_GLES2 OR BUILD_EPOXY)
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/res/shaders DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
+	if(NOT USE_LIBZIP AND NOT USE_MINIZIP)
+		install(DIRECTORY ${PROJECT_SOURCE_DIR}/res/shaders DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
+	else()
+		file(GLOB SHADERS ${PROJECT_SOURCE_DIR}/res/shaders/*.shader)
+		file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+		foreach(SHADER_DIR ${SHADERS})
+			get_filename_component(SHADER ${SHADER_DIR} NAME)
+			add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER}" COMMAND "${CMAKE_COMMAND}" -E tar cf "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER}" --format=zip . WORKING_DIRECTORY "${SHADER_DIR}")
+			add_custom_target("${SHADER}" ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER}")
+			install(FILES "${CMAKE_CURRENT_BINARY_DIR}/shaders/${SHADER}" DESTINATION ${DATADIR}/shaders COMPONENT ${BINARY_NAME}-qt)
+		endforeach()
+	endif()
 endif()
 if(ENABLE_SCRIPTING AND USE_LUA)
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/res/scripts DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
+	install(DIRECTORY ${PROJECT_SOURCE_DIR}/res/scripts DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
 endif()
-install(FILES ${CMAKE_SOURCE_DIR}/res/nointro.dat DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
+install(FILES ${PROJECT_SOURCE_DIR}/res/nointro.dat DESTINATION ${DATADIR} COMPONENT ${BINARY_NAME}-qt)
 if(NOT WIN32 AND NOT APPLE)
 	if(DATADIR MATCHES "^\\.[.\\]")
 		list(APPEND QT_DEFINES DATADIR="${DATADIR}")
@@ -386,17 +445,21 @@ else()
 	qt5_wrap_ui(UI_SRC ${UI_FILES})
 endif()
 
-add_executable(${BINARY_NAME}-qt WIN32 MACOSX_BUNDLE main.cpp ${CMAKE_SOURCE_DIR}/res/mgba.icns ${SOURCE_FILES} ${PLATFORM_SRC} ${UI_SRC} ${AUDIO_SRC} ${RESOURCES})
-set_target_properties(${BINARY_NAME}-qt PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/res/info.plist.in COMPILE_DEFINITIONS "${FEATURE_DEFINES};${FUNCTION_DEFINES};${OS_DEFINES};${QT_DEFINES}" COMPILE_OPTIONS "${FEATURE_FLAGS}")
+add_executable(${BINARY_NAME}-qt WIN32 MACOSX_BUNDLE main.cpp ${PROJECT_SOURCE_DIR}/res/mgba.icns ${SOURCE_FILES} ${PLATFORM_SRC} ${UI_SRC} ${AUDIO_SRC} ${RESOURCES})
+set_target_properties(${BINARY_NAME}-qt PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/res/info.plist.in COMPILE_DEFINITIONS "${FEATURE_DEFINES};${FUNCTION_DEFINES};${OS_DEFINES};${QT_DEFINES}" COMPILE_OPTIONS "${FEATURE_FLAGS}")
 
 if(WIN32)
 	set_target_properties(${BINARY_NAME}-qt PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+	target_link_libraries(${BINARY_NAME}-qt dwmapi)
 	if(NOT MSVC)
 		target_link_libraries(${BINARY_NAME}-qt -municode)
 	endif()
 endif()
 
 list(APPEND QT_LIBRARIES ${QT}::Widgets ${QT}::Network)
+if(${QT_V} GREATER_EQUAL 6)
+	list(APPEND QT_LIBRARIES ${QT}::OpenGL ${QT}::OpenGLWidgets)
+endif()
 if(BUILD_GL OR BUILD_GLES2 OR BUILD_EPOXY)
 	list(APPEND QT_LIBRARIES ${OPENGL_LIBRARY} ${OPENGLES2_LIBRARY})
 endif()
@@ -406,7 +469,7 @@ if(QT_STATIC)
 		if(CMAKE_CROSSCOMPILING)
 			set(QWINDOWS_DEPS ${QT}EventDispatcherSupport ${QT}FontDatabaseSupport ${QT}ThemeSupport ${QT}WindowsUIAutomationSupport)
 		endif()
-		list(APPEND QT_LIBRARIES ${QT}::QWindowsIntegrationPlugin ${QWINDOWS_DEPS} amstrmid dwmapi uxtheme imm32 -static-libgcc -static-libstdc++)
+		list(APPEND QT_LIBRARIES ${QT}::QWindowsIntegrationPlugin ${QWINDOWS_DEPS} amstrmid uxtheme imm32 -static-libgcc -static-libstdc++)
 		set_target_properties(${QT}::Core PROPERTIES INTERFACE_LINK_LIBRARIES "${QTPCRE};version;winmm;ssl;crypto;ws2_32;iphlpapi;crypt32;userenv;netapi32;wtsapi32")
 		set_target_properties(${QT}::Gui PROPERTIES INTERFACE_LINK_LIBRARIES ${OPENGL_LIBRARY} ${OPENGLES2_LIBRARY})
 	elseif(APPLE)
@@ -420,20 +483,17 @@ if(QT_STATIC)
 		list(APPEND QT_LIBRARIES "-framework AVFoundation" "-framework CoreMedia" "-framework SystemConfiguration" "-framework Security")
 		set_target_properties(${QT}::Core PROPERTIES INTERFACE_LINK_LIBRARIES "${QTPCRE}")
 	elseif(UNIX)
-		list(APPEND QT_LIBRARIES ${QT}::FontDatabaseSupport ${QT}::XcbQpa)
+		list(APPEND QT_LIBRARIES ${QT}::FontDatabaseSupport ${QT}::XcbQpa ${QT}::QWaylandIntegrationPlugin)
 	endif()
 endif()
 target_link_libraries(${BINARY_NAME}-qt ${PLATFORM_LIBRARY} ${BINARY_NAME} ${QT_LIBRARIES})
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}" PARENT_SCOPE)
 
-install(TARGETS ${BINARY_NAME}-qt
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${BINARY_NAME}-qt
-	BUNDLE DESTINATION ${APPDIR} COMPONENT ${BINARY_NAME}-qt)
 if(UNIX AND NOT APPLE)
-	install(FILES ${CMAKE_SOURCE_DIR}/res/mgba-qt.desktop DESTINATION share/applications RENAME io.mgba.${PROJECT_NAME}.desktop COMPONENT ${BINARY_NAME}-qt)
+	install(FILES ${PROJECT_SOURCE_DIR}/res/mgba-qt.desktop DESTINATION share/applications RENAME io.mgba.${PROJECT_NAME}.desktop COMPONENT ${BINARY_NAME}-qt)
 endif()
 if(UNIX AND NOT (APPLE AND DISTBUILD))
-	install(FILES ${CMAKE_SOURCE_DIR}/doc/mgba-qt.6 DESTINATION ${MANDIR}/man6 COMPONENT ${BINARY_NAME}-qt)
+	install(FILES ${PROJECT_SOURCE_DIR}/doc/mgba-qt.6 DESTINATION ${MANDIR}/man6 COMPONENT ${BINARY_NAME}-qt)
 endif()
 if(APPLE OR WIN32)
 	set_target_properties(${BINARY_NAME}-qt PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -441,19 +501,31 @@ endif()
 if(APPLE)
 	if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
 		get_target_property(QTCOCOA ${QT}::QCocoaIntegrationPlugin LOCATION)
-		get_target_property(COREAUDIO ${QT}::CoreAudioPlugin LOCATION)
-		get_target_property(QTAVFSERVICE ${QT}::AVFServicePlugin LOCATION)
+		if(${QT_V} LESS 6)
+			# QtMultimedia plugins were removed with Qt 6, skip checking for them
+			get_target_property(COREAUDIO ${QT}::CoreAudioPlugin LOCATION)
+			get_target_property(QTAVFSERVICE ${QT}::AVFServicePlugin LOCATION)
+		endif()
+
 		set(BUNDLE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.app)
 		target_sources(${BINARY_NAME}-qt PRIVATE "${PLUGINS}")
+
 		set_source_files_properties("${QTCOCOA}" PROPERTIES MACOSX_PACKAGE_LOCATION Contents/PlugIns)
-		set_source_files_properties("${COREAUDIO}" PROPERTIES MACOSX_PACKAGE_LOCATION Contents/PlugIns)
-		set_source_files_properties("${QTAVFSERVICE}" PROPERTIES MACOSX_PACKAGE_LOCATION Contents/PlugIns)
+		if(${QT_V} LESS 6)
+			set_source_files_properties("${COREAUDIO}" PROPERTIES MACOSX_PACKAGE_LOCATION Contents/PlugIns)
+			set_source_files_properties("${QTAVFSERVICE}" PROPERTIES MACOSX_PACKAGE_LOCATION Contents/PlugIns)
+		endif()
+
 		install(CODE "
 		   include(BundleUtilities)
 		   set(BU_CHMOD_BUNDLE_ITEMS ON)
 		   file(GLOB_RECURSE PLUGINS \"${BUNDLE_PATH}/Contents/PlugIns/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
 		   fixup_bundle(\"${BUNDLE_PATH}\"   \"${PLUGINS}\"   \"\")
 		   " COMPONENT ${BINARY_NAME}-qt)
+		if(CODESIGN_IDENTITY)
+			install(CODE "execute_process(COMMAND codesign -s \"${CODESIGN_IDENTITY}\" -vf -o runtime --timestamp --entitlements \"${PROJECT_SOURCE_DIR}/res/entitlements.plist\" \"${BUNDLE_PATH}\")"
+				COMPONENT ${BINARY_NAME}-qt)
+		endif()
 	else()
 		set(DEPLOY_OPTIONS -p platforms/libqcocoa.dylib,audio/libqtaudio_coreaudio.dylib,mediaservice/libqavfcamera.dylib)
 		if(NOT CMAKE_INSTALL_NAME_TOOL EQUAL "install_name_tool")
@@ -465,7 +537,10 @@ if(APPLE)
 		if(DEFINED CROSS_ROOT)
 			set(DEPLOY_OPTIONS ${DEPLOY_OPTIONS} -R "${CROSS_ROOT}")
 		endif()
-		install(CODE "execute_process(COMMAND \"${CMAKE_SOURCE_DIR}/tools/deploy-mac.py\" -v ${DEPLOY_OPTIONS} \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${APPDIR}/${PROJECT_NAME}.app\")")
+		if($ENV{CODESIGN_IDENTITY})
+			set(DEPLOY_OPTIONS ${DEPLOY_OPTIONS} -s "$ENV{CODESIGN_IDENTITY}" -E "${PROJECT_SOURCE_DIR}/res/entitlements.plist")
+		endif()
+		install(CODE "execute_process(COMMAND \"${PROJECT_SOURCE_DIR}/tools/deploy-mac.py\" -v ${DEPLOY_OPTIONS} \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${APPDIR}/${PROJECT_NAME}.app\")")
 	endif()
 elseif(WIN32)
 	if(CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_VERSION EQUAL 8)
@@ -474,7 +549,7 @@ elseif(WIN32)
 	endif()
 	if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 		find_program(BASH bash)
-		install(CODE "execute_process(COMMAND \"${BASH}\" \"${CMAKE_SOURCE_DIR}/tools/deploy-win.sh\" \"${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.exe\" \"\${CMAKE_INSTALL_PREFIX}\" \"\$ENV{PWD}\" WORKING_DIRECTORY \"${CMAKE_BINARY_DIR}\")" COMPONENT ${BINARY_NAME}-qt)
+		install(CODE "execute_process(COMMAND \"${BASH}\" \"${PROJECT_SOURCE_DIR}/tools/deploy-win.sh\" \"${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.exe\" \"\${CMAKE_INSTALL_PREFIX}\" \"\$ENV{PWD}\" WORKING_DIRECTORY \"${CMAKE_BINARY_DIR}\")" COMPONENT ${BINARY_NAME}-qt)
 	endif()
 	if(DISTBUILD)
 		file(WRITE "${CMAKE_BINARY_DIR}/portable.ini" "")
@@ -482,13 +557,26 @@ elseif(WIN32)
 	endif()
 endif()
 
-if(DISTBUILD AND NOT APPLE)
-	if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-		add_custom_command(TARGET ${BINARY_NAME}-qt POST_BUILD COMMAND "${OBJCOPY}" --only-keep-debug "$<TARGET_FILE:${BINARY_NAME}-qt>" "$<TARGET_FILE:${BINARY_NAME}-qt>.debug")
-		add_custom_command(TARGET ${BINARY_NAME}-qt POST_BUILD COMMAND "${STRIP}" "$<TARGET_FILE:${BINARY_NAME}-qt>")
-		add_custom_command(TARGET ${BINARY_NAME}-qt POST_BUILD COMMAND "${OBJCOPY}" --add-gnu-debuglink "$<TARGET_FILE:${BINARY_NAME}-qt>.debug" "$<TARGET_FILE:${BINARY_NAME}-qt>")
-		install(FILES "$<TARGET_FILE:${BINARY_NAME}-qt>.debug" DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${BINARY_NAME}-qt-dbg)
-	elseif(BUILD_STATIC AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"))
-		add_custom_command(TARGET ${BINARY_NAME}-qt POST_BUILD COMMAND "${STRIP}" "$<TARGET_FILE:${BINARY_NAME}-qt>")
+debug_strip(${BINARY_NAME}-qt)
+
+if(BUILD_SUITE)
+	enable_testing()
+	find_package(${QT}Test)
+	if(${QT}Test_FOUND)
+		get_property(ALL_TESTS DIRECTORY PROPERTY VARIABLES)
+		list(FILTER ALL_TESTS INCLUDE REGEX "^TEST_QT_.*_SRC$")
+		foreach(TEST_SRC ${ALL_TESTS})
+			string(REGEX REPLACE "^TEST_QT_(.*)_SRC$" "\\1" TEST_NAME ${TEST_SRC})
+			add_executable(test-qt-${TEST_NAME} WIN32 ${${TEST_SRC}})
+			target_link_libraries(test-qt-${TEST_NAME} ${PLATFORM_LIBRARY} ${BINARY_NAME} ${QT_LIBRARIES} ${QT}::Test)
+			set_target_properties(test-qt-${TEST_NAME} PROPERTIES COMPILE_DEFINITIONS "${FEATURE_DEFINES};${FUNCTION_DEFINES};${OS_DEFINES};${QT_DEFINES}" COMPILE_OPTIONS "${FEATURE_FLAGS}")
+			add_test(platform-qt-${TEST_NAME} test-qt-${TEST_NAME})
+		endforeach()
+	else()
+		message(WARNING "${QT}Test not found")
 	endif()
 endif()
+
+install(TARGETS ${BINARY_NAME}-qt
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${BINARY_NAME}-qt
+	BUNDLE DESTINATION ${APPDIR} COMPONENT ${BINARY_NAME}-qt)

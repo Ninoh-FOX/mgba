@@ -34,7 +34,7 @@
 #endif
 #include <libswscale/swscale.h>
 
-static void _ffmpegPostVideoFrame(struct mAVStream*, const color_t* pixels, size_t stride);
+static void _ffmpegPostVideoFrame(struct mAVStream*, const mColor* pixels, size_t stride);
 static void _ffmpegPostAudioFrame(struct mAVStream*, int16_t left, int16_t right);
 static void _ffmpegSetVideoDimensions(struct mAVStream*, unsigned width, unsigned height);
 static void _ffmpegSetAudioRate(struct mAVStream*, unsigned rate);
@@ -62,13 +62,13 @@ void FFmpegEncoderInit(struct FFmpegEncoder* encoder) {
 	encoder->audioCodec = NULL;
 	encoder->videoCodec = NULL;
 	encoder->containerFormat = NULL;
+	encoder->isampleRate = PREFERRED_SAMPLE_RATE;
 	FFmpegEncoderSetAudio(encoder, "flac", 0);
 	FFmpegEncoderSetVideo(encoder, "libx264", 0, 0);
 	FFmpegEncoderSetContainer(encoder, "matroska");
 	FFmpegEncoderSetDimensions(encoder, GBA_VIDEO_HORIZONTAL_PIXELS, GBA_VIDEO_VERTICAL_PIXELS);
 	encoder->iwidth = GBA_VIDEO_HORIZONTAL_PIXELS;
 	encoder->iheight = GBA_VIDEO_VERTICAL_PIXELS;
-	encoder->isampleRate = PREFERRED_SAMPLE_RATE;
 	encoder->frameskip = 1;
 	encoder->skipResidue = 0;
 	encoder->loop = false;
@@ -134,18 +134,28 @@ bool FFmpegEncoderSetAudio(struct FFmpegEncoder* encoder, const char* acodec, un
 		return false;
 	}
 
-	if (!codec->sample_fmts) {
+	const enum AVSampleFormat* formats = NULL;
+#ifdef FFMPEG_USE_GET_SUPPORTED_CONFIG
+	if (avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, (const void**) &formats, NULL) < 0) {
 		return false;
 	}
+#else
+	formats = codec->sample_fmts;
+#endif
+
+	if (!formats) {
+		return false;
+	}
+
 	size_t i;
 	size_t j;
 	int priority = INT_MAX;
 	encoder->sampleFormat = AV_SAMPLE_FMT_NONE;
-	for (i = 0; codec->sample_fmts[i] != AV_SAMPLE_FMT_NONE; ++i) {
+	for (i = 0; formats[i] != AV_SAMPLE_FMT_NONE; ++i) {
 		for (j = 0; j < sizeof(priorities) / sizeof(*priorities); ++j) {
-			if (codec->sample_fmts[i] == priorities[j].format && priority > priorities[j].priority) {
+			if (formats[i] == priorities[j].format && priority > priorities[j].priority) {
 				priority = priorities[j].priority;
-				encoder->sampleFormat = codec->sample_fmts[i];
+				encoder->sampleFormat = formats[i];
 			}
 		}
 	}
@@ -153,19 +163,46 @@ bool FFmpegEncoderSetAudio(struct FFmpegEncoder* encoder, const char* acodec, un
 		return false;
 	}
 	encoder->sampleRate = encoder->isampleRate;
-	if (codec->supported_samplerates) {
-		for (i = 0; codec->supported_samplerates[i]; ++i) {
-			if (codec->supported_samplerates[i] < encoder->isampleRate) {
+
+
+
+	const int* sampleRates = NULL;
+#ifdef FFMPEG_USE_GET_SUPPORTED_CONFIG
+	if (avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_SAMPLE_RATE, 0, (const void**) &sampleRates, NULL) < 0) {
+		return false;
+	}
+#else
+	sampleRates = codec->supported_samplerates;
+#endif
+	if (sampleRates) {
+		bool gotSampleRate = false;
+		int highestSampleRate = 0;
+		for (i = 0; sampleRates[i]; ++i) {
+			if (sampleRates[i] > highestSampleRate) {
+				highestSampleRate = sampleRates[i];
+			}
+			if (sampleRates[i] < encoder->isampleRate) {
 				continue;
 			}
-			if (encoder->sampleRate == encoder->isampleRate || encoder->sampleRate > codec->supported_samplerates[i]) {
-				encoder->sampleRate = codec->supported_samplerates[i];
+			if (!gotSampleRate || encoder->sampleRate > sampleRates[i]) {
+				encoder->sampleRate = sampleRates[i];
+				gotSampleRate = true;
 			}
+		}
+		if (!gotSampleRate) {
+			// There are no available sample rates that are higher than the input sample rate
+			// Let's use the highest available instead
+			encoder->sampleRate = highestSampleRate;
 		}
 	} else if (codec->id == AV_CODEC_ID_FLAC) {
 		// HACK: FLAC doesn't support > 65535Hz unless it's divisible by 10
 		if (encoder->sampleRate >= 65535) {
 			encoder->sampleRate -= encoder->isampleRate % 10;
+		}
+	} else if (codec->id == AV_CODEC_ID_VORBIS) {
+		// HACK: FLAC doesn't support > 48000Hz but doesn't tell us
+		if (encoder->sampleRate > 48000) {
+			encoder->sampleRate = 48000;
 		}
 	} else if (codec->id == AV_CODEC_ID_AAC) {
 		// HACK: AAC doesn't support 32768Hz (it rounds to 32000), but libfaac doesn't tell us that
@@ -215,11 +252,19 @@ bool FFmpegEncoderSetVideo(struct FFmpegEncoder* encoder, const char* vcodec, in
 	size_t j;
 	int priority = INT_MAX;
 	encoder->pixFormat = AV_PIX_FMT_NONE;
-	for (i = 0; codec->pix_fmts[i] != AV_PIX_FMT_NONE; ++i) {
+	const enum AVPixelFormat* formats;
+#ifdef FFMPEG_USE_GET_SUPPORTED_CONFIG
+	if (avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void**) &formats, NULL) < 0) {
+		return false;
+	}
+#else
+	formats = codec->pix_fmts;
+#endif
+	for (i = 0; formats[i] != AV_PIX_FMT_NONE; ++i) {
 		for (j = 0; j < sizeof(priorities) / sizeof(*priorities); ++j) {
-			if (codec->pix_fmts[i] == priorities[j].format && priority > priorities[j].priority) {
+			if (formats[i] == priorities[j].format && priority > priorities[j].priority) {
 				priority = priorities[j].priority;
-				encoder->pixFormat = codec->pix_fmts[i];
+				encoder->pixFormat = formats[i];
 			}
 		}
 	}
@@ -304,8 +349,12 @@ bool FFmpegEncoderOpen(struct FFmpegEncoder* encoder, const char* outfile) {
 		encoder->audio = encoder->audioStream->codec;
 #endif
 		encoder->audio->bit_rate = encoder->audioBitrate;
+#ifdef FFMPEG_USE_NEW_CH_LAYOUT
+		av_channel_layout_copy(&encoder->audio->ch_layout, &(AVChannelLayout) AV_CHANNEL_LAYOUT_STEREO);
+#else
 		encoder->audio->channels = 2;
 		encoder->audio->channel_layout = AV_CH_LAYOUT_STEREO;
+#endif
 		encoder->audio->sample_rate = encoder->sampleRate;
 		encoder->audio->sample_fmt = encoder->sampleFormat;
 		AVDictionary* opts = 0;
@@ -330,7 +379,11 @@ bool FFmpegEncoderOpen(struct FFmpegEncoder* encoder, const char* outfile) {
 		encoder->audioFrame->nb_samples = encoder->audio->frame_size;
 		encoder->audioFrame->format = encoder->audio->sample_fmt;
 		encoder->audioFrame->pts = 0;
+#ifdef FFMPEG_USE_NEW_CH_LAYOUT
+		av_channel_layout_copy(&encoder->audioFrame->ch_layout, &(AVChannelLayout) AV_CHANNEL_LAYOUT_STEREO);
+#else
 		encoder->audioFrame->channel_layout = AV_CH_LAYOUT_STEREO;
+#endif
 		_ffmpegOpenResampleContext(encoder);
 		av_frame_get_buffer(encoder->audioFrame, 0);
 
@@ -360,7 +413,9 @@ bool FFmpegEncoderOpen(struct FFmpegEncoder* encoder, const char* outfile) {
 		encoder->videoStream = avformat_new_stream(encoder->context, vcodec);
 		encoder->video = encoder->videoStream->codec;
 #endif
-		encoder->video->bit_rate = encoder->videoBitrate;
+		if (encoder->videoBitrate >= 0) {
+			encoder->video->bit_rate = encoder->videoBitrate;
+		}
 		encoder->video->width = encoder->width;
 		encoder->video->height = encoder->height;
 		encoder->video->time_base = (AVRational) { encoder->frameCycles * encoder->frameskip, encoder->cycles };
@@ -760,7 +815,7 @@ bool _ffmpegWriteAudioFrame(struct FFmpegEncoder* encoder, struct AVFrame* audio
 	return gotData;
 }
 
-void _ffmpegPostVideoFrame(struct mAVStream* stream, const color_t* pixels, size_t stride) {
+void _ffmpegPostVideoFrame(struct mAVStream* stream, const mColor* pixels, size_t stride) {
 	struct FFmpegEncoder* encoder = (struct FFmpegEncoder*) stream;
 	if (!encoder->context || !encoder->videoCodec) {
 		return;
@@ -869,7 +924,7 @@ void FFmpegEncoderSetInputFrameRate(struct FFmpegEncoder* encoder, int numerator
 
 void FFmpegEncoderSetInputSampleRate(struct FFmpegEncoder* encoder, int sampleRate) {
 	encoder->isampleRate = sampleRate;
-	if (encoder->resampleContext) {	
+	if (encoder->resampleContext) {
 		av_freep(&encoder->audioBuffer);
 #ifdef USE_LIBAVRESAMPLE
 		avresample_close(encoder->resampleContext);
@@ -881,7 +936,7 @@ void FFmpegEncoderSetInputSampleRate(struct FFmpegEncoder* encoder, int sampleRa
 }
 
 void _ffmpegOpenResampleContext(struct FFmpegEncoder* encoder) {
-	encoder->audioBufferSize = av_rescale_q(encoder->audioFrame->nb_samples, (AVRational) { 4, encoder->sampleRate }, (AVRational) { 1, encoder->isampleRate });
+	encoder->audioBufferSize = av_rescale_q(encoder->audioFrame->nb_samples, (AVRational) { 1, encoder->sampleRate }, (AVRational) { 1, encoder->isampleRate }) * 4;
 	encoder->audioBuffer = av_malloc(encoder->audioBufferSize);
 #ifdef USE_LIBAVRESAMPLE
 	encoder->resampleContext = avresample_alloc_context();
@@ -893,8 +948,13 @@ void _ffmpegOpenResampleContext(struct FFmpegEncoder* encoder) {
 	av_opt_set_int(encoder->resampleContext, "out_sample_fmt", encoder->sampleFormat, 0);
 	avresample_open(encoder->resampleContext);
 #else
+#ifdef FFMPEG_USE_NEW_CH_LAYOUT
+	swr_alloc_set_opts2(&encoder->resampleContext, &(AVChannelLayout) AV_CHANNEL_LAYOUT_STEREO, encoder->sampleFormat, encoder->sampleRate,
+	                    &(AVChannelLayout) AV_CHANNEL_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, encoder->isampleRate, 0, NULL);
+#else
 	encoder->resampleContext = swr_alloc_set_opts(NULL, AV_CH_LAYOUT_STEREO, encoder->sampleFormat, encoder->sampleRate,
 	                                              AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, encoder->isampleRate, 0, NULL);
+#endif
 	swr_init(encoder->resampleContext);
 #endif
 }

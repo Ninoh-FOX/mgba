@@ -6,6 +6,7 @@
 #include "ScriptingTextBuffer.h"
 
 #include "GBAApp.h"
+#include "utils.h"
 
 #include <QMutexLocker>
 #include <QPlainTextDocumentLayout>
@@ -15,6 +16,7 @@ using namespace QGBA;
 
 ScriptingTextBuffer::ScriptingTextBuffer(QObject* parent)
 	: QObject(parent)
+	, m_document(this)
 {
 	m_shim.init = &ScriptingTextBuffer::init;
 	m_shim.deinit = &ScriptingTextBuffer::deinit;
@@ -48,28 +50,71 @@ void ScriptingTextBuffer::setBufferName(const QString& name) {
 	emit bufferNameChanged(name);
 }
 
+void ScriptingTextBuffer::lineBreak() {
+	bool nextBlockExists = m_shim.cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, 1);
+	if (!nextBlockExists) {
+		m_shim.cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::MoveAnchor, 1);
+		m_shim.cursor.insertBlock();
+	}
+}
+
+void ScriptingTextBuffer::carriageReturn() {
+	m_shim.cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor, 1);
+}
+
+void ScriptingTextBuffer::tab() {
+	QTextCursor& cursor = m_shim.cursor;
+	int column = cursor.positionInBlock();
+	int move = tabStop - (column % tabStop) + 1;
+	if (column + move >= m_dims.width()) {
+		lineBreak();
+	} else if (column + move <= cursor.block().length()) {
+		cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, move - 1);
+	} else {
+		move = column + move - cursor.block().length();
+		cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor, 1);
+		cursor.insertText(QString(move, ' '));
+	}
+}
+
+void ScriptingTextBuffer::insertString(const QString& text) {
+	QTextCursor& cursor = m_shim.cursor;
+	if (cursor.positionInBlock() >= m_dims.width()) {
+		lineBreak();
+	}
+	cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, text.length());
+	cursor.insertText(text);
+}
+
 void ScriptingTextBuffer::print(const QString& text) {
 	QMutexLocker locker(&m_mutex);
-	QString split(text);
-	m_shim.cursor.beginEditBlock();
-	while (m_shim.cursor.positionInBlock() + split.length() > m_dims.width()) {
-		int cut = m_dims.width() - m_shim.cursor.positionInBlock();
-		if (!m_shim.cursor.atBlockEnd()) {
-			m_shim.cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+
+	QTextCursor& cursor = m_shim.cursor;
+	QString toInsert;
+
+	for (const QChar& ch : text) {
+		int column = cursor.positionInBlock();
+		if (ch == '\t' || ch == '\n' || ch == '\r' || column + toInsert.length() >= m_dims.width()) {
+			insertString(toInsert);
+			toInsert.clear();
 		}
-		m_shim.cursor.insertText(split.left(cut));
-		if (m_shim.cursor.atEnd()) {
-			m_shim.cursor.insertBlock();
-		} else {
-			m_shim.cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, 1);
+		switch (ch.unicode()) {
+			case '\t':
+				tab();
+				break;
+			case '\n':
+				lineBreak();
+				break;
+			case '\r':
+				carriageReturn();
+				break;
+			default:
+				toInsert += ch;
 		}
-		split = split.mid(cut);
 	}
-	if (!m_shim.cursor.atBlockEnd()) {
-		m_shim.cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, split.length());
+	if (!toInsert.isEmpty()) {
+		insertString(toInsert);
 	}
-	m_shim.cursor.insertText(split);
-	m_shim.cursor.endEditBlock();
 }
 
 void ScriptingTextBuffer::clear() {
@@ -106,7 +151,7 @@ void ScriptingTextBuffer::moveCursor(const QPoint& pos) {
 			m_shim.cursor.insertBlock();
 		}
 	} else {
-		m_shim.cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, y);		
+		m_shim.cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, y);
 	}
 
 	int x = pos.x();
@@ -205,13 +250,8 @@ void ScriptingTextBuffer::setSize(struct mScriptTextBuffer* buffer, uint32_t col
 
 void ScriptingTextBuffer::moveCursor(struct mScriptTextBuffer* buffer, uint32_t x, uint32_t y) {
 	ScriptingTextBuffer* self = static_cast<ScriptingTextBuffer::ScriptingBufferShim*>(buffer)->p;
-	if (x > INT_MAX) {
-		x = INT_MAX;
-	}
-	if (y > INT_MAX) {
-		y = INT_MAX;
-	}
-	QMetaObject::invokeMethod(self, "moveCursor", Q_ARG(QPoint, QPoint(x, y)));
+	QPoint point(saturateCast<int>(x), saturateCast<int>(y));
+	QMetaObject::invokeMethod(self, "moveCursor", Q_ARG(QPoint, point));
 }
 
 void ScriptingTextBuffer::advance(struct mScriptTextBuffer* buffer, int32_t adv) {

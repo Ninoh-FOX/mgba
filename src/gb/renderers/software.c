@@ -44,7 +44,7 @@ static void _clearScreen(struct GBVideoSoftwareRenderer* renderer) {
 	}
 	int y;
 	for (y = 0; y < GB_VIDEO_VERTICAL_PIXELS; ++y) {
-		color_t* row = &renderer->outputBuffer[renderer->outputBufferStride * y + sgbOffset];
+		mColor* row = &renderer->outputBuffer[renderer->outputBufferStride * y + sgbOffset];
 		int x;
 		for (x = 0; x < GB_VIDEO_HORIZONTAL_PIXELS; x += 4) {
 			row[x + 0] = renderer->palette[0];
@@ -268,7 +268,7 @@ static void GBVideoSoftwareRendererUpdateWindow(struct GBVideoSoftwareRenderer* 
 	if (renderer->lastY >= GB_VIDEO_VERTICAL_PIXELS || !(after || before)) {
 		return;
 	}
-	if (!renderer->hasWindow && renderer->lastX == GB_VIDEO_HORIZONTAL_PIXELS) {
+	if (!renderer->hasWindow && renderer->lastX == GB_VIDEO_HORIZONTAL_PIXELS && renderer->lastY != oldWy) {
 		return;
 	}
 	if (renderer->lastY >= oldWy) {
@@ -492,7 +492,7 @@ static void GBVideoSoftwareRendererWriteSGBPacket(struct GBVideoRenderer* render
 
 static void GBVideoSoftwareRendererWritePalette(struct GBVideoRenderer* renderer, int index, uint16_t value) {
 	struct GBVideoSoftwareRenderer* softwareRenderer = (struct GBVideoSoftwareRenderer*) renderer;
-	color_t color = mColorFrom555(value);
+	mColor color = mColorFrom555(value);
 	if (softwareRenderer->model & GB_MODEL_SGB) {
 		if (index >= PAL_SGB_BORDER && !(index & 0xF)) {
 			color = softwareRenderer->palette[0];
@@ -571,20 +571,38 @@ static void _cleanOAM(struct GBVideoSoftwareRenderer* renderer, int y) {
 	}
 	int o = 0;
 	int i;
+	int16_t ids[GB_VIDEO_MAX_LINE_OBJ];
 	for (i = 0; i < GB_VIDEO_MAX_OBJ && o < GB_VIDEO_MAX_LINE_OBJ; ++i) {
 		uint8_t oy = renderer->d.oam->obj[i].y;
 		if (y < oy - 16 || y >= oy - 16 + spriteHeight) {
 			continue;
 		}
-		// TODO: Sort
-		renderer->obj[o].obj = renderer->d.oam->obj[i];
-		renderer->obj[o].index = i;
+		ids[o] = (renderer->d.oam->obj[i].x << 7) | i;
 		++o;
-		if (o == 10) {
-			break;
-		}
 	}
 	renderer->objMax = o;
+	if (renderer->model < GB_MODEL_CGB) {
+		// Terrble n^2 sort, but it's only 10 elements so it shouldn't be that bad
+		int16_t ids2[GB_VIDEO_MAX_LINE_OBJ];
+		int min = -1;
+		int j;
+		for (i = 0; i < o; ++i) {
+			int min2 = 0xFFFF;
+			for (j = 0; j < o; ++j) {
+				if (ids[j] > min && ids[j] < min2) {
+					min2 = ids[j];
+				}
+			}
+			min = min2;
+			ids2[i] = min;
+		}
+		memcpy(ids, ids2, sizeof(ids));
+	}
+	for (i = 0; i < o; ++i) {
+		int id = ids[i] & 0x7F;
+		renderer->obj[i].obj = renderer->d.oam->obj[id];
+		renderer->obj[i].index = id;
+	}
 }
 
 static void GBVideoSoftwareRendererDrawRange(struct GBVideoRenderer* renderer, int startX, int endX, int y) {
@@ -650,7 +668,7 @@ static void GBVideoSoftwareRendererDrawRange(struct GBVideoRenderer* renderer, i
 	if (softwareRenderer->model & GB_MODEL_SGB && softwareRenderer->sgbBorders) {
 		sgbOffset = softwareRenderer->outputBufferStride * 40 + 48;
 	}
-	color_t* row = &softwareRenderer->outputBuffer[softwareRenderer->outputBufferStride * y + sgbOffset];
+	mColor* row = &softwareRenderer->outputBuffer[softwareRenderer->outputBufferStride * y + sgbOffset];
 	int x = startX;
 	int p = 0;
 	switch (softwareRenderer->d.sgbRenderMode) {
@@ -1143,7 +1161,7 @@ static void GBVideoSoftwareRendererPutPixels(struct GBVideoRenderer* renderer, s
 	struct GBVideoSoftwareRenderer* softwareRenderer = (struct GBVideoSoftwareRenderer*) renderer;
 	// TODO: Share with GBAVideoSoftwareRendererGetPixels
 
-	const color_t* colorPixels = pixels;
+	const mColor* colorPixels = pixels;
 	unsigned i;
 	for (i = 0; i < GB_VIDEO_VERTICAL_PIXELS; ++i) {
 		memmove(&softwareRenderer->outputBuffer[softwareRenderer->outputBufferStride * i], &colorPixels[stride * i], GB_VIDEO_HORIZONTAL_PIXELS * BYTES_PER_PIXEL);

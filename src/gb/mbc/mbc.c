@@ -253,7 +253,9 @@ void _GBMBC5(struct GB* gb, uint16_t address, uint8_t value) {
 	case 0x4:
 	case 0x5:
 		if (memory->mbcType == GB_MBC5_RUMBLE && memory->rumble) {
-			memory->rumble->setRumble(memory->rumble, (value >> 3) & 1);
+			int32_t currentTime = mTimingCurrentTime(&gb->timing);
+			memory->rumble->setRumble(memory->rumble, (value >> 3) & 1, currentTime - memory->lastRumble);
+			memory->lastRumble = currentTime;
 			value &= ~8;
 		}
 		GBMBCSwitchSramBank(gb, value & 0xF);
@@ -562,4 +564,20 @@ void _GBMBC7Write(struct GBMemory* memory, uint16_t address, uint8_t value) {
 		value = GBMBC7FieldSetDO(value, GBMBC7FieldGetDO(old));
 	}
 	mbc7->eeprom = value;
+}
+
+void _GBM161(struct GB* gb, uint16_t address, uint8_t value) {
+	UNUSED(address);
+
+	struct GBM161State* m161 = &gb->memory.mbcState.m161;
+	if (m161->locked) {
+		return;
+	}
+
+	int bank = value & 0x7;
+	m161->bank = bank;
+	m161->locked = true;
+
+	GBMBCSwitchBank0(gb, bank * 2);
+	GBMBCSwitchBank(gb, bank * 2 + 1);
 }

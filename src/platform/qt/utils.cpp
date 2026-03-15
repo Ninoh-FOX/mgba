@@ -5,7 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "utils.h"
 
+#include <mgba/core/library.h>
+#ifdef M_CORE_GB
+#include <mgba/gb/interface.h>
+#endif
+
 #include <QCoreApplication>
+#include <QHostAddress>
+#include <QKeySequence>
 #include <QObject>
 
 #include "VFileDevice.h"
@@ -28,18 +35,25 @@ QString niceSizeFormat(size_t filesize) {
 	return unit.arg(size, 0, 'f', int(size * 10) % 10 ? 1 : 0);
 }
 
-QString nicePlatformFormat(mPlatform platform) {
+QString nicePlatformFormat(mPlatform platform, int validModels) {
 	switch (platform) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA:
-		return QObject::tr("GBA");
+		return "GBA";
 #endif
 #ifdef M_CORE_GB
 	case mPLATFORM_GB:
-		return QObject::tr("GB");
+		if (validModels != M_LIBRARY_MODEL_UNKNOWN) {
+			if (validModels & GB_MODEL_CGB) {
+				return "GBC";
+			} else if (validModels & GB_MODEL_SGB) {
+				return "SGB";
+			}
+		}
+		return "GB";
 #endif
 	default:
-		return QObject::tr("?");
+		return "?";
 	}
 }
 
@@ -64,28 +78,36 @@ bool convertAddress(const QHostAddress* input, Address* output) {
 	return true;
 }
 
-QString romFilters(bool includeMvl) {
+QString romFilters(bool includeMvl, mPlatform platform, bool rawOnly) {
 	QStringList filters;
 	QStringList formats;
 
 #ifdef M_CORE_GBA
 	QStringList gbaFormats{
 		"*.gba",
-#if defined(USE_LIBZIP) || defined(USE_MINIZIP)
-		"*.zip",
-#endif
-#ifdef USE_LZMA
-		"*.7z",
-#endif
-#ifdef USE_ELF
-		"*.elf",
-#endif
 		"*.agb",
 		"*.mb",
 		"*.rom",
 		"*.bin"};
-	formats.append(gbaFormats);
-	filters.append(QCoreApplication::translate("QGBA", "Game Boy Advance ROMs (%1)", nullptr).arg(gbaFormats.join(QChar(' '))));
+	if (!rawOnly) {
+		gbaFormats += QStringList{
+#if defined(USE_LIBZIP) || defined(USE_MINIZIP)
+			"*.zip",
+#endif
+#ifdef USE_LZMA
+			"*.7z",
+#endif
+#ifdef USE_ELF
+			"*.elf",
+#endif
+		};
+	}
+	if (platform == mPLATFORM_NONE || platform == mPLATFORM_GBA) {
+		formats.append(gbaFormats);
+	}
+	if (platform == mPLATFORM_NONE) {
+		filters.append(QCoreApplication::translate("QGBA", "Game Boy Advance ROMs (%1)", nullptr).arg(gbaFormats.join(QChar(' '))));
+	}
 #endif
 
 #ifdef M_CORE_GB
@@ -93,16 +115,25 @@ QString romFilters(bool includeMvl) {
 		"*.gb",
 		"*.gbc",
 		"*.sgb",
-#if defined(USE_LIBZIP) || defined(USE_MINIZIP)
-		"*.zip",
-#endif
-#ifdef USE_LZMA
-		"*.7z",
-#endif
 		"*.rom",
 		"*.bin"};
-	formats.append(gbFormats);
-	filters.append(QCoreApplication::translate("QGBA", "Game Boy ROMs (%1)", nullptr).arg(gbFormats.join(QChar(' '))));
+
+	if (!rawOnly) {
+		gbFormats += QStringList{
+#if defined(USE_LIBZIP) || defined(USE_MINIZIP)
+			"*.zip",
+#endif
+#ifdef USE_LZMA
+			"*.7z",
+#endif
+		};
+	}
+	if (platform == mPLATFORM_NONE || platform == mPLATFORM_GBA) {
+		formats.append(gbFormats);
+	}
+	if (platform == mPLATFORM_NONE) {
+		filters.append(QCoreApplication::translate("QGBA", "Game Boy ROMs (%1)", nullptr).arg(gbFormats.join(QChar(' '))));
+	}
 #endif
 
 	formats.removeDuplicates();
@@ -120,13 +151,84 @@ bool extractMatchingFile(VDir* dir, std::function<QString (VDirEntry*)> filter) 
 			continue;
 		}
 		VFile* outfile = VFileOpen(target.toUtf8().constData(), O_WRONLY | O_TRUNC | O_CREAT);
+		if (!outfile) {
+			return false;
+		}
 		VFile* infile = dir->openFile(dir, entry->name(entry), O_RDONLY);
+		if (!infile) {
+			outfile->close(outfile);
+			return false;
+		}
 		VFileDevice::copyFile(infile, outfile);
 		infile->close(infile);
 		outfile->close(outfile);
 		return true;
 	}
 	return false;
+}
+
+QString keyName(int key) {
+	switch (key) {
+#ifndef Q_OS_MAC
+	case Qt::Key_Shift:
+		return QCoreApplication::translate("QShortcut", "Shift");
+	case Qt::Key_Control:
+		return QCoreApplication::translate("QShortcut", "Control");
+	case Qt::Key_Alt:
+		return QCoreApplication::translate("QShortcut", "Alt");
+	case Qt::Key_Meta:
+		return QCoreApplication::translate("QShortcut", "Meta");
+#endif
+	case Qt::Key_Super_L:
+		return QObject::tr("Super (L)");
+	case Qt::Key_Super_R:
+		return QObject::tr("Super (R)");
+	case Qt::Key_Menu:
+		return QObject::tr("Menu");
+	default:
+		return QKeySequence(key).toString(QKeySequence::NativeText);
+	}
+}
+
+void SpanSet::add(int pos) {
+	for (Span& span : spans) {
+		if (pos == span.left - 1) {
+			span.left = pos;
+			return;
+		} else if (pos == span.right + 1) {
+			span.right = pos;
+			return;
+		}
+	}
+	spans << Span{ pos, pos };
+}
+
+void SpanSet::merge() {
+	int numSpans = spans.size();
+	if (!numSpans) {
+		return;
+	}
+	sort();
+	QVector<Span> merged({ spans[0] });
+	int lastRight = merged[0].right;
+	for (int i = 1; i < numSpans; i++) {
+		int right = spans[i].right;
+		if (spans[i].left - 1 <= lastRight) {
+			merged.back().right = right;
+		} else {
+			merged << spans[i];
+		}
+		lastRight = right;
+	}
+	spans = merged;
+}
+
+void SpanSet::sort(bool reverse) {
+	if (reverse) {
+		std::sort(spans.begin(), spans.end(), std::greater<Span>());
+	} else {
+		std::sort(spans.begin(), spans.end());
+	}
 }
 
 }

@@ -6,6 +6,8 @@
 #include "MultiplayerController.h"
 
 #include "CoreController.h"
+#include "LogController.h"
+#include "utils.h"
 
 #ifdef M_CORE_GBA
 #include <mgba/internal/gba/gba.h>
@@ -18,27 +20,22 @@
 
 using namespace QGBA;
 
-#ifdef M_CORE_GB
-MultiplayerController::Player::Player(CoreController* coreController, GBSIOLockstepNode* gbNode)
+MultiplayerController::Player::Player(CoreController* coreController)
 	: controller(coreController)
 {
-	node.gb = gbNode;
 }
-#endif
-
-#ifdef M_CORE_GBA
-MultiplayerController::Player::Player(CoreController* coreController, GBASIOLockstepNode* gbaNode)
-	: controller(coreController)
-{
-	node.gba = gbaNode;
-}
-#endif
 
 int MultiplayerController::Player::id() const {
 	switch (controller->platform()) {
 #ifdef M_CORE_GBA
-	case mPLATFORM_GBA:
-		return node.gba->id;
+	case mPLATFORM_GBA: {
+		int id = node.gba->d.deviceId(&node.gba->d);
+		if (id >= 0) {
+			return id;
+		} else {
+			return preferredId;
+		}
+	}
 #endif
 #ifdef M_CORE_GB
 	case mPLATFORM_GB:
@@ -67,7 +64,7 @@ MultiplayerController::MultiplayerController() {
 	};
 	m_lockstep.signal = [](mLockstep* lockstep, unsigned mask) {
 		MultiplayerController* controller = static_cast<MultiplayerController*>(lockstep->context);
-		Player* player = &controller->m_players[0];
+		Player* player = controller->player(0);
 		bool woke = false;
 		player->waitMask &= ~mask;
 		if (!player->waitMask && player->awake < 1) {
@@ -79,7 +76,7 @@ MultiplayerController::MultiplayerController() {
 	};
 	m_lockstep.wait = [](mLockstep* lockstep, unsigned mask) {
 		MultiplayerController* controller = static_cast<MultiplayerController*>(lockstep->context);
-		Player* player = &controller->m_players[0];
+		Player* player = controller->player(0);
 		bool slept = false;
 		player->waitMask |= mask;
 		if (player->awake > 0) {
@@ -99,21 +96,7 @@ MultiplayerController::MultiplayerController() {
 		switch (player->controller->platform()) {
 #ifdef M_CORE_GBA
 		case mPLATFORM_GBA:
-			if (!id) {
-				for (int i = 1; i < controller->m_players.count(); ++i) {
-					player = controller->player(i);
-					player->controller->setSync(false);
-					player->cyclesPosted += cycles;
-					if (player->awake < 1) {
-						player->node.gba->nextEvent += player->cyclesPosted;
-					}
-					mCoreThreadStopWaiting(player->controller->thread());
-					player->awake = 1;
-				}
-			} else {
-				player->controller->setSync(true);
-				player->cyclesPosted += cycles;
-			}
+			abort();
 			break;
 #endif
 #ifdef M_CORE_GB
@@ -175,7 +158,6 @@ MultiplayerController::MultiplayerController() {
 				switch (player->controller->platform()) {
 #ifdef M_CORE_GBA
 				case mPLATFORM_GBA:
-					player->cyclesPosted += reinterpret_cast<GBASIOLockstep*>(lockstep)->players[0]->eventDiff;
 					break;
 #endif
 #ifdef M_CORE_GB
@@ -190,7 +172,6 @@ MultiplayerController::MultiplayerController() {
 					switch (player->controller->platform()) {
 #ifdef M_CORE_GBA
 					case mPLATFORM_GBA:
-						player->node.gba->nextEvent += player->cyclesPosted;
 						break;
 #endif
 #ifdef M_CORE_GB
@@ -211,18 +192,24 @@ MultiplayerController::MultiplayerController() {
 
 MultiplayerController::~MultiplayerController() {
 	mLockstepDeinit(&m_lockstep);
+	if (m_platform == mPLATFORM_GBA) {
+		GBASIOLockstepCoordinatorDeinit(&m_gbaCoordinator);
+	}
 }
 
 bool MultiplayerController::attachGame(CoreController* controller) {
-	if (m_lockstep.attached == MAX_GBAS) {
-		return false;
+	QList<CoreController::Interrupter> interrupters;
+	interrupters.append(controller);
+	for (Player& p : m_pids.values()) {
+		interrupters.append(p.controller);
 	}
 
-	if (m_lockstep.attached == 0) {
+	bool doDelayedAttach = false;
+	if (m_platform == mPLATFORM_NONE) {
 		switch (controller->platform()) {
 #ifdef M_CORE_GBA
 		case mPLATFORM_GBA:
-			GBASIOLockstepInit(&m_gbaLockstep);
+			GBASIOLockstepCoordinatorInit(&m_gbaCoordinator);
 			break;
 #endif
 #ifdef M_CORE_GB
@@ -233,6 +220,9 @@ bool MultiplayerController::attachGame(CoreController* controller) {
 		default:
 			return false;
 		}
+		m_platform = controller->platform();
+	} else if (controller->platform() != m_platform) {
+		return false;
 	}
 
 	mCoreThread* thread = controller->thread();
@@ -240,43 +230,115 @@ bool MultiplayerController::attachGame(CoreController* controller) {
 		return false;
 	}
 
+	Player player{controller};
+	for (int i = 0; i < MAX_GBAS; ++i) {
+		if (m_claimedIds & (1 << i)) {
+			continue;
+		}
+		player.preferredId = i;
+		m_claimedIds |= 1 << i;
+		break;
+	}
 	switch (controller->platform()) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA: {
-		GBA* gba = static_cast<GBA*>(thread->core->board);
+		if (attached() >= MAX_GBAS) {
+			return false;
+		}
 
-		GBASIOLockstepNode* node = new GBASIOLockstepNode;
-		GBASIOLockstepNodeCreate(node);
-		GBASIOLockstepAttachNode(&m_gbaLockstep, node);
-		m_players.append({controller, node});
+		GBASIOLockstepDriver* node = new GBASIOLockstepDriver;
+		LockstepUser* user = new LockstepUser;
+		mLockstepThreadUserInit(user, thread);
+		user->controller = this;
+		user->pid = m_nextPid;
+		user->d.requestedId = [](mLockstepUser* ctx) {
+			mLockstepThreadUser* tctx = reinterpret_cast<mLockstepThreadUser*>(ctx);
+			LockstepUser* user = static_cast<LockstepUser*>(tctx);
+			MultiplayerController* controller = user->controller;
+			const auto iter = controller->m_pids.find(user->pid);
+			if (iter == controller->m_pids.end()) {
+				return -1;
+			}
+			const Player& p = iter.value();
+			return p.preferredId;
+		};
 
-		GBASIOSetDriver(&gba->sio, &node->d, SIO_MULTI);
-		GBASIOSetDriver(&gba->sio, &node->d, SIO_NORMAL_32);
+		GBASIOLockstepDriverCreate(node, &user->d);
+		player.node.gba = node;
 
-		emit gameAttached();
-		return true;
+		if (m_pids.size()) {
+			doDelayedAttach = true;
+		}
+		break;
 	}
 #endif
 #ifdef M_CORE_GB
 	case mPLATFORM_GB: {
+		if (attached() >= 2) {
+			return false;
+		}
+
 		GB* gb = static_cast<GB*>(thread->core->board);
 
 		GBSIOLockstepNode* node = new GBSIOLockstepNode;
 		GBSIOLockstepNodeCreate(node);
 		GBSIOLockstepAttachNode(&m_gbLockstep, node);
-		m_players.append({controller, node});
+		player.node.gb = node;
+		player.attached = true;
 
 		GBSIOSetDriver(&gb->sio, &node->d);
-
-		emit gameAttached();
-		return true;
+		break;
 	}
 #endif
 	default:
-		break;
+		return false;
 	}
 
-	return false;
+	QPair<QString, QString> path(controller->path(), controller->baseDirectory());
+	int claimed = m_claimedSaves[path];
+
+	int saveId = 0;
+	mCoreConfigGetIntValue(&controller->thread()->core->config, "savePlayerId", &saveId);
+
+	if (claimed) {
+		player.saveId = 0;
+		for (int i = 0; i < MAX_GBAS; ++i) {
+			if (claimed & (1 << i)) {
+				continue;
+			}
+			player.saveId = i + 1;
+			break;
+		}
+		if (!player.saveId) {
+			qCritical() << "Couldn't find available save ID";
+			player.saveId = 1;
+		}
+	} else if (saveId) {
+		player.saveId = saveId;
+	} else {
+		player.saveId = 1;
+	}
+	m_claimedSaves[path] |= 1 << (player.saveId - 1);
+
+	m_pids.insert(m_nextPid, player);
+	++m_nextPid;
+	fixOrder();
+
+	if (doDelayedAttach) {
+		for (auto pid: m_players) {
+			Player& player = m_pids.find(pid).value();
+			if (player.attached) {
+				continue;
+			}
+			struct mCore* core = player.controller->thread()->core;
+			GBASIOLockstepCoordinatorAttach(&m_gbaCoordinator, player.node.gba);
+			core->setPeripheral(core, mPERIPH_GBA_LINK_PORT, &player.node.gba->d);
+			player.attached = true;
+		}
+	}
+
+	emit gameAttached();
+	return true;
 }
 
 void MultiplayerController::detachGame(CoreController* controller) {
@@ -289,20 +351,36 @@ void MultiplayerController::detachGame(CoreController* controller) {
 	}
 	QList<CoreController::Interrupter> interrupters;
 
+	int pid = -1;
 	for (int i = 0; i < m_players.count(); ++i) {
-		interrupters.append(m_players[i].controller);
+		Player* p = player(i);
+		if (!p) {
+			continue;
+		}
+		CoreController* playerController = p->controller;
+		if (playerController == controller) {
+			pid = m_players[i];
+		}
+		interrupters.append(playerController);
+	}
+	if (pid < 0) {
+		qWarning() << tr("Trying to detach a multiplayer player that's not attached");
+		return;
 	}
 	switch (controller->platform()) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA: {
 		GBA* gba = static_cast<GBA*>(thread->core->board);
-		GBASIOLockstepNode* node = reinterpret_cast<GBASIOLockstepNode*>(gba->sio.drivers.multiplayer);
-		GBASIOSetDriver(&gba->sio, nullptr, SIO_MULTI);
-		GBASIOSetDriver(&gba->sio, nullptr, SIO_NORMAL_32);
-		if (node) {
-			GBASIOLockstepDetachNode(&m_gbaLockstep, node);
-			delete node;
+		Player& p = m_pids.find(pid).value();
+		GBASIODriver* node = gba->sio.driver;
+		if (node == &p.node.gba->d) {
+			thread->core->setPeripheral(thread->core, mPERIPH_GBA_LINK_PORT, NULL);
 		}
+		if (p.attached) {
+			GBASIOLockstepCoordinatorDetach(&m_gbaCoordinator, p.node.gba);
+		}
+		delete reinterpret_cast<LockstepUser*>(p.node.gba->user);
+		delete p.node.gba;
 		break;
 	}
 #endif
@@ -322,52 +400,127 @@ void MultiplayerController::detachGame(CoreController* controller) {
 		break;
 	}
 
-	for (int i = 0; i < m_players.count(); ++i) {
-		if (m_players[i].controller == controller) {
-			m_players.removeAt(i);
-			break;
+	// TODO: This might change if we replace the ROM--make sure to handle this properly
+	QPair<QString, QString> path(controller->path(), controller->baseDirectory());
+	Player& p = m_pids.find(pid).value();
+	if (!p.saveId) {
+		qWarning() << tr("Clearing invalid save ID");
+	} else {
+		m_claimedSaves[path] &= ~(1 << (p.saveId - 1));
+		if (!m_claimedSaves[path]) {
+			m_claimedSaves.remove(path);
 		}
+	}
+
+	if (p.preferredId < 0) {
+		qWarning() << tr("Clearing invalid preferred ID");
+	} else {
+		m_claimedIds &= ~(1 << p.preferredId);
+	}
+
+	m_pids.remove(pid);
+	if (m_pids.size() == 0) {
+		if (m_platform == mPLATFORM_GBA) {
+			GBASIOLockstepCoordinatorDeinit(&m_gbaCoordinator);
+		}
+		m_platform = mPLATFORM_NONE;
+	} else {
+		fixOrder();
 	}
 	emit gameDetached();
 }
 
-int MultiplayerController::playerId(CoreController* controller) {
+int MultiplayerController::playerId(CoreController* controller) const {
 	for (int i = 0; i < m_players.count(); ++i) {
-		if (m_players[i].controller == controller) {
+		const Player* p = player(i);
+		if (!p) {
+			qCritical() << tr("Trying to get player ID for a multiplayer player that's not attached");
+			return -1;
+		}
+		if (p->controller == controller) {
 			return i;
 		}
 	}
 	return -1;
 }
 
+int MultiplayerController::saveId(CoreController* controller) const {
+	for (int i = 0; i < m_players.count(); ++i) {
+		const Player* p = player(i);
+		if (!p) {
+			qCritical() << tr("Trying to get save ID for a multiplayer player that's not attached");
+			return -1;
+		}
+		if (p->controller == controller) {
+			return p->saveId;
+		}
+	}
+	return -1;
+}
+
 int MultiplayerController::attached() {
-	int num;
-	num = m_lockstep.attached;
+	int num = 0;
+	switch (m_platform) {
+	case mPLATFORM_GB:
+		num = m_lockstep.attached;
+		break;
+	case mPLATFORM_GBA:
+		num = saturateCast<int>(GBASIOLockstepCoordinatorAttached(&m_gbaCoordinator));
+		break;
+	default:
+		break;
+	}
 	return num;
 }
 
 MultiplayerController::Player* MultiplayerController::player(int id) {
-	Player* player = &m_players[id];
-	switch (player->controller->platform()) {
+	if (id >= m_players.size()) {
+		return nullptr;
+	}
+	int pid = m_players[id];
+	auto iter = m_pids.find(pid);
+	if (iter == m_pids.end()) {
+		return nullptr;
+	}
+	return &iter.value();
+}
+
+const MultiplayerController::Player* MultiplayerController::player(int id) const {
+	if (id >= m_players.size()) {
+		return nullptr;
+	}
+	int pid = m_players[id];
+	auto iter = m_pids.find(pid);
+	if (iter == m_pids.end()) {
+		return nullptr;
+	}
+	return &iter.value();
+}
+
+void MultiplayerController::fixOrder() {
+	m_players.clear();
+	m_players = m_pids.keys();
+	std::sort(m_players.begin(), m_players.end());
+	switch (m_platform) {
 #ifdef M_CORE_GBA
 	case mPLATFORM_GBA:
-		if (player->node.gba->id != id) {
-			std::sort(m_players.begin(), m_players.end());
-			player = &m_players[id];
-		}
+		// TODO: fix
+		/*for (int pid : m_pids.keys()) {
+			Player& p = m_pids.find(pid).value();
+			GBA* gba = static_cast<GBA*>(p.controller->thread()->core->board);
+			GBASIOLockstepDriver* node = reinterpret_cast<GBASIOLockstepDriver*>(gba->sio.driver);
+			m_players[node->d.deviceId(&node->d)] = pid;
+		}*/
 		break;
 #endif
 #ifdef M_CORE_GB
 	case mPLATFORM_GB:
-		if (player->node.gb->id != id) {
+		if (player(0)->node.gb->id == 1) {
 			std::swap(m_players[0], m_players[1]);
-			player = &m_players[id];
 		}
 		break;
 #endif
 	case mPLATFORM_NONE:
 		break;
 	}
-
-	return player;
 }
