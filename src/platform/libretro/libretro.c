@@ -43,7 +43,11 @@ FS_Archive sdmcArchive;
 
 #include "libretro_core_options.h"
 
+#ifdef MMIYOO
+#define GBA_RESAMPLED_RATE 48000
+#else
 #define GBA_RESAMPLED_RATE 65536
+#endif
 static unsigned targetSampleRate = GBA_RESAMPLED_RATE;
 #define GB_SAMPLES 512
 /* An alpha factor of 1/180 is *somewhat* equivalent
@@ -1730,6 +1734,14 @@ void retro_run(void) {
 	if (core->platform(core) == mPLATFORM_GBA) {
 		struct mAudioBuffer *coreBuffer = core->getAudioBuffer(core);
         int coreSamplesAvail = mAudioBufferAvailable(coreBuffer);
+
+#ifdef MMIYOO
+        /* Limitar el lote al tamaño máximo para evitar bloqueos de VSync y desbordamientos */
+		if (coreSamplesAvail > (audioSampleBufferSize / 2)) {
+            coreSamplesAvail = audioSampleBufferSize / 2;
+        }
+#endif
+		
         if (coreSamplesAvail > 0) {
             unsigned coreSampleRate = core->audioSampleRate(core);
             size_t samplesProduced;
@@ -2048,14 +2060,23 @@ bool retro_load_game(const struct retro_game_info* game) {
         audioSamplesPerFrame = (size_t)(
 				((float) targetSampleRate * (float) core->frameCycles(core) /
 						(float)core->frequency(core)) + 0.5f);
+#ifdef MMIYOO
+		/* Búfer aumentado x4 para absorber tirones de CPU en Miyoo Mini */
+		audioBufferSize = (((audioSamplesPerFrame * 4) + 1024 - 1) / 1024) * 1024;
+#else
 		/* Round up to nearest multiple of 1024
 		 * > This is more than we need, but
-		 *   no harm in being safe... */
+		 * no harm in being safe... */
 		audioBufferSize = ((audioSamplesPerFrame + 1024 - 1) / 1024) * 1024;
+#endif
 		/* Initialise resample buffer */
 		mAudioBufferInit(&audioResampleBuffer, audioBufferSize, 2);
 		/* Initialise resampler */
+#ifdef MMIYOO
+		mAudioResamplerInit(&audioResampler, mINTERPOLATOR_COSINE);
+#else
 		mAudioResamplerInit(&audioResampler, mINTERPOLATOR_SINC);
+#endif
 		mAudioResamplerSetDestination(&audioResampler, &audioResampleBuffer, targetSampleRate);
 		/* Initialise output sample buffer
 		 * > Multiply size by 2 (channels) */
