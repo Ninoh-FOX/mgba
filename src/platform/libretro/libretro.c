@@ -43,11 +43,7 @@ FS_Archive sdmcArchive;
 
 #include "libretro_core_options.h"
 
-#ifdef MMIYOO
-#define GBA_RESAMPLED_RATE 48000
-#else
 #define GBA_RESAMPLED_RATE 65536
-#endif
 static unsigned targetSampleRate = GBA_RESAMPLED_RATE;
 #define GB_SAMPLES 512
 /* An alpha factor of 1/180 is *somewhat* equivalent
