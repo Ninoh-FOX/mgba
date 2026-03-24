@@ -1729,35 +1729,31 @@ void retro_run(void) {
 #ifdef M_CORE_GBA
 	if (core->platform(core) == mPLATFORM_GBA) {
 		struct mAudioBuffer *coreBuffer = core->getAudioBuffer(core);
-        int coreSamplesAvail = mAudioBufferAvailable(coreBuffer);
+		int coreSamplesAvail = mAudioBufferAvailable(coreBuffer);
 
-#ifdef MMIYOO
-        /* Limitar el lote al tamaño máximo para evitar bloqueos de VSync y desbordamientos */
-		if (coreSamplesAvail > (audioSampleBufferSize / 2)) {
-            coreSamplesAvail = audioSampleBufferSize / 2;
-        }
-#endif
-		
-        if (coreSamplesAvail > 0) {
-            unsigned coreSampleRate = core->audioSampleRate(core);
-            size_t samplesProduced;
-            if (coreSampleRate != targetSampleRate) {
-                /* Resample generated audio */
-                mAudioResamplerSetSource(&audioResampler, coreBuffer, coreSampleRate, true);
-                mAudioResamplerProcess(&audioResampler);
-                /* Output resampled audio */
-                size_t samplesAvail = mAudioBufferAvailable(&audioResampleBuffer);
-                samplesProduced = mAudioBufferRead(&audioResampleBuffer, audioSampleBuffer, samplesAvail);
-            } else {
-                samplesProduced = mAudioBufferRead(coreBuffer, audioSampleBuffer, coreSamplesAvail);
-            }
-            if (samplesProduced > 0) {
-                if (audioLowPassEnabled) {
-                    _audioLowPassFilter(audioSampleBuffer, samplesProduced);
-                }
-                audioCallback(audioSampleBuffer, samplesProduced);
-            }
-        }
+		/* Leemos TODO el búfer disponible. Sin límites artificiales para evitar "rasposidad" */
+		if (coreSamplesAvail > 0) {
+			unsigned coreSampleRate = core->audioSampleRate(core);
+			size_t samplesProduced;
+
+			if (coreSampleRate != targetSampleRate) {
+				/* Resample generated audio */
+				mAudioResamplerSetSource(&audioResampler, coreBuffer, coreSampleRate, true);
+				mAudioResamplerProcess(&audioResampler);
+				/* Output resampled audio */
+				size_t samplesAvail = mAudioBufferAvailable(&audioResampleBuffer);
+				samplesProduced = mAudioBufferRead(&audioResampleBuffer, audioSampleBuffer, samplesAvail);
+			} else {
+				samplesProduced = mAudioBufferRead(coreBuffer, audioSampleBuffer, coreSamplesAvail);
+			}
+
+			if (samplesProduced > 0) {
+				if (audioLowPassEnabled) {
+					_audioLowPassFilter(audioSampleBuffer, samplesProduced);
+				}
+				audioCallback(audioSampleBuffer, samplesProduced);
+			}
+		}
 	}
 #endif
 }
@@ -2050,30 +2046,36 @@ bool retro_load_game(const struct retro_game_info* game) {
 	 * best possible frame pacing */
 	if (core->platform(core) == mPLATFORM_GBA) {
 		size_t audioSamplesPerFrame, audioBufferSize;
-        if (!environCallback(RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE, &targetSampleRate))
-            targetSampleRate = GBA_RESAMPLED_RATE;
+		
+		/* Obtenemos la tasa de muestreo del frontend (habitualmente 48kHz en RetroArch) */
+		if (!environCallback(RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE, &targetSampleRate))
+			targetSampleRate = GBA_RESAMPLED_RATE;
+
 		/* Get nominal output samples per frame */
-        audioSamplesPerFrame = (size_t)(
+		audioSamplesPerFrame = (size_t)(
 				((float) targetSampleRate * (float) core->frameCycles(core) /
 						(float)core->frequency(core)) + 0.5f);
+
 #ifdef MMIYOO
-		/* Búfer aumentado x4 para absorber tirones de CPU en Miyoo Mini */
-		audioBufferSize = (((audioSamplesPerFrame * 4) + 1024 - 1) / 1024) * 1024;
+		/* Búfer x2: suficiente colchón para las caídas de frames sin añadir lag perceptible */
+		audioBufferSize = (((audioSamplesPerFrame * 2) + 1024 - 1) / 1024) * 1024;
 #else
-		/* Round up to nearest multiple of 1024
-		 * > This is more than we need, but
-		 * no harm in being safe... */
+		/* Round up to nearest multiple of 1024 */
 		audioBufferSize = ((audioSamplesPerFrame + 1024 - 1) / 1024) * 1024;
 #endif
+
 		/* Initialise resample buffer */
 		mAudioBufferInit(&audioResampleBuffer, audioBufferSize, 2);
+		
 		/* Initialise resampler */
 #ifdef MMIYOO
+		/* Usamos COSINE: es mucho más ligero para la CPU ARM de la Miyoo que SINC */
 		mAudioResamplerInit(&audioResampler, mINTERPOLATOR_COSINE);
 #else
 		mAudioResamplerInit(&audioResampler, mINTERPOLATOR_SINC);
 #endif
 		mAudioResamplerSetDestination(&audioResampler, &audioResampleBuffer, targetSampleRate);
+		
 		/* Initialise output sample buffer
 		 * > Multiply size by 2 (channels) */
 		audioSampleBufferSize = audioBufferSize * 2;

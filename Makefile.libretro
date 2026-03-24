@@ -429,25 +429,23 @@ else ifeq ($(platform), miyoomini)
    CC = /opt/miyoomini-toolchain/usr/bin/arm-linux-gcc
    CXX = /opt/miyoomini-toolchain/usr/bin/arm-linux-g++
    AR = /opt/miyoomini-toolchain/usr/bin/arm-linux-ar
-   fpic := -fPIC
-   SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined -Wl,--gc-sections -lpthread
-	CFLAGS += -flto=4 \
-	-fdata-sections -ffunction-sections \
-	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-	-fno-unwind-tables -fno-asynchronous-unwind-tables \
-	-fmerge-all-constants -fno-math-errno \
-	-marm -mcpu=cortex-a7 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard \
-	-ftree-vectorize
-	CXXFLAGS += $(CFLAGS)
-	CPPFLAGS += $(CFLAGS)
-	ASFLAGS += $(CFLAGS)
-	HAVE_NEON = 1
-	ARCH = arm
-	BUILTIN_GPU = neon
-	HAVE_VFS_FD = 0
-    DEFINES += -std=c99 -D_GNU_SOURCE
-    DEFINES += -DHAVE_LOCALE
-	DEFINES += -DMMIYOO
+   OPTFLAGS := -O3 -fomit-frame-pointer -ffast-math -flto
+   CPUFLAGS := -mcpu=cortex-a7 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+   
+   CFLAGS += $(OPTFLAGS) $(CPUFLAGS) -fPIC
+   CXXFLAGS += $(OPTFLAGS) $(CPUFLAGS) -fPIC
+   
+   # Pasamos las optimizaciones al linker, pero QUITAMOS el link.T que choca con LTO
+   LDFLAGS += $(OPTFLAGS) $(CPUFLAGS)
+   SHARED := -shared -Wl,--no-undefined
+
+   # Le decimos explícitamente al núcleo que hay NEON disponible
+   HAVE_NEON = 1
+   ARCH = arm
+   BUILTIN_GPU = neon
+   DEFINES += -std=c99 -D_GNU_SOURCE
+   DEFINES += -DHAVE_LOCALE
+   DEFINES += -DMMIYOO
 
 # Windows
 else
