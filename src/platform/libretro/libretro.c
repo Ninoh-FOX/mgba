@@ -1155,17 +1155,31 @@ bool retro_load_game(const struct retro_game_info* game) {
 	}
 #endif
 
+	core->reset(core);
+
 #ifdef ENABLE_VFS
-	if (core->opts.useBios && sysDir && biosName) {
+	bool useBiosFile = core->opts.useBios && sysDir && biosName;
+#ifdef M_CORE_GBA
+	/* Pokémon ROM hacks (detected by the first reset, which turns on the VBA
+	 * compatibility) often have badly compressed data: the built-in BIOS
+	 * stops at the declared size, the real one overruns the buffer and the
+	 * game stops (e.g. Mega Moemon before Professor Oak). As in gpSP plus,
+	 * these games always use the built-in BIOS. */
+	if (useBiosFile && core->platform(core) == mPLATFORM_GBA && ((struct GBA*) core->board)->vbaBugCompat) {
+		useBiosFile = false;
+		_showMessage("Pokemon ROM hack detected, using the built-in BIOS", 2500);
+	}
+#endif
+	if (useBiosFile) {
 		snprintf(biosPath, sizeof(biosPath), "%s%s%s", sysDir, PATH_SEP, biosName);
 		struct VFile* bios = VFileOpen(biosPath, O_RDONLY);
 		if (bios) {
 			core->loadBIOS(core, bios, 0);
+			core->reset(core);
 		}
 	}
 #endif
 
-	core->reset(core);
 	_setupMaps(core);
 
 	cableLinkEnabled = false;
