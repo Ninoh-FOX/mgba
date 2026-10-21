@@ -1349,6 +1349,7 @@ static u32 hash_slot(unsigned s) {
 	struct ARMCore* cpu;
 	u32 h = 2166136261u;
 	u16 sio[2];
+	u16 io[sizeof(((struct GBAMemory*) 0)->io) / sizeof(u16)];
 	if (!c) {
 		return 0;
 	}
@@ -1359,7 +1360,15 @@ static u32 hash_slot(unsigned s) {
 	h = hash_mem(h, gba->video.vram, GBA_SIZE_VRAM);
 	h = hash_mem(h, gba->video.oam.raw, GBA_SIZE_OAM);
 	h = hash_mem(h, gba->video.palette, GBA_SIZE_PALETTE_RAM);
-	h = hash_mem(h, gba->memory.io, sizeof(gba->memory.io));
+	/* The write-only video registers are left out: the game never reads
+	 * them, and what they keep depends on the renderer (the software one
+	 * keeps BLDY at 16 at most, the dummy one of the hidden GBAs keeps what
+	 * the game wrote). */
+	memcpy(io, gba->memory.io, sizeof(io));
+	memset(&io[GBA_REG(BG0HOFS)], 0, GBA_REG_WININ - GBA_REG_BG0HOFS);
+	io[GBA_REG(MOSAIC)] = 0;
+	io[GBA_REG(BLDY)] = 0;
+	h = hash_mem(h, io, sizeof(io));
 	sio[0] = gba->sio.siocnt;
 	sio[1] = gba->sio.rcnt;
 	h = hash_mem(h, sio, sizeof(sio));
