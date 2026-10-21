@@ -27,6 +27,7 @@
 #include <mgba-util/vfs.h>
 
 #include "libretro_core_options.h"
+#include "dual.h"
 
 #define GB_SAMPLES 512
 /* An alpha factor of 1/180 is *somewhat* equivalent
@@ -52,6 +53,9 @@ static retro_set_sensor_state_t sensorStateCallback;
 static void GBARetroLog(struct mLogger* logger, int category, enum mLogLevel level, const char* format, va_list args);
 
 static void _postAudioBuffer(struct mAVStream*, struct mAudioBuffer*);
+static void _outputFrame(void);
+static void _outputSilence(void);
+static void _dupeFrame(void);
 static void _audioRateChanged(struct mAVStream*, unsigned rate);
 static void _setRumble(struct mRumbleIntegrator*, float level);
 static uint8_t _readLux(struct GBALuminanceSource* lux);
@@ -104,6 +108,9 @@ static bool audioLowPassEnabled = false;
 static int32_t audioLowPassRange = 0;
 static int32_t audioLowPassLeftPrev = 0;
 static int32_t audioLowPassRightPrev = 0;
+static bool cableLinkEnabled = false;
+static bool allowOpposingDirections = false;
+static bool opposingDirectionsPending = false;
 
 static const int keymap[] = {
 	RETRO_DEVICE_ID_JOYPAD_A,
@@ -353,6 +360,106 @@ static void _doDeferredSetup(void) {
 	deferredSetup = false;
 }
 
+/* Cable Link (dual.c) */
+
+static void _showMessage(const char* text, unsigned durationMs) {
+	unsigned version = 0;
+	if (!environCallback(RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION, &version) || version >= 1) {
+		struct retro_message_ext msg = {
+			.msg = text,
+			.duration = durationMs,
+			.priority = 2,
+			.level = RETRO_LOG_INFO,
+			.target = RETRO_MESSAGE_TARGET_ALL,
+			.type = RETRO_MESSAGE_TYPE_NOTIFICATION,
+			.progress = -1,
+		};
+		if (environCallback(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, &msg)) {
+			return;
+		}
+	}
+	struct retro_message msg = { .msg = text, .frames = durationMs / 17 };
+	environCallback(RETRO_ENVIRONMENT_SET_MESSAGE, &msg);
+}
+
+static void _dualPrepare(void) {
+	if (deferredSetup) {
+		_doDeferredSetup();
+	}
+}
+
+/* Read again when a netplay session starts: it may have been changed in
+ * the menu just before, with no frame run since. */
+static void _readCablePlayers(void) {
+	struct retro_variable var = {
+		.key = "mgba_cable_players",
+		.value = 0
+	};
+	unsigned players = 2;
+	if (environCallback(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+		players = strtoul(var.value, NULL, 10);
+	}
+	dual_set_players(players);
+}
+
+static unsigned netplayClients = 0;
+
+static void RETRO_CALLCONV _netpacketStart(uint16_t clientId, retro_netpacket_send_t send, retro_netpacket_poll_receive_t pollReceive) {
+	_readCablePlayers();
+	netplayClients = 0;
+	dual_set_net(send, pollReceive);
+	dual_session_start(clientId);
+}
+
+static void RETRO_CALLCONV _netpacketReceive(const void* buf, size_t len, uint16_t clientId) {
+	dual_net_receive(buf, len, clientId);
+}
+
+static void RETRO_CALLCONV _netpacketStop(void) {
+	dual_session_stop();
+	netplayClients = 0;
+}
+
+static bool RETRO_CALLCONV _netpacketConnected(uint16_t clientId) {
+	struct retro_variable var = {
+		.key = "mgba_cable_players",
+		.value = 0
+	};
+	unsigned players = 2;
+	if (environCallback(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+		players = strtoul(var.value, NULL, 10);
+	}
+	if (players < 2 || players > DUAL_MAX_PLAYERS) {
+		players = 2;
+	}
+	/* The cable has 4 ends: a client id past 3 has no room on it. */
+	if (netplayClients + 1 >= players || clientId >= DUAL_MAX_PLAYERS) {
+		return false;
+	}
+	if (!dual_peer_connected(clientId)) {
+		return false;
+	}
+	++netplayClients;
+	return true;
+}
+
+static void RETRO_CALLCONV _netpacketDisconnected(uint16_t clientId) {
+	if (netplayClients) {
+		--netplayClients;
+	}
+	dual_peer_disconnected(clientId);
+}
+
+static const struct retro_netpacket_callback netpacketInterface = {
+	_netpacketStart,
+	_netpacketReceive,
+	_netpacketStop,
+	NULL,
+	_netpacketConnected,
+	_netpacketDisconnected,
+	"mGBA dual cable 1",
+};
+
 unsigned retro_api_version(void) {
 	return RETRO_API_VERSION;
 }
@@ -559,8 +666,10 @@ void retro_run(void) {
 			.value = 0
 		};
 		if (environCallback(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-			mCoreConfigSetIntValue(&core->config, "allowOpposingDirections", strcmp(var.value, "yes") == 0);
-			core->reloadConfigOption(core, "allowOpposingDirections", NULL);
+			allowOpposingDirections = strcmp(var.value, "yes") == 0;
+			/* (while linked every GBA takes the buttons already filtered:
+			 * the core gets the option once the link is over) */
+			opposingDirectionsPending = true;
 		}
 
 		_loadAudioLowPassFilterSettings();
@@ -576,6 +685,12 @@ void retro_run(void) {
 #endif
 	}
 
+	if (opposingDirectionsPending && !dual_linked()) {
+		opposingDirectionsPending = false;
+		mCoreConfigSetIntValue(&core->config, "allowOpposingDirections", allowOpposingDirections);
+		core->reloadConfigOption(core, "allowOpposingDirections", NULL);
+	}
+
 	keys = 0;
 	unsigned i;
 	if (useBitmasks) {
@@ -588,6 +703,39 @@ void retro_run(void) {
 			keys |= (!!inputCallback(0, RETRO_DEVICE_JOYPAD, 0, keymap[i])) << i;
 		}
 	}
+	if (cableLinkEnabled) {
+		if (dual_setting_up()) {
+			/* The GBAs of the link are being set up: the game waits. */
+			_dupeFrame();
+			return;
+		}
+		if (dual_running()) {
+			if (!allowOpposingDirections) {
+				if ((keys & 0x030) == 0x030) {
+					keys &= ~0x030;
+				}
+				if ((keys & 0x0C0) == 0x0C0) {
+					keys &= ~0x0C0;
+				}
+			}
+			switch (dual_frame_begin(keys)) {
+			case DUAL_FRAME_RUN:
+				dual_frame_run();
+				_outputFrame();
+				return;
+			case DUAL_FRAME_HOLD:
+				/* Ahead of the other consoles: this frame waits (in silence). */
+				_outputSilence();
+				_dupeFrame();
+				return;
+			default:
+				/* Someone's buttons for this frame are not here yet. */
+				_dupeFrame();
+				return;
+			}
+		}
+	}
+
 	core->setKeys(core, keys);
 
 	if (!luxSensorUsed) {
@@ -613,6 +761,29 @@ void retro_run(void) {
 	}
 
 	core->runFrame(core);
+	_outputFrame();
+}
+
+static void _dupeFrame(void) {
+	unsigned width, height;
+	core->currentVideoSize(core, &width, &height);
+	videoCallback(NULL, width, height, BYTES_PER_PIXEL * 256);
+}
+
+static void _outputSilence(void) {
+	size_t samples = (size_t) audioSamplesPerFrameAvg;
+	if (!samples || !audioSampleBuffer) {
+		return;
+	}
+	if (audioSampleBufferSize < samples * 2) {
+		audioSampleBufferSize = samples * 2;
+		audioSampleBuffer = realloc(audioSampleBuffer, audioSampleBufferSize * sizeof(int16_t));
+	}
+	memset(audioSampleBuffer, 0, samples * 2 * sizeof(int16_t));
+	audioCallback(audioSampleBuffer, samples);
+}
+
+static void _outputFrame(void) {
 	unsigned width, height;
 	core->currentVideoSize(core, &width, &height);
 	videoCallback(outputBuffer, width, height, BYTES_PER_PIXEL * 256);
@@ -837,6 +1008,12 @@ static void _setupMaps(struct mCore* core) {
 }
 
 void retro_reset(void) {
+	if (cableLinkEnabled && dual_linked()) {
+		/* The other consoles have copies of this GBA: every console restarts
+		 * every GBA in the same frame (or, while setting up, nothing). */
+		dual_request_reset();
+		return;
+	}
 	core->reset(core);
 	mRumbleIntegratorReset(&rumble);
 	_setupMaps(core);
@@ -991,6 +1168,33 @@ bool retro_load_game(const struct retro_game_info* game) {
 	core->reset(core);
 	_setupMaps(core);
 
+	cableLinkEnabled = false;
+#ifdef M_CORE_GBA
+	if (core->platform(core) == mPLATFORM_GBA) {
+		struct retro_variable var = {
+			.key = "mgba_cable_link",
+			.value = 0
+		};
+		if (!environCallback(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || !var.value || strcmp(var.value, "OFF") != 0) {
+			cableLinkEnabled = true;
+		}
+	}
+#endif
+	{
+		struct retro_variable var = {
+			.key = "mgba_allow_opposing_directions",
+			.value = 0
+		};
+		allowOpposingDirections = environCallback(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && strcmp(var.value, "yes") == 0;
+	}
+	if (cableLinkEnabled) {
+		dual_set_frontend(environCallback, _showMessage, _dualPrepare);
+		dual_game_loaded(core, data, dataSize, game->path);
+		_readCablePlayers();
+		/* (The frontend's netplay then lets the core carry the link) */
+		environCallback(RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE, (void*) &netpacketInterface);
+	}
+
 	return true;
 }
 
@@ -998,6 +1202,12 @@ void retro_unload_game(void) {
 	if (!core) {
 		return;
 	}
+	dual_game_unloaded();
+	if (cableLinkEnabled) {
+		environCallback(RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE, NULL);
+	}
+	cableLinkEnabled = false;
+	opposingDirectionsPending = false;
 	mCoreConfigDeinit(&core->config);
 	core->deinit(core);
 	mappedMemoryFree(data, dataSize);
@@ -1036,6 +1246,10 @@ bool retro_serialize(void* data, size_t size) {
 }
 
 bool retro_unserialize(const void* data, size_t size) {
+	if (dual_linked()) {
+		/* The copies of this GBA on the other consoles cannot travel in time */
+		return false;
+	}
 	if (deferredSetup) {
 		_doDeferredSetup();
 	}
@@ -1052,6 +1266,10 @@ void retro_cheat_reset(void) {
 void retro_cheat_set(unsigned index, bool enabled, const char* code) {
 	UNUSED(index);
 	UNUSED(enabled);
+	if (dual_linked()) {
+		/* Cheats are off while linked (the copies of this GBA have none) */
+		return;
+	}
 	struct mCheatDevice* device = core->cheatDevice(core);
 	struct mCheatSet* cheatSet = NULL;
 	if (mCheatSetsSize(&device->cheats)) {
@@ -1128,6 +1346,13 @@ void* retro_get_memory_data(unsigned id) {
 	switch (id) {
 	case RETRO_MEMORY_SAVE_RAM:
 		return savedata;
+#ifdef M_CORE_GBA
+	case RETRO_MEMORY_SYSTEM_RAM:
+		if (core->platform(core) == mPLATFORM_GBA) {
+			return ((struct GBA*) core->board)->memory.wram;
+		}
+		break;
+#endif
 	case RETRO_MEMORY_RTC:
 		switch (core->platform(core)) {
 #ifdef M_CORE_GB
@@ -1151,6 +1376,10 @@ void* retro_get_memory_data(unsigned id) {
 
 size_t retro_get_memory_size(unsigned id) {
 	switch (id) {
+#ifdef M_CORE_GBA
+	case RETRO_MEMORY_SYSTEM_RAM:
+		return core->platform(core) == mPLATFORM_GBA ? GBA_SIZE_EWRAM : 0;
+#endif
 	case RETRO_MEMORY_SAVE_RAM:
 		switch (core->platform(core)) {
 #ifdef M_CORE_GBA
@@ -1193,7 +1422,7 @@ size_t retro_get_memory_size(unsigned id) {
 
 void GBARetroLog(struct mLogger* logger, int category, enum mLogLevel level, const char* format, va_list args) {
 	UNUSED(logger);
-	if (!logCallback) {
+	if (!logCallback || dual_hidden_thread()) {
 		return;
 	}
 

@@ -1,0 +1,760 @@
+/* dualtest: 2 to 4 consoles with RetroArch, in one process, for the Dual
+ * Cable Link of the mGBA libretro core (adapted from gpSP's).
+ *
+ * Loads a copy of the core per console (each copy is a console: dlopen'ed
+ * files, so each has its own globals), plays the frontend for all of them
+ * and joins their netpacket interfaces with a network in memory that adds a
+ * fixed latency. As in RetroArch, the clients only talk to the host, which
+ * passes on what a client sends to the others when it reads the network.
+ * Messages from the core are printed with the console they come from.
+ *
+ *   dualtest CORE.so ROM FRAMES [latency_ms] [solo_frames]
+ *
+ * Environment: PLAYERS=n (2-4) consoles, and the "Cable Link players"
+ * option of all of them (PLAYERS1=n gives console 1 another value).
+ * JOIN_GAP=n: frames between one client joining and the next.
+ * PACE=1 runs each console at 59.73 frames a second, as on the real ones
+ * (SKEW_PPM=n: the clients' clocks are n parts per million faster, client k
+ * k times), BW_KBPS=n gives the network that bandwidth each way, JITTER_MS=n
+ * delays each packet up to n ms more (in order, as TCP); SPIKE_MS=n with
+ * SPIKE_EVERY=k delays one packet in k (at random) n ms more, and the ones
+ * behind it wait (a WiFi having a bad moment). RESET_AT=n: the host player
+ * presses reset at frame n of the session.
+ *
+ * KEYS0..KEYS3 = "from-to:key+key;...": what each player presses at those
+ * frames of the session (keys: a b select start up down left right l r),
+ * instead of random buttons. SHOTS=dir saves the screens (dir/cN_FRAME.ppm)
+ * at the frames in SHOT_AT="f,f,..." or every SHOT_EVERY frames. With PACE
+ * the harness prints how long the setup took and how many frames apart the
+ * screens are.
+ *
+ * Exit status 0 if the session ran FRAMES frames on every console without
+ * the core reporting a problem. With the link test ROM (linktest.gba) it
+ * also checks that every GBA logged the very same words, with a word from
+ * each player.
+ */
+#include <dlfcn.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include "libretro.h"
+
+#define MAXCON 4
+
+typedef struct {
+  void *h;
+  void (*set_environment)(retro_environment_t);
+  void (*set_video_refresh)(retro_video_refresh_t);
+  void (*set_audio_sample)(retro_audio_sample_t);
+  void (*set_audio_sample_batch)(retro_audio_sample_batch_t);
+  void (*set_input_poll)(retro_input_poll_t);
+  void (*set_input_state)(retro_input_state_t);
+  void (*init)(void);
+  void (*deinit)(void);
+  bool (*load_game)(const struct retro_game_info *);
+  void (*unload_game)(void);
+  void (*run)(void);
+  void (*reset)(void);
+  void *(*get_memory_data)(unsigned);
+
+  struct retro_netpacket_callback np;
+  bool np_set;
+  bool started;           // Its netplay session started
+  bool playing;           // The host was told it joined (RetroArch only
+                          // sends to a client from then on)
+  int id;                 // 0 = host, 1-3 = clients
+  unsigned frames_shown;  // Frames that were run (not repeated)
+  unsigned frames_dupe;
+  unsigned frames_held;   // Repeated on purpose (a frame of sound came)
+  bool sound;             // Sound since the last frame
+  uint32_t keys;
+  bool bad;
+} console;
+
+static console con[MAXCON];
+static int ncon = 2;
+static int latency_us = 0;
+static int64_t bw_bps = 0, jitter_us = 0, spike_us = 0, spike_every = 0;
+static int64_t link_free[MAXCON], last_at[MAXCON];
+
+typedef struct pkt {
+  struct pkt *next;
+  int64_t at;
+  int to;                 // Console it gets to
+  uint16_t from_id;       // Who sent it (as the receiver is told)
+  uint16_t dest;          // To the host from a client: who it is for
+  size_t len;
+  unsigned char data[];
+} pkt;
+
+static pkt *q_head, *q_tail;
+static pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+static int64_t now_us(void) {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (int64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
+
+/* One hop, from console `link` (whose uplink it takes) to console `to`. */
+static void net_queue(int link, int to, uint16_t from_id, uint16_t dest,
+                      const void *buf, size_t len) {
+  pkt *p = malloc(sizeof(pkt) + len);
+  int64_t t;
+  pthread_mutex_lock(&q_mtx);
+  p->next = NULL;
+  t = now_us();
+  if (bw_bps) {
+    link_free[link] = (t > link_free[link] ? t : link_free[link]) +
+                      (int64_t)len * 8 * 1000000 / bw_bps;
+    t = link_free[link];
+  }
+  t += latency_us + (jitter_us ? rand() % (jitter_us + 1) : 0);
+  if (spike_every && rand() % spike_every == 0)
+    t += spike_us;
+  if (t < last_at[link]) t = last_at[link];
+  p->at = last_at[link] = t;
+  p->to = to;
+  p->from_id = from_id;
+  p->dest = dest;
+  p->len = len;
+  memcpy(p->data, buf, len);
+  if (q_tail) q_tail->next = p; else q_head = p;
+  q_tail = p;
+  pthread_mutex_unlock(&q_mtx);
+}
+
+static void net_send(int from, int flags, const void *buf, size_t len, uint16_t client_id) {
+  int k;
+  (void)flags;
+  if (from) {
+    /* A client always sends to the host, which passes it on. */
+    net_queue(from, 0, (uint16_t)from, client_id, buf, len);
+    return;
+  }
+  for (k = 1; k < ncon; k++)
+    if (con[k].playing &&
+        (client_id == RETRO_NETPACKET_BROADCAST || client_id == k))
+      net_queue(0, k, 0, 0, buf, len);
+}
+
+static void net_poll(int who) {
+  pkt **pp, *prev = NULL, *got = NULL, **got_tail = &got;
+  const int64_t t = now_us();
+  pthread_mutex_lock(&q_mtx);
+  pp = &q_head;
+  while (*pp) {
+    pkt *p = *pp;
+    if (p->to == who && p->at <= t) {
+      *pp = p->next;
+      if (q_tail == p) q_tail = prev;
+      p->next = NULL;
+      *got_tail = p;
+      got_tail = &p->next;
+      continue;
+    }
+    prev = p;
+    pp = &p->next;
+  }
+  pthread_mutex_unlock(&q_mtx);
+  /* (Delivered unlocked: the core answers some of them right away.) */
+  while (got) {
+    pkt *p = got;
+    got = p->next;
+    if (who == 0 && p->from_id) {
+      /* The host: for itself, and/or passed on to the other clients. */
+      const uint16_t dest = p->dest;
+      int k;
+      if (dest == 0 || dest == RETRO_NETPACKET_BROADCAST)
+        if (con[0].np_set && con[0].np.receive)
+          con[0].np.receive(p->data, p->len, p->from_id);
+      for (k = 1; k < ncon; k++)
+        if (k != p->from_id && con[k].playing &&
+            (dest == RETRO_NETPACKET_BROADCAST || dest == k))
+          net_queue(0, k, p->from_id, 0, p->data, p->len);
+    }
+    else if (con[who].np_set && con[who].np.receive)
+      con[who].np.receive(p->data, p->len, p->from_id);
+    free(p);
+  }
+}
+
+/* ---- frontend callbacks, one set per console ---- */
+
+/* HOST_PLAYERS_BEFORE=n: the players option the host had before the netplay
+ * session (it is changed to PLAYERS in the menu right before connecting). */
+static bool opt_netplay;
+/* CHANGE_AT=n: at frame n of each session console 0 switches its sound rate
+ * (32768 Hz) in the menu, or its dynarec off with CHANGE_DRC=1, and the core
+ * is told an option changed. */
+static bool opt_changed, opt_change_pending;
+
+static const char *opt(int who, const char *key) {
+  if (!strcmp(key, "mgba_cable_link")) return getenv("CABLE") ? getenv("CABLE") : "ON";
+  /* BIOS1=ON: console 1 uses ./gba_bios.bin (a setting that differs) */
+  if (!strcmp(key, "mgba_use_bios")) return (who == 1 && getenv("BIOS1")) ? getenv("BIOS1") : (getenv("BIOS") ? getenv("BIOS") : "OFF");
+  if (!strcmp(key, "mgba_skip_bios")) return "ON";
+  /* IDLE=Detect and Remove ... */
+  if (!strcmp(key, "mgba_idle_optimization")) return (who == 0 && getenv("IDLE0")) ? getenv("IDLE0") : (getenv("IDLE") ? getenv("IDLE") : "Remove Known");
+  (void)opt_changed;
+  if (!strcmp(key, "mgba_cable_players")) {
+    if (who == 0 && !opt_netplay && getenv("HOST_PLAYERS_BEFORE")) return getenv("HOST_PLAYERS_BEFORE");
+    if (who == 1 && getenv("PLAYERS1")) return getenv("PLAYERS1");
+    return getenv("PLAYERS") ? getenv("PLAYERS") : "2";
+  }
+  return NULL;
+}
+
+static bool env(int who, unsigned cmd, void *data) {
+  switch (cmd) {
+  case RETRO_ENVIRONMENT_GET_VARIABLE: {
+    struct retro_variable *v = data;
+    v->value = opt(who, v->key);
+    return v->value != NULL;
+  }
+  case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+  case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
+    *(const char **)data = ".";
+    return true;
+  case RETRO_ENVIRONMENT_GET_INPUT_BITMASKS:
+  case RETRO_ENVIRONMENT_GET_CAN_DUPE:
+    if (data) *(bool *)data = true;
+    return true;
+  case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
+    return true;
+  case RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE:
+    if (data) {
+      con[who].np = *(const struct retro_netpacket_callback *)data;
+      con[who].np_set = true;
+    } else
+      con[who].np_set = false;
+    return true;
+  case RETRO_ENVIRONMENT_SET_MESSAGE: {
+    const struct retro_message *m = data;
+    printf("[console %d] message: %s\n", who, m->msg);
+    return true;
+  }
+  case RETRO_ENVIRONMENT_SET_MESSAGE_EXT: {
+    const struct retro_message_ext *m = data;
+    printf("[console %d] message: %s\n", who, m->msg);
+    /* Counted from the first frame of the dual cable (frame 0 everywhere). */
+    if (strstr(m->msg, "GBAs connected") && getenv("PACE"))
+      con[who].frames_shown = 0;
+    if (strstr(m->msg, "out of sync") || strstr(m->msg, "could not") ||
+        strstr(m->msg, "not enough") || strstr(m->msg, "did not answer"))
+      con[who].bad = true;
+    return true;
+  }
+  case RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION:
+    *(unsigned *)data = 1;
+    return true;
+  case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
+    *(bool *)data = who == 0 && opt_change_pending;
+    if (who == 0) opt_change_pending = false;
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool shot_wanted(unsigned f) {
+  const char *at = getenv("SHOT_AT"), *every = getenv("SHOT_EVERY");
+  if (every && atoi(every) > 0 && f % (unsigned)atoi(every) == 0)
+    return true;
+  while (at && *at) {
+    if ((unsigned)atoi(at) == f)
+      return true;
+    at = strchr(at, ',');
+    if (at) at++;
+  }
+  return false;
+}
+
+static void video(int who, const void *data, unsigned w, unsigned h, size_t pitch) {
+  if (data) con[who].frames_shown++; else con[who].frames_dupe++;
+  /* A repeated frame with sound: held back by the time sync, not a wait. */
+  if (!data && con[who].sound) con[who].frames_held++;
+  con[who].sound = false;
+  if (data && getenv("SHOTS") && shot_wanted(con[who].frames_shown)) {
+    char path[512];
+    FILE *f;
+    unsigned x, y;
+    snprintf(path, sizeof(path), "%s/c%d_%05u.ppm", getenv("SHOTS"), who, con[who].frames_shown);
+    if ((f = fopen(path, "wb"))) {
+      fprintf(f, "P6 %u %u 255\n", w, h);
+      for (y = 0; y < h; y++)
+        for (x = 0; x < w; x++) {
+          const uint16_t p = ((const uint16_t *)((const uint8_t *)data + y * pitch))[x];
+          const unsigned char rgb[3] = { (p >> 11) << 3, ((p >> 5) & 63) << 2, (p & 31) << 3 };
+          fwrite(rgb, 1, 3, f);
+        }
+      fclose(f);
+    }
+  }
+}
+
+static int16_t input_state(int who, unsigned port, unsigned dev, unsigned idx, unsigned id) {
+  if (port || dev != RETRO_DEVICE_JOYPAD) return 0;
+  if (id == RETRO_DEVICE_ID_JOYPAD_MASK) return (int16_t)con[who].keys;
+  return (con[who].keys >> id) & 1;
+}
+
+#define CBSET(n) \
+  static bool env##n(unsigned c, void *d) { return env(n, c, d); } \
+  static void video##n(const void *d, unsigned w, unsigned h, size_t p) { video(n, d, w, h, p); } \
+  static int16_t input##n(unsigned p, unsigned d, unsigned i, unsigned id) { return input_state(n, p, d, i, id); } \
+  static void np_send##n(int f, const void *b, size_t l, uint16_t c) { net_send(n, f, b, l, c); } \
+  static void np_poll##n(void) { net_poll(n); } \
+  static size_t audio##n(const int16_t *d, size_t f) { con[n].sound = true; return f; }
+CBSET(0)
+CBSET(1)
+CBSET(2)
+CBSET(3)
+
+static const retro_environment_t envs[MAXCON] = { env0, env1, env2, env3 };
+static const retro_video_refresh_t videos[MAXCON] = { video0, video1, video2, video3 };
+static const retro_input_state_t inputs[MAXCON] = { input0, input1, input2, input3 };
+static const retro_audio_sample_batch_t audios[MAXCON] = { audio0, audio1, audio2, audio3 };
+static void (*const np_sends[MAXCON])(int, const void *, size_t, uint16_t) =
+  { np_send0, np_send1, np_send2, np_send3 };
+static void (*const np_polls[MAXCON])(void) = { np_poll0, np_poll1, np_poll2, np_poll3 };
+
+static void audio(int16_t l, int16_t r) {}
+static void input_poll(void) {}
+
+static void load_core(console *c, const char *path, int who) {
+#define SYM(f) c->f = dlsym(c->h, "retro_" #f); if (!c->f) { fprintf(stderr, "missing retro_%s\n", #f); exit(2); }
+  c->h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+  if (!c->h) { fprintf(stderr, "dlopen %s: %s\n", path, dlerror()); exit(2); }
+  SYM(set_environment) SYM(set_video_refresh) SYM(set_audio_sample)
+  SYM(set_audio_sample_batch) SYM(set_input_poll) SYM(set_input_state)
+  SYM(init) SYM(deinit) SYM(load_game) SYM(unload_game) SYM(run)
+  SYM(get_memory_data) SYM(reset)
+  c->id = who;
+  c->set_environment(envs[who]);
+  c->set_video_refresh(videos[who]);
+  c->set_audio_sample(audio);
+  c->set_audio_sample_batch(audios[who]);
+  c->set_input_poll(input_poll);
+  c->set_input_state(inputs[who]);
+  printf("  init\n");
+  c->init();
+  printf("  init done\n");
+}
+
+static bool copy_file(const char *from, const char *to) {
+  FILE *a = fopen(from, "rb"), *b = fopen(to, "wb");
+  char buf[65536];
+  size_t n;
+  bool ok = a && b;
+  while (ok && (n = fread(buf, 1, sizeof(buf), a)) > 0)
+    ok = fwrite(buf, 1, n, b) == n;
+  if (a) fclose(a);
+  if (b) fclose(b);
+  return ok;
+}
+
+/* KEYS0..KEYS3: "from-to:key+key;..." */
+static bool scripted_keys(int who, unsigned frame, uint32_t *keys) {
+  static const struct { const char *n; int id; } names[] = {
+    { "a", RETRO_DEVICE_ID_JOYPAD_A }, { "b", RETRO_DEVICE_ID_JOYPAD_B },
+    { "select", RETRO_DEVICE_ID_JOYPAD_SELECT }, { "start", RETRO_DEVICE_ID_JOYPAD_START },
+    { "up", RETRO_DEVICE_ID_JOYPAD_UP }, { "down", RETRO_DEVICE_ID_JOYPAD_DOWN },
+    { "left", RETRO_DEVICE_ID_JOYPAD_LEFT }, { "right", RETRO_DEVICE_ID_JOYPAD_RIGHT },
+    { "l", RETRO_DEVICE_ID_JOYPAD_L }, { "r", RETRO_DEVICE_ID_JOYPAD_R },
+  };
+  char var[8];
+  const char *s;
+  snprintf(var, sizeof(var), "KEYS%d", who);
+  s = getenv(var);
+  if (!s)
+    return false;
+  *keys = 0;
+  while (*s) {
+    char *e;
+    const unsigned from = (unsigned)strtoul(s, &e, 10);
+    unsigned to = from;
+    if (*e == '-') to = (unsigned)strtoul(e + 1, &e, 10);
+    if (*e == ':') e++;
+    while (*e && *e != ';') {
+      size_t n = strcspn(e, "+;");
+      unsigned k;
+      for (k = 0; k < sizeof(names) / sizeof(names[0]); k++)
+        if (strlen(names[k].n) == n && !strncmp(e, names[k].n, n) && frame >= from && frame <= to)
+          *keys |= 1u << names[k].id;
+      e += n;
+      if (*e == '+') e++;
+    }
+    s = *e ? e + 1 : e;
+  }
+  return true;
+}
+
+/* Buttons that change now and then, different for each player. */
+static uint32_t script_keys(int who, unsigned frame) {
+  uint32_t x = (frame / 9) * 2654435761u + who * 40503u;
+  uint32_t k;
+  if (scripted_keys(who, frame, &k))
+    return k;
+  x ^= x >> 13;
+  return x & 0x0FF;   /* A B Select Start and the pad, no L/R/X/Y */
+}
+
+static bool all_done(unsigned frames) {
+  int i;
+  for (i = 0; i < ncon; i++)
+    if (con[i].frames_shown < frames)
+      return false;
+  return true;
+}
+
+static bool any_bad(void) {
+  int i;
+  for (i = 0; i < ncon; i++)
+    if (con[i].bad)
+      return true;
+  return false;
+}
+
+/* One frame of every console that has started its session (or of all, if
+ * `all`), one after the other. */
+static void run_round(bool all) {
+  int i;
+  for (i = 0; i < ncon; i++)
+    if (all || con[i].started) {
+      con[i].keys = script_keys(i, con[i].frames_shown);
+      net_poll(i);
+      con[i].run();
+    }
+}
+
+/* PACE: one thread per console. The host's thread also keeps the stats:
+ * how many frames apart the screens are, sampled at each host frame. */
+static struct {
+  int64_t t0, t_start[MAXCON];
+  unsigned frames;
+  double ppm;
+  volatile int stop, half;
+  unsigned dupe_half[MAXCON], held_half[MAXCON];
+  volatile int64_t t_last[MAXCON];
+  double period[MAXCON];
+  double diff_sum[MAXCON], diff_min[MAXCON], diff_max[MAXCON];
+  long long diff_n;
+} pace;
+
+static void *pace_main(void *arg) {
+  const int i = (int)(intptr_t)arg;
+  const double period = pace.period[i];
+  const int64_t limit = pace.t0 + 60 * 1000000LL + (int64_t)pace.frames * 40000;
+  double next = (double)pace.t0;
+  int k;
+  while (!pace.stop && now_us() < limit && !all_done(pace.frames)) {
+    int64_t t = now_us();
+    if (next > t) usleep((useconds_t)(next - t));
+    con[i].keys = script_keys(i, con[i].frames_shown);
+    net_poll(i);
+    con[i].run();
+    t = now_us();
+    pace.t_last[i] = t;
+    next += period;
+    if (next < t - period) next = t;      /* missed a frame */
+    if (!pace.t_start[i] && con[i].frames_shown)
+      pace.t_start[i] = t;
+    if (any_bad()) pace.stop = 1;
+    if (i) continue;
+    for (k = 0; k < ncon && pace.t_start[k]; k++);
+    if (k < ncon) continue;
+    if (!pace.half) {
+      for (k = 0; k < ncon && con[k].frames_shown >= pace.frames / 2; k++);
+      if (k == ncon) {
+        pace.half = 1;
+        for (k = 0; k < ncon; k++) {
+          pace.dupe_half[k] = con[k].frames_dupe;
+          pace.held_half[k] = con[k].frames_held;
+        }
+      }
+    }
+    if (pace.half && !all_done(pace.frames)) {
+      for (k = 1; k < ncon; k++) {
+        /* Where client k is: its last frame, plus the time since. */
+        const double d = (double)con[0].frames_shown - (double)con[k].frames_shown -
+                         (double)(t - pace.t_last[k]) / pace.period[k];
+        pace.diff_sum[k] += d;
+        if (d < pace.diff_min[k]) pace.diff_min[k] = d;
+        if (d > pace.diff_max[k]) pace.diff_max[k] = d;
+      }
+      pace.diff_n++;
+    }
+  }
+  return NULL;
+}
+
+static void print_session(int64_t t0) {
+  int i;
+  printf("session:");
+  for (i = 0; i < ncon; i++)
+    printf(" %s%d %u frames (%u repeated)%s", i ? "client " : "host", i ? i : 0,
+           con[i].frames_shown, con[i].frames_dupe, i + 1 < ncon ? "," : "");
+  printf(", %.1f s\n", (now_us() - t0) / 1e6);
+}
+
+int main(int argc, char **argv) {
+  const char *core, *rom;
+  unsigned frames, solo, f;
+  struct retro_game_info info;
+  char copy[MAXCON][256];
+  int i, ok = 1;
+
+  setvbuf(stdout, NULL, _IOLBF, 0);
+  if (argc < 4) {
+    fprintf(stderr, "usage: %s CORE.so ROM FRAMES [latency_ms] [solo_frames]\n", argv[0]);
+    return 2;
+  }
+  core = argv[1];
+  rom = argv[2];
+  frames = (unsigned)atoi(argv[3]);
+  latency_us = argc > 4 ? atoi(argv[4]) * 1000 : 0;
+  bw_bps = getenv("BW_KBPS") ? atoll(getenv("BW_KBPS")) * 1000 : 0;
+  jitter_us = getenv("JITTER_MS") ? atoll(getenv("JITTER_MS")) * 1000 : 0;
+  spike_us = getenv("SPIKE_MS") ? atoll(getenv("SPIKE_MS")) * 1000 : 0;
+  spike_every = getenv("SPIKE_EVERY") ? atoll(getenv("SPIKE_EVERY")) : 0;
+  solo = argc > 5 ? (unsigned)atoi(argv[5]) : 30;
+  if (getenv("PLAYERS")) ncon = atoi(getenv("PLAYERS"));
+  if (ncon < 2 || ncon > MAXCON) { fprintf(stderr, "PLAYERS: 2 to 4\n"); return 2; }
+
+  /* One file each: dlopen gives each its own globals. */
+  for (i = 0; i < ncon; i++) {
+    snprintf(copy[i], sizeof(copy[i]), "%s/dualtest_core%d_%d.so",
+             getenv("TMPDIR") ? getenv("TMPDIR") : "/tmp", i, (int)getpid());
+    if (!copy_file(core, copy[i])) { fprintf(stderr, "cannot copy the core\n"); return 2; }
+    printf("console %d: loading core\n", i);
+    load_core(&con[i], copy[i], i);
+    printf("console %d: loading game\n", i);
+    memset(&info, 0, sizeof(info));
+    /* ROM2 in the environment: client 1 has another game. */
+    info.path = (i == 1 && getenv("ROM2")) ? getenv("ROM2") : rom;
+    if (getenv("DATA")) {
+      FILE *rf = fopen(info.path, "rb");
+      long sz;
+      void *buf;
+      if (!rf) { fprintf(stderr, "cannot read %s\n", info.path); return 2; }
+      fseek(rf, 0, SEEK_END); sz = ftell(rf); fseek(rf, 0, SEEK_SET);
+      buf = malloc(sz);
+      if (fread(buf, 1, sz, rf) != (size_t)sz) { fprintf(stderr, "short read\n"); return 2; }
+      fclose(rf);
+      info.data = buf;
+      info.size = sz;
+    }
+    if (!con[i].load_game(&info)) { fprintf(stderr, "load_game failed\n"); return 2; }
+    if (!con[i].np_set && !getenv("SOLO_ONLY")) { fprintf(stderr, "no netpacket interface\n"); return 2; }
+    printf("console %d: ready\n", i);
+  }
+
+  /* Each player plays alone for a while, so that the GBAs differ. */
+  for (f = 0; f < solo; f++)
+    for (i = 0; i < ncon; i++) {
+      con[i].keys = script_keys(i, f + 1000 * i);
+      con[i].run();
+    }
+  printf("solo frames done (%u)\n", solo);
+  /* SOLO_ONLY=1: only the frames alone (to time a core, any core) */
+  if (getenv("SOLO_ONLY")) return 0;
+
+  /* SESSIONS=n: n netplay sessions one after the other (everybody leaves,
+   * plays alone a while, and connects again). */
+  {
+  const unsigned sessions = getenv("SESSIONS") ? (unsigned)atoi(getenv("SESSIONS")) : 1;
+  unsigned sess;
+  for (sess = 0; sess < sessions; sess++) {
+  if (sess) {
+    printf("=== session %u ===\n", sess + 1);
+    for (f = 0; f < solo; f++)
+      for (i = 0; i < ncon; i++) {
+        con[i].keys = script_keys(i, f + 1000 * i);
+        con[i].run();
+      }
+  }
+  /* Netplay: the host starts, the clients join one after the other. */
+  {
+    const unsigned gap = getenv("JOIN_GAP") ? (unsigned)atoi(getenv("JOIN_GAP")) : 0;
+    const unsigned late = getenv("LATE_CONNECT") ? (unsigned)atoi(getenv("LATE_CONNECT")) : 0;
+    int64_t ts = now_us();
+    opt_netplay = true;   /* (no frame runs before the session starts) */
+    con[0].np.start(0, np_sends[0], np_polls[0]);
+    con[0].started = true;
+    printf("host session start took %.0f ms\n", (now_us() - ts) / 1e3);
+    for (i = 1; i < ncon; i++) {
+      if (i > 1)
+        for (f = 0; f < gap; f++)
+          run_round(false);
+      ts = now_us();
+      con[i].np.start((unsigned)i, np_sends[i], np_polls[i]);
+      con[i].started = true;
+      printf("client %d session start took %.0f ms\n", i, (now_us() - ts) / 1e3);
+      /* LATE_CONNECT=N: the host hears about the client N frames after the
+       * client started (as RetroArch can do), so the client's first packets
+       * get to a host that is not listening yet. */
+      for (f = 0; f < late; f++)
+        run_round(false);
+      if (late)
+        printf("host told about client %d %u frames late\n", i, late);
+      /* (RetroArch marks it as playing before it asks the core) */
+      con[i].playing = true;
+      if (con[0].np.connected && !con[0].np.connected((uint16_t)i)) {
+        fprintf(stderr, "host refused client %d\n", i);
+        return 2;
+      }
+    }
+  }
+
+  for (i = 0; i < ncon; i++)
+    con[i].frames_shown = con[i].frames_dupe = 0;
+
+  if (getenv("PACE")) {
+    /* Each console on its own clock and its own thread, as real ones. */
+    pthread_t th[MAXCON];
+    pace.t0 = now_us();
+    pace.frames = frames;
+    pace.ppm = getenv("SKEW_PPM") ? atof(getenv("SKEW_PPM")) : 0;
+    for (i = 0; i < ncon; i++) {
+      pace.period[i] = 1e6 / 59.7275 * (1 - i * pace.ppm / 1e6);
+      pace.diff_min[i] = 1e9;
+      pace.diff_max[i] = -1e9;
+    }
+    for (i = 0; i < ncon; i++)
+      pthread_create(&th[i], NULL, pace_main, (void *)(intptr_t)i);
+    for (i = 0; i < ncon; i++)
+      pthread_join(th[i], NULL);
+    print_session(pace.t0);
+    printf("setup: plays after");
+    for (i = 0; i < ncon; i++)
+      printf(" %.0f ms%s", pace.t_start[i] ? (pace.t_start[i] - pace.t0) / 1e3 : -1.0,
+             i + 1 < ncon ? "," : "\n");
+    if (pace.diff_n) {
+      for (i = 1; i < ncon; i++)
+        printf("second half: host ahead of client %d by (frames): avg %.2f, min %.2f, max %.2f\n",
+               i, pace.diff_sum[i] / pace.diff_n, pace.diff_min[i], pace.diff_max[i]);
+      printf("second half, frames repeated (held by the time sync + waits):");
+      for (i = 0; i < ncon; i++) {
+        const unsigned held = con[i].frames_held - pace.held_half[i];
+        printf(" %s %u + %u%s", i ? "client" : "host", held,
+               con[i].frames_dupe - pace.dupe_half[i] - held, i + 1 < ncon ? "," : "\n");
+      }
+    }
+  }
+  else {
+    const int64_t t0 = now_us();
+    unsigned rounds = 0;
+    const int64_t limit = t0 + 120 * 1000000LL + (int64_t)frames * 100000 * ncon;
+    const unsigned reset_at = getenv("RESET_AT") ? (unsigned)atoi(getenv("RESET_AT")) : 0;
+    const unsigned change_at = getenv("CHANGE_AT") ? (unsigned)atoi(getenv("CHANGE_AT")) : 0;
+    bool changed = false;
+    while (!all_done(frames) && now_us() < limit) {
+      if (change_at && !changed && con[0].frames_shown >= change_at) {
+        printf("console 0 changes its sound rate at frame %u\n", con[0].frames_shown);
+        opt_changed = !opt_changed;
+        opt_change_pending = changed = true;
+      }
+      if (reset_at && con[0].frames_shown == reset_at) {
+        printf("host presses reset at frame %u\n", reset_at);
+        con[0].reset();
+        con[0].frames_shown++;    /* (only once) */
+      }
+      run_round(true);
+      rounds++;
+      if (rounds % 50 == 0) {
+        printf("  round %u:", rounds);
+        for (i = 0; i < ncon; i++)
+          printf(" %u (+%u rep)", con[i].frames_shown, con[i].frames_dupe);
+        printf("\n");
+      }
+      if (any_bad()) break;
+    }
+    print_session(t0);
+  }
+
+  if (any_bad() || !all_done(frames))
+    ok = 0;
+
+  /* Link test ROM: every GBA must have logged the same words, two log
+   * entries per transfer: the parent's and first child's words, then the
+   * other two. Each player's word must be there (FFFF where nobody is). */
+  {
+    const uint32_t *e[MAXCON];
+    bool lt = true;
+    for (i = 0; i < ncon; i++) {
+      e[i] = con[i].get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+      if (!e[i] || e[i][2] < 1 || e[i][2] > 4)
+        lt = false;
+    }
+    if (lt) {
+      unsigned n = e[0][0], k, diff = 0, absent = 0, phantom = 0;
+      for (i = 1; i < ncon; i++)
+        if (e[i][0] < n) n = e[i][0];
+      if (n > 8192) n = 8192;
+      n &= ~1u;
+      for (k = 0; k < n; k++)
+        for (i = 1; i < ncon; i++)
+          if (e[0][4 + k] != e[i][4 + k]) diff++;
+      for (k = 0; k < n; k += 2) {
+        const uint16_t w[4] = { e[0][4 + k] & 0xFFFF, e[0][4 + k] >> 16,
+                                e[0][5 + k] & 0xFFFF, e[0][5 + k] >> 16 };
+        int s;
+        for (s = 0; s < 4; s++) {
+          if (s < ncon && w[s] == 0xFFFF) absent++;
+          if (s >= ncon && w[s] != 0xFFFF) phantom++;
+        }
+      }
+      printf("link test: roles");
+      for (i = 0; i < ncon; i++)
+        printf(" %u", e[i][2]);
+      printf(", transfers %u, first %u words compared, %u differ, "
+             "%u player words missing, %u words from nobody\n",
+             e[0][0] / 2, n, diff, absent, phantom);
+      if (n > 0)
+        printf("  first words: %08x %08x / %08x %08x\n", e[0][4], e[0][5],
+               e[ncon - 1][4], e[ncon - 1][5]);
+      for (i = 0; i < ncon; i++)
+        if (e[i][2] != (unsigned)i + 1)
+          ok = 0;
+      if (n < 20 || diff || phantom || absent > n / 20)
+        ok = 0;
+    }
+  }
+
+  /* Everybody leaves (the clients first, as the host hears about each). */
+  if (sess + 1 < sessions) {
+    pkt *p;
+    for (i = 1; i < ncon; i++) {
+      if (con[i].np_set && con[i].np.stop) con[i].np.stop();
+      con[i].started = con[i].playing = false;
+      if (con[0].np.disconnected) con[0].np.disconnected((uint16_t)i);
+    }
+    if (con[0].np.stop) con[0].np.stop();
+    con[0].started = false;
+    pthread_mutex_lock(&q_mtx);
+    while ((p = q_head)) { q_head = p->next; free(p); }
+    q_tail = NULL;
+    pthread_mutex_unlock(&q_mtx);
+    opt_netplay = false;
+    printf("session %u: %s\n", sess + 1, ok ? "ok" : "FAILED");
+    if (!ok) break;
+  }
+  }
+  }
+
+  for (i = 0; i < ncon; i++) {
+    if (con[i].np_set && con[i].np.stop) con[i].np.stop();
+    con[i].unload_game();
+    con[i].deinit();
+    unlink(copy[i]);
+  }
+  printf("%s\n", ok ? "PASS" : "FAIL");
+  return ok ? 0 : 1;
+}

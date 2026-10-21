@@ -2966,6 +2966,121 @@ struct retro_disk_control_ext_callback
    retro_get_image_label_t get_image_label;     /* Optional - may be NULL */
 };
 
+#define RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE 78
+                                           /* const struct retro_netpacket_callback * -- see below. */
+
+/* Definitions for RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE.
+ * A core can set it if sending and receiving custom network packets
+ * during a multiplayer session is desired.
+ */
+
+/* Netpacket flags for retro_netpacket_send_t */
+#define RETRO_NETPACKET_UNRELIABLE  0        /* Packet to be sent unreliable, depending on network quality it might not arrive. */
+#define RETRO_NETPACKET_RELIABLE    (1 << 0) /* Reliable packets are guaranteed to arrive at the target in the order they were sent. */
+#define RETRO_NETPACKET_UNSEQUENCED (1 << 1) /* Packet will not be sequenced with other packets and may arrive out of order. Cannot be set on reliable packets. */
+#define RETRO_NETPACKET_FLUSH_HINT  (1 << 2) /* Request the packet and any previously buffered ones to be sent immediately */
+
+/* Broadcast client_id for retro_netpacket_send_t */
+#define RETRO_NETPACKET_BROADCAST 0xFFFF
+
+/* Used by the core to send a packet to one or all connected players.
+ * A single packet sent via this interface can contain up to 64 KB of data.
+ *
+ * The client_id RETRO_NETPACKET_BROADCAST sends the packet as a broadcast to
+ * all connected players. This is supported from the host as well as clients.
+*  Otherwise, the argument indicates the player to send the packet to.
+ *
+ * A frontend must support sending reliable packets (RETRO_NETPACKET_RELIABLE).
+ * Unreliable packets might not be supported by the frontend, but the flags can
+ * still be specified. Reliable transmission will be used instead.
+ *
+ * Calling this with the flag RETRO_NETPACKET_FLUSH_HINT will send off the
+ * packet and any previously buffered ones immediately and without blocking.
+ * To only flush previously queued packets, buf or len can be passed as NULL/0.
+ *
+ * This function is not guaranteed to be thread-safe and must be called during
+ * retro_run or any of the netpacket callbacks passed with this interface.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_send_t)(int flags, const void* buf, size_t len, uint16_t client_id);
+
+/* Optionally read any incoming packets without waiting for the end of the
+ * frame. While polling, retro_netpacket_receive_t and retro_netpacket_stop_t
+ * can be called. The core can perform this in a loop to do a blocking read,
+ * i.e., wait for incoming data, but needs to handle stop getting called and
+ * also give up after a short while to avoid freezing on a connection problem.
+ * It is a good idea to manually flush outgoing packets before calling this.
+ *
+ * This function is not guaranteed to be thread-safe and must be called during
+ * retro_run or any of the netpacket callbacks passed with this interface.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_poll_receive_t)();
+
+/* Called by the frontend to signify that a multiplayer session has started.
+ * If client_id is 0 the local player is the host of the session and at this
+ * point no other player has connected yet.
+ *
+ * If client_id is > 0 the local player is a client connected to a host and
+ * at this point is already fully connected to the host.
+ *
+ * The core must store the function pointer send_fn and use it whenever it
+ * wants to send a packet. Optionally poll_receive_fn can be stored and used
+ * when regular receiving between frames is not enough. These function pointers
+ * remain valid until the frontend calls retro_netpacket_stop_t.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_start_t)(uint16_t client_id, retro_netpacket_send_t send_fn, retro_netpacket_poll_receive_t poll_receive_fn);
+
+/* Called by the frontend when a new packet arrives which has been sent from
+ * another player with retro_netpacket_send_t. The client_id argument indicates
+ * who has sent the packet.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_receive_t)(const void* buf, size_t len, uint16_t client_id);
+
+/* Called by the frontend when the multiplayer session has ended.
+ * Once this gets called the function pointers passed to
+ * retro_netpacket_start_t will not be valid anymore.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_stop_t)(void);
+
+/* Called by the frontend every frame (between calls to retro_run while
+ * updating the state of the multiplayer session.
+ * This is a good place for the core to call retro_netpacket_send_t from.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_poll_t)(void);
+
+/* Called by the frontend when a new player connects to the hosted session.
+ * This is only called on the host side, not for clients connected to the host.
+ * If this function returns false, the newly connected player gets dropped.
+ * This can be used for example to limit the number of players.
+ */
+typedef bool (RETRO_CALLCONV *retro_netpacket_connected_t)(uint16_t client_id);
+
+/* Called by the frontend when a player leaves or disconnects from the hosted session.
+ * This is only called on the host side, not for clients connected to the host.
+ */
+typedef void (RETRO_CALLCONV *retro_netpacket_disconnected_t)(uint16_t client_id);
+
+/**
+ * A callback interface for giving a core the ability to send and receive custom
+ * network packets during a multiplayer session between two or more instances
+ * of a libretro frontend.
+ *
+ * Normally during connection handshake the frontend will compare library_version
+ * used by both parties and show a warning if there is a difference. When the core
+ * supplies protocol_version, the frontend will check against this instead.
+ *
+ * @see RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE
+ */
+struct retro_netpacket_callback
+{
+   retro_netpacket_start_t        start;
+   retro_netpacket_receive_t      receive;
+   retro_netpacket_stop_t         stop;         /* Optional - may be NULL */
+   retro_netpacket_poll_t         poll;         /* Optional - may be NULL */
+   retro_netpacket_connected_t    connected;    /* Optional - may be NULL */
+   retro_netpacket_disconnected_t disconnected; /* Optional - may be NULL */
+   const char* protocol_version; /* Optional - if not NULL will be used instead of core version to decide if communication is compatible */
+};
+
 enum retro_pixel_format
 {
    /* 0RGB1555, native endian.

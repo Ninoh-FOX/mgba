@@ -267,6 +267,35 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "OFF"
    },
    {
+      "mgba_cable_link",
+      "Cable Link over Netplay (Restart)",
+      NULL,
+      "Joins the GBAs of a netplay session with a Game Link Cable. Every console runs every GBA of the session and only the buttons travel over the network, so games that use the cable a lot work at full speed. Needs the same game, BIOS and core on every console. While linked, savestates cannot be loaded and cheats are off.",
+      NULL,
+      "system",
+      {
+         { "ON",  "enabled" },
+         { "OFF", "disabled" },
+         { NULL, NULL },
+      },
+      "ON"
+   },
+   {
+      "mgba_cable_players",
+      "Cable Link Players",
+      NULL,
+      "How many GBAs are on the Cable Link (every console must have the same value). The host waits for all of them before the games restart, once. Each console runs every GBA, so 3 or 4 need much more CPU.",
+      NULL,
+      "system",
+      {
+         { "2", NULL },
+         { "3", NULL },
+         { "4", NULL },
+         { NULL, NULL },
+      },
+      "2"
+   },
+   {
       "mgba_idle_optimization",
       "Idle Loop Removal",
       NULL,
