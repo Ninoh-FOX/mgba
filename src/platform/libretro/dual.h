@@ -49,7 +49,9 @@ void dual_set_net(retro_netpacket_send_t send, retro_netpacket_poll_receive_t po
 
 void dual_session_start(unsigned client_id);
 bool dual_peer_connected(unsigned client_id);
-void dual_peer_disconnected(unsigned client_id);
+void dual_peer_disconnected(unsigned client_id, unsigned clients_left);
+void dual_clear_disconnects(void);
+void dual_drain_disconnects(void);
 void dual_session_stop(void);
 bool dual_net_receive(const void* buf, size_t len, uint16_t client_id);
 

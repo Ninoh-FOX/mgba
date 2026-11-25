@@ -405,6 +405,7 @@ static void _readCablePlayers(void) {
 static unsigned netplayClients = 0;
 
 static void RETRO_CALLCONV _netpacketStart(uint16_t clientId, retro_netpacket_send_t send, retro_netpacket_poll_receive_t pollReceive) {
+	dual_clear_disconnects();
 	_readCablePlayers();
 	netplayClients = 0;
 	dual_set_net(send, pollReceive);
@@ -447,7 +448,7 @@ static void RETRO_CALLCONV _netpacketDisconnected(uint16_t clientId) {
 	if (netplayClients) {
 		--netplayClients;
 	}
-	dual_peer_disconnected(clientId);
+	dual_peer_disconnected(clientId, netplayClients);
 }
 
 static const struct retro_netpacket_callback netpacketInterface = {
@@ -650,6 +651,7 @@ void retro_deinit(void) {
 }
 
 void retro_run(void) {
+	dual_drain_disconnects();
 	if (deferredSetup) {
 		_doDeferredSetup();
 	}

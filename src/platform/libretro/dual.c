@@ -333,6 +333,14 @@ static struct {
 	u32 sync_next;
 } ds = { .players = 2, .cfg_players = 2, .rom_fd = -1 };
 
+/* The frontend still owns the closing socket while its callback runs.
+ * Keep these events separate from ds, which can be reset when rearming. */
+static struct {
+	unsigned client_id;
+	unsigned clients_left;
+} pending_disconnects[DUAL_MAX_PLAYERS - 1];
+static unsigned pending_disconnect_count;
+
 static __thread bool in_hidden_thread;
 
 bool dual_hidden_thread(void) {
@@ -2039,6 +2047,8 @@ void dual_session_start(unsigned client_id) {
 
 bool dual_peer_connected(unsigned client_id) {
 	const u64 bit = client_id < 64 ? 1ull << client_id : 0;
+	if (pending_disconnect_count)
+		return false;
 	if (!ds.is_host || ds.gave_up || ds.state == DS_OFF) {
 		return true;
 	}
@@ -2056,9 +2066,19 @@ bool dual_peer_connected(unsigned client_id) {
 	return true;
 }
 
-void dual_peer_disconnected(unsigned client_id) {
+static void dual_apply_disconnect(unsigned client_id, unsigned clients_left) {
 	unsigned s;
-	if (!ds.is_host || ds.state == DS_OFF) {
+	if (!ds.is_host) {
+		return;
+	}
+	if (ds.state == DS_OFF) {
+		/* Two players, nobody left: the other console had another game (or
+		 * settings), or the cable already stopped (it stopped answering, its
+		 * BYE, out of sync) before the frontend told us it left: the cable
+		 * waits for the next one. */
+		if (((ds.gave_up && ds.players == 2) || ds.n == 2) && !clients_left && ds.send_fn) {
+			dual_session_start(0);
+		}
 		return;
 	}
 	if (ds.state == DS_WAIT) {
@@ -2081,14 +2101,47 @@ void dual_peer_disconnected(unsigned client_id) {
 	}
 	for (s = 1; s < ds.n; s++) {
 		if (ds.slot_id[s] == (int) client_id) {
-			dual_send_all(DPK_BYE, NULL, 0, NULL, 0);
+			if (ds.n > 2 && clients_left > pending_disconnect_count)
+				dual_send_all(DPK_BYE, NULL, 0, NULL, 0);
 			dual_stop(ds.state == DS_RUN ? "Cable Link: a console left" : NULL);
+			/* Two players: nobody else is left, the cable waits for the
+			 * next console (it would be off until netplay started again). */
+			if (ds.n == 2 && ds.send_fn) {
+				dual_session_start(0);
+			}
 			return;
 		}
 	}
 }
 
+/* Invoked before the frontend retires the socket. Do not send here. */
+void dual_peer_disconnected(unsigned client_id, unsigned clients_left) {
+	/* IDs are 1 through DUAL_MAX_PLAYERS - 1 and cannot rejoin while
+	 * a departure is pending. One entry per accepted player is enough. */
+	if (!ds.is_host || pending_disconnect_count == DUAL_MAX_PLAYERS - 1)
+		return;
+	pending_disconnects[pending_disconnect_count].client_id = client_id;
+	pending_disconnects[pending_disconnect_count].clients_left = clients_left;
+	pending_disconnect_count++;
+}
+
+void dual_clear_disconnects(void) {
+	pending_disconnect_count = 0;
+}
+
+void dual_drain_disconnects(void) {
+	while (pending_disconnect_count) {
+		const unsigned client_id = pending_disconnects[0].client_id;
+		const unsigned clients_left = pending_disconnects[0].clients_left;
+		pending_disconnect_count--;
+		memmove(pending_disconnects, pending_disconnects + 1,
+			pending_disconnect_count * sizeof(pending_disconnects[0]));
+		dual_apply_disconnect(client_id, clients_left);
+	}
+}
+
 void dual_session_stop(void) {
+	dual_clear_disconnects();
 	dual_stop(NULL);
 	ds.state = DS_OFF;
 	ds.send_fn = NULL;
@@ -2100,21 +2153,30 @@ void dual_session_stop(void) {
  * others answer. (While the host waits for the players, the games go on.) */
 bool dual_setting_up(void) {
 	const u64 t0 = time_usec();
+	if (pending_disconnect_count)
+		return true;
 	if (ds.state == DS_WAIT || ds.state == DS_HELLO) {
 		dual_setup_step();
+		if (pending_disconnect_count)
+			return true;
 		if (ds.state == DS_WAIT || ds.state == DS_HELLO || ds.state == DS_OFF) {
 			return false;
 		}
 	}
 	while (ds.state != DS_OFF && ds.state != DS_RUN) {
 		dual_setup_step();
-		if (ds.state == DS_OFF || ds.state == DS_RUN || time_usec() - t0 > DUAL_SLICE_US) {
+		if (pending_disconnect_count)
+			return true;
+		if (ds.state == DS_OFF || ds.state == DS_RUN || ds.state == DS_WAIT ||
+		    time_usec() - t0 > DUAL_SLICE_US) {
 			break;
 		}
 		net_poll();
+		if (pending_disconnect_count)
+			return true;
 		usleep(250);
 	}
-	return ds.state != DS_OFF && ds.state != DS_RUN;
+	return ds.state != DS_OFF && ds.state != DS_RUN && ds.state != DS_WAIT;
 }
 
 bool dual_running(void) {
@@ -2165,6 +2227,9 @@ int dual_frame_begin(u32 local_keys) {
 	bool full = true;
 	unsigned s;
 
+	if (pending_disconnect_count)
+		return DUAL_FRAME_WAIT;
+
 	/* Ahead of another console: stay a frame where we are. Each client
 	 * keeps with the host, and the host with each client. */
 	for (s = 0; s < ds.n; s++) {
@@ -2205,6 +2270,8 @@ int dual_frame_begin(u32 local_keys) {
 		ds.own_keys[ds.sent_upto % DUAL_RING] = w[1];
 		dual_send_all(DPK_INPUT, w, 3 + 2 * NP, NULL, 0);
 		ds.sent_upto++;
+		if (pending_disconnect_count)
+			return DUAL_FRAME_WAIT;
 	}
 
 	/* Everybody else's for frame f */
@@ -2238,6 +2305,8 @@ int dual_frame_begin(u32 local_keys) {
 			return DUAL_FRAME_WAIT;
 		}
 		net_poll();
+		if (pending_disconnect_count)
+			return DUAL_FRAME_WAIT;
 		usleep(250);
 	}
 	if (ds.state != DS_RUN) {
@@ -2349,6 +2418,8 @@ bool dual_net_receive(const void* buf, size_t len, uint16_t client_id) {
 
 	switch (type) {
 	case DPK_HELLO:
+		if (pending_disconnect_count)
+			break;
 		if (len < 8 + 6 * 4) {
 			break;
 		} else {
@@ -2538,6 +2609,7 @@ bool dual_net_receive(const void* buf, size_t len, uint16_t client_id) {
 
 void dual_game_unloaded(void) {
 	unsigned k;
+	dual_clear_disconnects();
 	dual_stop(NULL);
 	bus.abort = 1;
 	for (k = 0; k < DUAL_HIDDEN; k++) {
