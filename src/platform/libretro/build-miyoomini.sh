@@ -21,11 +21,22 @@ CFLAGS="-Ofast -marm -mcpu=cortex-a7 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-a
  -fno-asynchronous-unwind-tables -fno-unroll-loops -fmerge-all-constants -fno-math-errno \
  -fvisibility=hidden"
 
+# Profile-guided optimization with a profile recorded on a Miyoo Mini Plus
+# (see pgo/miyoomini/README.md). PGO=generate builds the instrumented core,
+# PGO=0 builds without the profile. The profile only fits these sources at
+# this same path (GCC checks the source file names).
+PGOFLAGS=""
+if [ "$PGO" = generate ]; then
+  PGOFLAGS="-fprofile-generate=/tmp/pgo"
+elif [ "$PGO" != 0 ] && [ -d "$ROOT/pgo/miyoomini/profile" ]; then
+  PGOFLAGS="-fprofile-use=$ROOT/pgo/miyoomini/profile -fprofile-correction -Wno-error=coverage-mismatch"
+fi
+
 mkdir -p "$BUILD"
 cd "$BUILD"
 cmake "$ROOT" -DCMAKE_TOOLCHAIN_FILE=$TC/share/buildroot/toolchainfile.cmake \
-  -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="$CFLAGS" \
-  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--gc-sections" \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="$CFLAGS $PGOFLAGS" \
+  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--gc-sections $PGOFLAGS" \
   -DBUILD_LIBRETRO=ON -DSKIP_LIBRARY=ON -DBUILD_QT=OFF -DBUILD_SDL=OFF \
   -DBUILD_GL=OFF -DBUILD_GLES2=OFF -DBUILD_GLES3=OFF -DUSE_FFMPEG=OFF \
   -DUSE_ZLIB=OFF -DUSE_PNG=OFF -DUSE_LIBZIP=OFF -DUSE_MINIZIP=OFF \
