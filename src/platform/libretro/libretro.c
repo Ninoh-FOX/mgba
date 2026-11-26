@@ -1442,6 +1442,23 @@ void GBARetroLog(struct mLogger* logger, int category, enum mLogLevel level, con
 		return;
 	}
 
+#ifdef NDEBUG
+	/* These release-only exclusions also avoid formatting per-event traces. */
+	if (level == mLOG_DEBUG || level == mLOG_GAME_ERROR || level == mLOG_STUB) {
+		return;
+	}
+
+	static int biosCat = -1;
+	static int dmaCat = -1;
+	if (biosCat < 0) {
+		biosCat = mLogCategoryById("gba.bios");
+		dmaCat = mLogCategoryById("gba.dma");
+	}
+	if (category == biosCat || (level == mLOG_INFO && category == dmaCat)) {
+		return;
+	}
+#endif
+
 	char message[128];
 	vsnprintf(message, sizeof(message), format, args);
 
@@ -1459,26 +1476,10 @@ void GBARetroLog(struct mLogger* logger, int category, enum mLogLevel level, con
 		break;
 	case mLOG_GAME_ERROR:
 	case mLOG_STUB:
-#ifdef NDEBUG
-		return;
-#else
-		retroLevel = RETRO_LOG_DEBUG;
-		break;
-#endif
 	case mLOG_DEBUG:
 		retroLevel = RETRO_LOG_DEBUG;
 		break;
 	}
-#ifdef NDEBUG
-	static int biosCat = -1;
-	if (biosCat < 0) {
-		biosCat = mLogCategoryById("gba.bios");
-	}
-
-	if (category == biosCat) {
-		return;
-	}
-#endif
 	logCallback(retroLevel, "%s: %s\n", mLogCategoryName(category), message);
 }
 
